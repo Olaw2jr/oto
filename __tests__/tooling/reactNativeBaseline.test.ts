@@ -40,8 +40,9 @@ describe('React Native 0.87 JavaScript baseline', () => {
     expect(read('tsconfig.json')).toContain('@react-native/typescript-config');
   });
 
-  it('does not depend on deprecated React Native type or matcher packages', () => {
+  it('keeps the RN upgrade on the synchronous RNTL 13 test surface', () => {
     expect(pkg.devDependencies['@types/react-native']).toBeUndefined();
-    expect(pkg.devDependencies['@testing-library/jest-native']).toBeUndefined();
+    expect(pkg.devDependencies['@testing-library/react-native']).toBe('13.3.3');
+    expect(pkg.devDependencies['@testing-library/jest-native']).toBe('5.4.3');
   });
 });

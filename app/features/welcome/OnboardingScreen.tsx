@@ -203,7 +203,11 @@ const styles = StyleSheet.create({
   coverB: {width: 150, height: 150, left: 172, top: 112},
   coverC: {width: 176, height: 176, left: 66, top: 196},
   ringLabel: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
