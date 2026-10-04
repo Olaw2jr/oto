@@ -29,7 +29,7 @@ export const RECENT_SEARCHES_KEY = 'oto.searches';
 const MAX_RECENT = 8;
 
 const scopes = ['All', 'Titles', 'Authors', 'Narrators', 'Clubs'] as const;
-type Scope = typeof scopes[number];
+type Scope = (typeof scopes)[number];
 
 const matches = (book: CatalogueBook, scope: Scope, needle: string) => {
   const fields =
