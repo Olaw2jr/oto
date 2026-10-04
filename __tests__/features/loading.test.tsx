@@ -146,5 +146,13 @@ describe('offline illustration', () => {
       />,
     );
     expect(screen.getByLabelText('oto, offline')).toBeOnTheScreen();
+    // Offline, the mark is quiet: no kaki anywhere on the screen.
+    const {Circle} = require('react-native-svg');
+    const {colors} = require('../../app/theme/colors');
+    const fills = screen
+      .UNSAFE_getAllByType(Circle)
+      .map((c: any) => c.props.fill);
+    expect(fills).not.toContain(colors.light.kaki);
+    expect(fills).not.toContain(colors.dark.kaki);
   });
 });
