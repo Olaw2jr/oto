@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {
   GestureResponderEvent,
+  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -95,6 +96,8 @@ const UpdateComposeScreen = ({
         styles.sheet,
         {
           backgroundColor: colors.paper,
+          // iOS presents a card sheet; Android's modal is full screen.
+          paddingTop: (Platform.OS === 'android' ? insets.top : 0) + 8,
           paddingBottom: Math.max(insets.bottom, 16) + 18,
         },
       ]}>
@@ -274,7 +277,7 @@ const UpdateComposeScreen = ({
 };
 
 const styles = StyleSheet.create({
-  sheet: {flex: 1, paddingHorizontal: 20, paddingTop: 8},
+  sheet: {flex: 1, paddingHorizontal: 20},
   handle: {width: 38, height: 5, borderRadius: 3, alignSelf: 'center'},
   header: {
     flexDirection: 'row',

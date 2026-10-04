@@ -258,9 +258,9 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
                     </Txt>
                   </Pressable>
                   {post.replies ? (
-                    <Txt variant="caption" style={styles.action}>
-                      {`Reply · ${post.replies}`}
-                    </Txt>
+                    <View style={styles.action}>
+                      <Txt variant="caption">{`Reply · ${post.replies}`}</Txt>
+                    </View>
                   ) : null}
                 </View>
               ) : null}

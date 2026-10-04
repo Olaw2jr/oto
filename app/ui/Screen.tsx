@@ -42,6 +42,14 @@ export const Screen = ({
       ) : (
         <View style={[styles.root, content]}>{children}</View>
       )}
+      {/* Keeps scrolled content from showing under the translucent status bar. */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.statusBar,
+          {height: insets.top, backgroundColor: colors.paper},
+        ]}
+      />
       {footer ? (
         <View
           style={[
@@ -58,4 +66,5 @@ export const Screen = ({
 const styles = StyleSheet.create({
   root: {flex: 1},
   padded: {paddingHorizontal: 20},
+  statusBar: {position: 'absolute', top: 0, left: 0, right: 0},
 });
