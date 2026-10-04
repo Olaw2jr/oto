@@ -18,6 +18,94 @@ import {Avatar, Icon, IconButton, Screen, Sheet, SheetRow, Txt} from '../../ui';
 
 const nameOf = (id: string) => (id === ME ? 'You' : getPerson(id).short);
 
+const LikeButton = ({id, base}: {id: string; base: number}) => {
+  const social = useSocial();
+  const liked = social.liked(id);
+  const count = social.likeCount(id, base);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${liked ? 'Unlike' : 'Like'}, ${count} likes`}
+      accessibilityState={{selected: liked}}
+      onPress={() => social.toggleLike(id)}
+      style={styles.action}>
+      <Icon
+        name={liked ? 'heartFilled' : 'heart'}
+        size={18}
+        color={liked ? 'kaki' : 'graphite'}
+      />
+      <Txt variant="caption" style={styles.count}>
+        {String(count)}
+      </Txt>
+    </Pressable>
+  );
+};
+
+type CommentProps = {
+  comment: FeedComment;
+  parent?: FeedComment;
+  posterId: string;
+  onOpenPerson: (personId: string) => void;
+  onReply: (comment: FeedComment) => void;
+};
+
+const Comment = ({
+  comment,
+  parent,
+  posterId,
+  onOpenPerson,
+  onReply,
+}: CommentProps) => {
+  const {colors} = useTheme();
+  return (
+    <View style={[styles.comment, parent && styles.reply]}>
+      {parent ? (
+        <View style={[styles.thread, {backgroundColor: colors.hairline}]} />
+      ) : null}
+      <PersonLink personId={comment.by} onOpen={onOpenPerson}>
+        <Avatar name={getPerson(comment.by).name} size={parent ? 30 : 34} />
+      </PersonLink>
+      <View style={styles.commentBody}>
+        <View
+          accessible
+          accessibilityLabel={
+            parent
+              ? `Reply from ${nameOf(comment.by)} to ${nameOf(parent.by)}`
+              : `Comment from ${nameOf(comment.by)}`
+          }>
+          <View style={styles.meta}>
+            <Txt variant="caption" color="ink" weight="semibold">
+              {nameOf(comment.by)}
+            </Txt>
+            <Txt variant="small" style={styles.ago}>
+              {comment.by === posterId
+                ? `Poster · ${comment.ago}`
+                : comment.ago}
+            </Txt>
+          </View>
+          <Txt variant="quote" style={styles.commentText}>
+            {comment.body}
+          </Txt>
+        </View>
+        {comment.by === ME ? null : (
+          <View style={styles.actions}>
+            <LikeButton id={comment.id} base={comment.likes} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Reply to ${nameOf(comment.by)}`}
+              onPress={() => onReply(comment)}
+              style={styles.action}>
+              <Txt variant="caption" color="ink" weight="semibold">
+                Reply
+              </Txt>
+            </Pressable>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+};
+
 const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
   const {colors} = useTheme();
   const social = useSocial();
@@ -42,82 +130,6 @@ const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
     setDraft('');
     setReplyTo(null);
   };
-
-  const LikeButton = ({id, base}: {id: string; base: number}) => {
-    const liked = social.liked(id);
-    const count = social.likeCount(id, base);
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${liked ? 'Unlike' : 'Like'}, ${count} likes`}
-        accessibilityState={{selected: liked}}
-        onPress={() => social.toggleLike(id)}
-        style={styles.action}>
-        <Icon
-          name={liked ? 'heartFilled' : 'heart'}
-          size={18}
-          color={liked ? 'kaki' : 'graphite'}
-        />
-        <Txt variant="caption" style={styles.count}>
-          {String(count)}
-        </Txt>
-      </Pressable>
-    );
-  };
-
-  const Comment = ({
-    comment,
-    parent,
-  }: {
-    comment: FeedComment;
-    parent?: FeedComment;
-  }) => (
-    <View style={[styles.comment, parent && styles.reply]}>
-      {parent ? (
-        <View style={[styles.thread, {backgroundColor: colors.hairline}]} />
-      ) : null}
-      <PersonLink
-        personId={comment.by}
-        onOpen={id => openPerson(navigation, id)}>
-        <Avatar name={getPerson(comment.by).name} size={parent ? 30 : 34} />
-      </PersonLink>
-      <View style={styles.commentBody}>
-        <View
-          accessible
-          accessibilityLabel={
-            parent
-              ? `Reply from ${nameOf(comment.by)} to ${nameOf(parent.by)}`
-              : `Comment from ${nameOf(comment.by)}`
-          }>
-          <View style={styles.meta}>
-            <Txt variant="caption" color="ink" weight="semibold">
-              {nameOf(comment.by)}
-            </Txt>
-            <Txt variant="small" style={styles.ago}>
-              {comment.by === item.by ? `Poster · ${comment.ago}` : comment.ago}
-            </Txt>
-          </View>
-          <Txt variant="quote" style={styles.commentText}>
-            {comment.body}
-          </Txt>
-        </View>
-        {comment.by === ME ? null : (
-          <View style={styles.actions}>
-            <LikeButton id={comment.id} base={comment.likes} />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Reply to ${nameOf(comment.by)}`}
-              onPress={() => setReplyTo(comment)}
-              style={styles.action}>
-              <Txt variant="caption" color="ink" weight="semibold">
-                Reply
-              </Txt>
-            </Pressable>
-          </View>
-        )}
-      </View>
-    </View>
-  );
 
   if (loading) {
     return (
@@ -261,9 +273,21 @@ const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
       <View style={styles.comments}>
         {topLevel.map(comment => (
           <View key={comment.id} style={styles.group}>
-            <Comment comment={comment} />
+            <Comment
+              comment={comment}
+              posterId={item.by}
+              onOpenPerson={id => openPerson(navigation, id)}
+              onReply={setReplyTo}
+            />
             {repliesTo(comment.id).map(reply => (
-              <Comment key={reply.id} comment={reply} parent={comment} />
+              <Comment
+                key={reply.id}
+                comment={reply}
+                parent={comment}
+                posterId={item.by}
+                onOpenPerson={id => openPerson(navigation, id)}
+                onReply={setReplyTo}
+              />
             ))}
           </View>
         ))}

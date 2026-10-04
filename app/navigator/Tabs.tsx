@@ -1,5 +1,8 @@
 import React from 'react';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {
+  BottomTabBarProps,
+  createBottomTabNavigator,
+} from '@react-navigation/bottom-tabs';
 
 import DiscoverScreen from '../features/discover/DiscoverScreen';
 import HomeScreen from '../features/home/HomeScreen';
@@ -11,10 +14,10 @@ import {TabParamList} from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
+const renderTabBar = (props: BottomTabBarProps) => <TabBar {...props} />;
+
 const Tabs = () => (
-  <Tab.Navigator
-    screenOptions={{headerShown: false}}
-    tabBar={props => <TabBar {...props} />}>
+  <Tab.Navigator screenOptions={{headerShown: false}} tabBar={renderTabBar}>
     <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Discover" component={DiscoverScreen} />
     <Tab.Screen name="Following" component={FollowingScreen} />

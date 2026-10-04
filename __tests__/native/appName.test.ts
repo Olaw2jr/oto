@@ -22,8 +22,9 @@ describe('app name', () => {
     expect(
       read('android/app/src/main/java/com/eyy/MainActivity.java'),
     ).toContain(`return "${moduleName}";`);
+    // React Native 0.71's RCTAppDelegate takes the module name as a property.
     expect(read('ios/Eyy/AppDelegate.mm')).toContain(
-      `RCTAppSetupDefaultRootView(bridge, @"${moduleName}"`,
+      `self.moduleName = @"${moduleName}";`,
     );
   });
 });

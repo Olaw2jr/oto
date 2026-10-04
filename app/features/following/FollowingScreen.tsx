@@ -17,7 +17,7 @@ import {Button, Card, Icon, IconButton, Screen, Txt} from '../../ui';
 import {FeedCard} from './FeedCard';
 
 const filters = ['Friends', 'Clubs', 'Reviews'] as const;
-type Filter = typeof filters[number];
+type Filter = (typeof filters)[number];
 
 const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
   const loading = useFirstLoad('following');

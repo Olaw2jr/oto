@@ -13,7 +13,7 @@ import {useTheme} from '../../theme/ThemeProvider';
 import {Icon, IconButton, Screen, Txt} from '../../ui';
 
 const tabs = ['New releases', 'Top rated', "Editors' picks"] as const;
-type Tab = typeof tabs[number];
+type Tab = (typeof tabs)[number];
 
 // Source dates are MM-DD-YY.
 const releaseKey = (book: CatalogueBook) => {
