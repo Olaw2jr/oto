@@ -6,7 +6,7 @@
 2. Work test-first: write a failing test, make it pass, then refactor.
 3. Keep commits small and focused, and use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `test:`, `refactor:`, `chore:`, `docs:`).
 4. Open a pull request using the template. CI has to pass before you merge.
-5. Squash-merge into `main`.
+5. Squash-merge into `main`. Use a merge commit instead when the PR's individual commits need to keep their hashes, for example a formatting commit listed in `.git-blame-ignore-revs`.
 
 ## Checks
 
