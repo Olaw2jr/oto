@@ -31,6 +31,7 @@ const icons = {
   skipBack: Outline.ArrowUturnLeftIcon,
   skipForward: Outline.ArrowUturnRightIcon,
   note: Outline.PencilSquareIcon,
+  check: Outline.CheckIcon,
 };
 
 export type IconName = keyof typeof icons;

@@ -13,6 +13,7 @@ type ButtonProps = {
   icon?: IconName;
   accessibilityLabel?: string;
   stretch?: boolean;
+  disabled?: boolean;
 };
 
 export const Button = ({
@@ -23,6 +24,7 @@ export const Button = ({
   icon,
   accessibilityLabel,
   stretch = false,
+  disabled = false,
 }: ButtonProps) => {
   const {colors} = useTheme();
   const height = size === 'large' ? 54 : 44;
@@ -37,6 +39,8 @@ export const Button = ({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{disabled}}
+      disabled={disabled}
       onPress={onPress}
       style={({pressed}) => [
         styles.base,
@@ -46,7 +50,7 @@ export const Button = ({
           borderRadius: height / 2,
           paddingHorizontal: size === 'large' ? 24 : 18,
           backgroundColor: background,
-          opacity: pressed ? 0.8 : 1,
+          opacity: disabled ? 0.4 : pressed ? 0.8 : 1,
         },
         kind === 'secondary' && {
           borderWidth: StyleSheet.hairlineWidth * 2,
