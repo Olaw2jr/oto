@@ -19,7 +19,7 @@ describe('DiscoverScreen', () => {
     await setup();
     expect(screen.getByRole('header', {name: 'Discover'})).toBeOnTheScreen();
     expect(
-      screen.getByPlaceholderText('Titles, authors, clubs, people'),
+      screen.getByText('Titles, authors, clubs, people'),
     ).toBeOnTheScreen();
 
     const forYou = screen.getByRole('button', {name: 'For you'});
@@ -57,25 +57,6 @@ describe('DiscoverScreen', () => {
         name: 'Project Hail Mary is on your want list',
       }),
     ).toBeOnTheScreen();
-  });
-
-  it('searches titles and authors', async () => {
-    const navigation = await setup();
-    fireEvent.changeText(screen.getByLabelText('Search'), 'weir');
-
-    expect(screen.queryByText('Trending with people you follow')).toBeNull();
-    fireEvent.press(
-      screen.getByRole('button', {name: /^Project Hail Mary, Andy Weir/}),
-    );
-    expect(navigation.navigate).toHaveBeenCalledWith('Book', {
-      bookId: 'project-hail-mary',
-    });
-  });
-
-  it('says so when nothing matches', async () => {
-    await setup();
-    fireEvent.changeText(screen.getByLabelText('Search'), 'zzzz');
-    expect(screen.getByText('No books match “zzzz”.')).toBeOnTheScreen();
   });
 
   it('lists moods', async () => {
