@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {Pressable, StyleSheet, useWindowDimensions, View} from 'react-native';
 
+import {AuthorLinks} from '../../components/AuthorLinks';
 import {BookCover} from '../../components/BookCover';
 import {chapterAt} from '../../data/catalogue';
 import {clubs} from '../../data/clubs';
@@ -141,9 +142,11 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
           <Txt variant="title" accessibilityRole="header" numberOfLines={2}>
             {book.title}
           </Txt>
-          <Txt variant="caption" style={styles.author}>
-            {book.author}
-          </Txt>
+          <AuthorLinks
+            author={book.author}
+            variant="caption"
+            onOpen={name => navigation.navigate('Author', {name})}
+          />
         </View>
         <IconButton
           icon="bookmark"

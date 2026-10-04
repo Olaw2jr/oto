@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {PersonLink} from '../../components/PersonLink';
 import {LoadingState} from '../../components/LoadingState';
 import {NotificationsSheet} from '../../components/NotificationsSheet';
 import OtoLogo from '../../components/OtoLogo';
@@ -9,6 +10,7 @@ import {chapterAt, getBook} from '../../data/catalogue';
 import {getClub, MY_CLUB} from '../../data/clubs';
 import {formatClock} from '../../data/format';
 import {getPerson, ME} from '../../data/people';
+import {openPerson} from '../../navigator/openPerson';
 import {RootStackScreenProps, TabScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
 import {NOTIFICATION_LABELS, useSettings} from '../../state/settings';
@@ -234,7 +236,11 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
         const person = getPerson(post.by);
         return (
           <View key={post.id} style={styles.post}>
-            <Avatar name={person.name} size={34} />
+            <PersonLink
+              personId={post.by}
+              onOpen={id => openPerson(navigation, id)}>
+              <Avatar name={person.name} size={34} />
+            </PersonLink>
             <View style={styles.postBody}>
               <View style={[styles.row, styles.wrap]}>
                 <Txt variant="caption" color="ink" weight="semibold">

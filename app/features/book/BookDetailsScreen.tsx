@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 
+import {AuthorLinks} from '../../components/AuthorLinks';
 import {BookCover} from '../../components/BookCover';
 import {getBook} from '../../data/catalogue';
 import {formatDuration} from '../../data/format';
@@ -87,9 +88,11 @@ const BookDetailsScreen = ({
           <Txt variant="title" accessibilityRole="header">
             {book.title}
           </Txt>
-          <Txt variant="caption" color="ink" style={styles.author}>
-            {book.author}
-          </Txt>
+          <AuthorLinks
+            author={book.author}
+            variant="caption"
+            onOpen={name => navigation.navigate('Author', {name})}
+          />
           <Txt variant="small">{`Narrated by ${book.narrator}`}</Txt>
         </View>
       </View>

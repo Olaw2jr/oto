@@ -231,16 +231,22 @@ const SearchScreen = ({navigation}: RootStackScreenProps<'Search'>) => {
               const following = social.followsAuthor(name);
               return (
                 <View key={name} style={styles.author}>
-                  <Avatar name={name} size={64} />
-                  <Txt
-                    variant="caption"
-                    color="ink"
-                    weight="semibold"
-                    align="center"
-                    numberOfLines={2}
-                    style={styles.authorName}>
-                    {name}
-                  </Txt>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${name}, author`}
+                    onPress={() => navigation.navigate('Author', {name})}
+                    style={styles.authorOpen}>
+                    <Avatar name={name} size={64} />
+                    <Txt
+                      variant="caption"
+                      color="ink"
+                      weight="semibold"
+                      align="center"
+                      numberOfLines={2}
+                      style={styles.authorName}>
+                      {name}
+                    </Txt>
+                  </Pressable>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`${
@@ -324,6 +330,7 @@ const styles = StyleSheet.create({
   authors: {marginHorizontal: -20},
   authorsContent: {paddingHorizontal: 20},
   author: {width: 84, alignItems: 'center', marginRight: 10},
+  authorOpen: {alignItems: 'center'},
   authorName: {marginTop: 6, lineHeight: 16},
   followHit: {minHeight: 44, justifyContent: 'center'},
   follow: {paddingHorizontal: 14},

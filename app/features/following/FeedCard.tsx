@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {PersonLink} from '../../components/PersonLink';
 import {getBook} from '../../data/catalogue';
 import {getClub} from '../../data/clubs';
 import {firstName, getPerson, ME} from '../../data/people';
@@ -17,6 +18,7 @@ type FeedCardProps = {
   onOpenBook: (bookId: string) => void;
   onOpenThread: (itemId: string) => void;
   onReported?: () => void;
+  onOpenPerson: (personId: string) => void;
 };
 
 export const FeedCard = ({
@@ -24,6 +26,7 @@ export const FeedCard = ({
   onOpenBook,
   onOpenThread,
   onReported,
+  onOpenPerson,
 }: FeedCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const {colors, colorScheme} = useTheme();
@@ -60,7 +63,9 @@ export const FeedCard = ({
   return (
     <Card style={styles.card} testID={`update-${name}`}>
       <View style={styles.head}>
-        <Avatar name={person.name} size={38} />
+        <PersonLink personId={item.by} onOpen={onOpenPerson}>
+          <Avatar name={person.name} size={38} />
+        </PersonLink>
         <View style={styles.who}>
           <Txt variant="caption" color="ink">
             <Txt variant="caption" color="ink" weight="semibold">

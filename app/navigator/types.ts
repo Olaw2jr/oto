@@ -33,6 +33,8 @@ export type RootStackParamList = {
   Shelf: {shelfId: string};
   SaveToShelf: {bookId: string};
   Mood: {mood: string};
+  Person: {personId: string};
+  Author: {name: string};
   Settings: undefined;
 };
 

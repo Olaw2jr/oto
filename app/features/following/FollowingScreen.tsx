@@ -6,6 +6,7 @@ import OtoLogo from '../../components/OtoLogo';
 import {LoadingState} from '../../components/LoadingState';
 import {chapterAt} from '../../data/catalogue';
 import {formatRemaining} from '../../data/format';
+import {openPerson} from '../../navigator/openPerson';
 import {TabScreenProps} from '../../navigator/types';
 import {retryConnection, useOnline} from '../../state/network';
 import {usePlayer} from '../../state/player';
@@ -168,6 +169,7 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
             onOpenBook={bookId => navigation.navigate('Book', {bookId})}
             onOpenThread={itemId => navigation.navigate('Thread', {itemId})}
             onReported={() => setReported(true)}
+            onOpenPerson={id => openPerson(navigation, id)}
           />
         ))
       ) : (
