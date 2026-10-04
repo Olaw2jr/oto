@@ -13,9 +13,7 @@
 Before you push, run:
 
 ```sh
-npm run typecheck
-npm run lint
-npm test
+npm run check   # typecheck, lint and tests
 ```
 
 ## Tests
