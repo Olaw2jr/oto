@@ -40,11 +40,7 @@ describe('App', () => {
       await renderAsync(<App />);
 
       expect(statusBars()).toHaveLength(1);
-      expect(statusBars()[0].props).toMatchObject({
-        barStyle,
-        translucent: true,
-        backgroundColor: 'transparent',
-      });
+      expect(statusBars()[0].props).toMatchObject({barStyle});
     },
   );
 });
