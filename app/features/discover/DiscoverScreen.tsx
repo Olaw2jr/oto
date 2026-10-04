@@ -6,10 +6,12 @@ import {BookCover} from '../../components/BookCover';
 import {LoadingState} from '../../components/LoadingState';
 import {catalogue, CatalogueBook, getBook} from '../../data/catalogue';
 import {filterRules} from '../../data/moods';
+import {picksForTaste} from '../../data/taste';
 import {discoverFilters, moods, trending} from '../../data/social';
 import {TabScreenProps} from '../../navigator/types';
 import {useFirstLoad} from '../../state/firstLoad';
 import {useLibrary} from '../../state/library';
+import {useTaste} from '../../state/taste';
 import {useTheme} from '../../theme/ThemeProvider';
 import {Chip, Icon, IconButton, Screen, Txt} from '../../ui';
 
@@ -115,6 +117,8 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
   const [filter, setFilter] = useState(discoverFilters[0]);
   const openBook = (id: string) => navigation.navigate('Book', {bookId: id});
   const loading = useFirstLoad('discover');
+  const taste = useTaste();
+  const picks = picksForTaste(taste.genres, taste.authors);
 
   return (
     <Screen scroll>
@@ -166,6 +170,40 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
             </>
           ) : (
             <>
+              {picks.length ? (
+                <>
+                  <Txt variant="heading" style={styles.heading}>
+                    Picked for your taste
+                  </Txt>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.picks}
+                    contentContainerStyle={styles.picksContent}>
+                    {picks.slice(0, 8).map(book => (
+                      <Pressable
+                        key={book.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${book.title}, ${book.author}`}
+                        onPress={() => openBook(book.id)}
+                        style={styles.pick}>
+                        <BookCover book={book} size={108} />
+                        <Txt
+                          variant="caption"
+                          color="ink"
+                          weight="semibold"
+                          numberOfLines={2}
+                          style={styles.pickTitle}>
+                          {book.title}
+                        </Txt>
+                        <Txt variant="small" numberOfLines={1}>
+                          {book.author}
+                        </Txt>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </>
+              ) : null}
               <Txt variant="heading" style={styles.heading}>
                 Trending with people you follow
               </Txt>
@@ -216,6 +254,10 @@ const styles = StyleSheet.create({
   chips: {marginTop: 8, marginHorizontal: -20},
   chipsContent: {paddingHorizontal: 17},
   heading: {marginTop: 14, marginBottom: 6},
+  picks: {marginHorizontal: -20, marginTop: 8},
+  picksContent: {paddingHorizontal: 20},
+  pick: {width: 108, marginRight: 13},
+  pickTitle: {marginTop: 9},
   row: {flexDirection: 'row', alignItems: 'center', height: 76},
   rowMain: {flex: 1, flexDirection: 'row', alignItems: 'center'},
   rank: {width: 20, textAlign: 'center', marginRight: 14},
