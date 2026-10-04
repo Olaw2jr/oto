@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { TailwindProvider } from "tailwind-rn";
+import { TailwindProvider } from "./app/theme/TailwindProvider";
 import utilities from "./tailwind.json";
 
 import TabScreen from "./app/navigator/Tabs";
