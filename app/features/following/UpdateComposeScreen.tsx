@@ -20,7 +20,16 @@ import {usePlayer} from '../../state/player';
 import {useSocial} from '../../state/social';
 import {useTheme} from '../../theme/ThemeProvider';
 import {fonts} from '../../theme/typography';
-import {Button, Card, Icon, Segmented, Switch, TextLink, Txt} from '../../ui';
+import {
+  Button,
+  Card,
+  Icon,
+  Segmented,
+  StarRating,
+  Switch,
+  TextLink,
+  Txt,
+} from '../../ui';
 
 const statusOptions: {value: Status; label: string}[] = [
   {value: 'want', label: 'Want to listen'},
@@ -50,7 +59,9 @@ const UpdateComposeScreen = ({
     library.status(bookId) ?? 'listening',
   );
   const [progress, setProgress] = useState(library.progress(bookId));
-  const [rating, setRating] = useState<number | undefined>();
+  // Starts from your saved rating for the book until you change it here.
+  const [ratingDraft, setRating] = useState<number | undefined | null>(null);
+  const rating = ratingDraft === null ? library.rating(bookId) : ratingDraft;
   const [body, setBody] = useState('');
   const [withNote, setWithNote] = useState(true);
   const [spoiler, setSpoiler] = useState(false);
@@ -69,11 +80,15 @@ const UpdateComposeScreen = ({
     const next = options[(options.indexOf(bookId) + 1) % options.length];
     setBookId(next);
     setStatus(library.status(next) ?? 'listening');
+    setRating(null);
     setProgress(library.progress(next));
   };
 
   const post = () => {
     library.setStatus(bookId, status);
+    if (rating !== undefined) {
+      library.setRating(bookId, rating);
+    }
     if (status !== 'finished') {
       library.setPosition(bookId, positionSec);
     }
@@ -185,24 +200,7 @@ const UpdateComposeScreen = ({
       <View style={[styles.between, styles.ratingRow]}>
         <Txt variant="label">Rating</Txt>
         <View style={styles.stars}>
-          {[1, 2, 3, 4, 5].map(n => (
-            <Pressable
-              key={n}
-              accessibilityRole="button"
-              accessibilityLabel={n === 1 ? '1 star' : `${n} stars`}
-              accessibilityState={{
-                selected: rating !== undefined && n <= rating,
-              }}
-              onPress={() => setRating(rating === n ? undefined : n)}
-              style={styles.star}>
-              <Icon
-                name={
-                  rating !== undefined && n <= rating ? 'starFilled' : 'star'
-                }
-                size={26}
-              />
-            </Pressable>
-          ))}
+          <StarRating value={rating} onChange={setRating} />
         </View>
       </View>
 
@@ -316,7 +314,6 @@ const styles = StyleSheet.create({
   },
   ratingRow: {alignItems: 'center', marginTop: 8},
   stars: {flexDirection: 'row', marginRight: -6},
-  star: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
   thoughts: {
     marginTop: 4,
     paddingVertical: 14,

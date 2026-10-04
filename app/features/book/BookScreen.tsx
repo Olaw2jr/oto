@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {Pressable, StyleSheet, View} from 'react-native';
+import React from 'react';
+import {StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
 import {getBook} from '../../data/catalogue';
@@ -50,7 +50,6 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
   const book = getBook(route.params.bookId);
   const library = useLibrary();
   const player = usePlayer();
-  const [expanded, setExpanded] = useState(false);
   const position = library.positionSec(book.id);
   const status = library.status(book.id);
   const following = listenersLine(book.id);
@@ -189,34 +188,14 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
         </>
       ) : null}
 
-      <Txt variant="heading" style={styles.sectionTitle}>
-        About
-      </Txt>
-      <View style={styles.facts}>
-        {[
-          `Narrated by ${book.narrator}`,
-          book.series && `Series: ${book.series}`,
-          book.genre,
-        ]
-          .filter(Boolean)
-          .map(fact => (
-            <Txt key={fact as string} variant="caption">
-              {fact}
-            </Txt>
-          ))}
+      <View style={styles.about}>
+        <TextLink
+          label="About this book"
+          variant="strong"
+          onPress={() => navigation.navigate('BookDetails', {bookId: book.id})}
+        />
+        <Icon name="forward" size={18} color="graphite" />
       </View>
-      <Txt numberOfLines={expanded ? undefined : 5} style={styles.summary}>
-        {book.summary}
-      </Txt>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={expanded ? 'Show less' : 'Read more'}
-        onPress={() => setExpanded(e => !e)}
-        style={styles.more}>
-        <Txt variant="caption" color="ink" weight="semibold">
-          {expanded ? 'Show less' : 'Read more'}
-        </Txt>
-      </Pressable>
     </Screen>
   );
 };
@@ -247,6 +226,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   sectionTitle: {fontSize: 19, marginTop: 20},
+  about: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+  },
   sectionHeading: {fontSize: 19},
   review: {marginTop: 6, paddingVertical: 14, paddingHorizontal: 16},
   reviewHead: {flexDirection: 'row', alignItems: 'center'},
@@ -255,9 +240,6 @@ const styles = StyleSheet.create({
   reviewBody: {marginTop: 8},
   reviewStats: {flexDirection: 'row', alignItems: 'center', marginTop: 8},
   stat: {marginLeft: 6, marginRight: 18},
-  facts: {marginTop: 8},
-  summary: {marginTop: 10},
-  more: {minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start'},
 });
 
 export default BookScreen;

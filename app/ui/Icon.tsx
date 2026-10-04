@@ -33,6 +33,8 @@ const icons = {
   skipForward: Outline.ArrowUturnRightIcon,
   note: Outline.PencilSquareIcon,
   check: Outline.CheckIcon,
+  clock: Outline.ClockIcon,
+  calendar: Outline.CalendarIcon,
 };
 
 export type IconName = keyof typeof icons;

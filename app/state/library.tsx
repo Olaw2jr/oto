@@ -22,6 +22,9 @@ type LibraryValue = {
   setPosition: (bookId: string, positionSec: number) => void;
   // Moves the position by a delta, clamped to the book's length.
   advance: (bookId: string, deltaSec: number) => void;
+  // Your own 1–5 star rating.
+  rating: (bookId: string) => number | undefined;
+  setRating: (bookId: string, stars: number | undefined) => void;
 };
 
 const LibraryContext = createContext<LibraryValue | null>(null);
@@ -36,6 +39,19 @@ const seed = (): Record<string, Entry> =>
 
 export const LibraryProvider = ({children}: {children: ReactNode}) => {
   const [entries, setEntries] = useState<Record<string, Entry>>(seed);
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+
+  const setRating = useCallback((bookId: string, stars: number | undefined) => {
+    setRatings(current => {
+      const next = {...current};
+      if (stars === undefined) {
+        delete next[bookId];
+      } else {
+        next[bookId] = stars;
+      }
+      return next;
+    });
+  }, []);
 
   const setStatus = useCallback((bookId: string, status: Status) => {
     setEntries(current => ({
@@ -83,8 +99,10 @@ export const LibraryProvider = ({children}: {children: ReactNode}) => {
       setStatus,
       setPosition,
       advance,
+      rating: id => ratings[id],
+      setRating,
     }),
-    [entries, setStatus, setPosition, advance],
+    [entries, ratings, setStatus, setPosition, advance, setRating],
   );
 
   return (

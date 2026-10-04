@@ -22,6 +22,7 @@ export type RootStackParamList = {
   // Signed in
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   Book: {bookId: string};
+  BookDetails: {bookId: string};
   Player: undefined;
   Club: {clubId: string};
   UpdateCompose: {bookId?: string} | undefined;

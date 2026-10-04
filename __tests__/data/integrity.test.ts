@@ -70,3 +70,20 @@ describe('catalogue text', () => {
     expect(chapterAt(book, book.durationSec * 0.28)).toBe(14);
   });
 });
+
+describe('book facts', () => {
+  it('reads the release year, language and genres', () => {
+    const book = getBook('where-the-crawdads-sing');
+    expect(book.releasedYear).toBeGreaterThan(1900);
+    expect(book.language).toBe('English');
+    expect(book.genres.length).toBeGreaterThan(0);
+    expect(book.genres.every(g => g === g.trim() && g.length > 0)).toBe(true);
+  });
+
+  it('gives every book a four-digit year and a language', () => {
+    for (const book of catalogue) {
+      expect(String(book.releasedYear)).toMatch(/^(19|20)\d\d$/);
+      expect(book.language).toBe('English');
+    }
+  });
+});
