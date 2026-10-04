@@ -18,6 +18,11 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - run: npm install --package-lock-only --ignore-scripts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rn-087-package-lock
+          path: package-lock.json
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
