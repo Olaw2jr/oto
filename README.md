@@ -10,7 +10,7 @@
 An audiobook social network. Find a book, listen, share where you are, and talk it over with friends.
 
 [![CI](https://github.com/Olaw2jr/oto/actions/workflows/ci.yml/badge.svg)](https://github.com/Olaw2jr/oto/actions/workflows/ci.yml)
-![React Native](https://img.shields.io/badge/React_Native-0.70-1B1B19?logo=react&logoColor=white)
+![React Native](https://img.shields.io/badge/React_Native-0.71-1B1B19?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-4-1B1B19?logo=typescript&logoColor=white)
 ![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20Android-1B1B19)
 
@@ -93,7 +93,7 @@ Colours come from the theme tokens in `app/theme/tokens.js`, never from raw hex 
 
 ## Tech stack
 
-- [React Native](https://reactnative.dev/) 0.70 with TypeScript
+- [React Native](https://reactnative.dev/) 0.71 with TypeScript
 - [React Navigation](https://reactnavigation.org/) for stacks and tabs
 - A themed UI kit (`app/ui`) built on shared design tokens (`app/theme`), with light and dark palettes
 - [react-native-svg](https://github.com/software-mansion/react-native-svg) and [Heroicons](https://heroicons.com/) for graphics
@@ -103,7 +103,7 @@ Colours come from the theme tokens in `app/theme/tokens.js`, never from raw hex 
 
 **Requirements**
 
-- Node 18 (see `.nvmrc`)
+- Node 24 (see `.nvmrc`)
 - Xcode with CocoaPods for iOS, and Android Studio for Android. Follow the React Native 0.71 [environment setup](https://reactnative.dev/docs/0.71/environment-setup).
 - **JDK 11–17 for Android.** Newer JDKs (18+, including 21) can't run this project's Gradle 7 build. `npm run android` picks JDK 17 automatically when it's installed; if you run Gradle directly, set `export JAVA_HOME=$(/usr/libexec/java_home -v 17)` first.
 
