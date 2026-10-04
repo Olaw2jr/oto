@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {Pressable, StyleSheet, useWindowDimensions, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
@@ -8,9 +8,20 @@ import {formatClock} from '../../data/format';
 import {firstName, getPerson} from '../../data/people';
 import {marginNotes} from '../../data/social';
 import {RootStackScreenProps} from '../../navigator/types';
-import {usePlayer} from '../../state/player';
+import {useLibrary} from '../../state/library';
+import {SleepTimer, usePlayer} from '../../state/player';
 import {useTheme} from '../../theme/ThemeProvider';
-import {Avatar, Card, Icon, IconButton, IconName, Screen, Txt} from '../../ui';
+import {
+  Avatar,
+  Card,
+  Icon,
+  IconButton,
+  IconName,
+  Screen,
+  Sheet,
+  SheetRow,
+  Txt,
+} from '../../ui';
 
 const Skip = ({
   icon,
@@ -35,10 +46,48 @@ const Skip = ({
   </Pressable>
 );
 
+const sleepOptions: {label: string; timer: SleepTimer}[] = [
+  {label: 'Off', timer: null},
+  {label: '15 minutes', timer: {kind: 'minutes', minutes: 15}},
+  {label: '30 minutes', timer: {kind: 'minutes', minutes: 30}},
+  {label: '45 minutes', timer: {kind: 'minutes', minutes: 45}},
+  {label: '60 minutes', timer: {kind: 'minutes', minutes: 60}},
+  {label: 'End of chapter', timer: {kind: 'chapter'}},
+];
+
+const sameTimer = (a: SleepTimer, b: SleepTimer) =>
+  a === b ||
+  (a !== null &&
+    b !== null &&
+    a.kind === b.kind &&
+    (a.kind === 'chapter' ||
+      (b.kind === 'minutes' && a.minutes === b.minutes)));
+
+const sleepLabel = (timer: SleepTimer) =>
+  timer === null
+    ? 'Sleep timer'
+    : timer.kind === 'chapter'
+    ? 'Sleep timer, end of chapter'
+    : `Sleep timer, ${timer.minutes} minutes`;
+
 const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
   const {colors} = useTheme();
   const {width} = useWindowDimensions();
   const player = usePlayer();
+  const library = useLibrary();
+  const [sheet, setSheet] = useState<'sleep' | 'more' | 'bookmarks' | null>(
+    null,
+  );
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+    const timer = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
   const {book, position, playing, rate} = player;
   const club = clubs.find(c => c.bookId === book.id);
   const notes = marginNotes
@@ -67,7 +116,12 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
             </>
           ) : null}
         </View>
-        <IconButton icon="more" label="More" size={48} onPress={() => {}} />
+        <IconButton
+          icon="more"
+          label="More"
+          size={48}
+          onPress={() => setSheet('more')}
+        />
       </View>
 
       <View style={styles.cover}>
@@ -93,7 +147,10 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
           label="Bookmark this moment"
           size={48}
           background="segment"
-          onPress={() => {}}
+          onPress={() => {
+            library.addBookmark(book.id, position);
+            setToast(`Bookmarked at ${formatClock(position)}`);
+          }}
         />
       </View>
 
@@ -174,12 +231,24 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
           label="Forward 30 seconds"
           onPress={() => player.skip(30)}
         />
-        <IconButton
-          icon="sleep"
-          label="Sleep timer"
-          size={52}
-          onPress={() => {}}
-        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={sleepLabel(player.sleepTimer)}
+          onPress={() => setSheet('sleep')}
+          style={styles.sleep}>
+          <Icon name="sleep" />
+          {player.sleepTimer ? (
+            <Txt
+              variant="small"
+              color="ink"
+              weight="semibold"
+              style={styles.sleepText}>
+              {player.sleepTimer.kind === 'chapter'
+                ? 'Ch.'
+                : `${player.sleepTimer.minutes}m`}
+            </Txt>
+          ) : null}
+        </Pressable>
       </View>
 
       {nearest ? (
@@ -216,11 +285,97 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
           </Pressable>
         </Card>
       ) : null}
+      {toast ? (
+        <View
+          accessibilityRole="alert"
+          style={[styles.toast, {backgroundColor: colors.ink}]}>
+          <Txt variant="caption" color="onInk" weight="semibold">
+            {toast}
+          </Txt>
+        </View>
+      ) : null}
+
+      <Sheet
+        visible={sheet === 'sleep'}
+        title="Sleep timer"
+        onClose={() => setSheet(null)}>
+        {sleepOptions.map(option => (
+          <SheetRow
+            key={option.label}
+            label={option.label}
+            selected={sameTimer(player.sleepTimer, option.timer)}
+            onPress={() => {
+              player.setSleepTimer(option.timer);
+              setSheet(null);
+            }}
+          />
+        ))}
+      </Sheet>
+
+      <Sheet
+        visible={sheet === 'more'}
+        title={book.title}
+        onClose={() => setSheet(null)}>
+        <SheetRow
+          icon="book"
+          label="View book"
+          onPress={() => {
+            setSheet(null);
+            navigation.navigate('Book', {bookId: book.id});
+          }}
+        />
+        <SheetRow
+          icon="bookmark"
+          label="Bookmarks"
+          value={String(library.bookmarks(book.id).length)}
+          onPress={() => setSheet('bookmarks')}
+        />
+      </Sheet>
+
+      <Sheet
+        visible={sheet === 'bookmarks'}
+        title="Bookmarks"
+        onClose={() => setSheet(null)}>
+        {library.bookmarks(book.id).length ? (
+          library.bookmarks(book.id).map(at => (
+            <SheetRow
+              key={at}
+              icon="play"
+              label={`${formatClock(at)} · Chapter ${chapterAt(book, at)}`}
+              accessibilityLabel={`Play from ${formatClock(at)}`}
+              onPress={() => {
+                player.seekTo(at);
+                setSheet(null);
+              }}
+            />
+          ))
+        ) : (
+          <Txt color="graphite" style={styles.noBookmarks}>
+            Tap the bookmark while you listen to save a moment.
+          </Txt>
+        )}
+      </Sheet>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
+  sleep: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sleepText: {position: 'absolute', bottom: 0, fontSize: 10},
+  toast: {
+    position: 'absolute',
+    alignSelf: 'center',
+    bottom: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  noBookmarks: {marginVertical: 16},
   content: {paddingHorizontal: 22},
   bar: {
     flexDirection: 'row',

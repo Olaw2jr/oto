@@ -10,6 +10,8 @@ export {IconButton} from './IconButton';
 export {Pill} from './Pill';
 export {ProgressBar} from './ProgressBar';
 export {Segmented} from './Segmented';
+export {Sheet} from './Sheet';
+export {SheetRow} from './SheetRow';
 export {Screen} from './Screen';
 export {StarRating} from './StarRating';
 export {Switch} from './Switch';
