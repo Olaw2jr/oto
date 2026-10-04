@@ -65,7 +65,11 @@ const chapterCounts: Record<string, number> = {'where-the-crawdads-sing': 48};
 export const catalogue: CatalogueBook[] = books.map(book => {
   const id = slug(book.title);
   const durationSec = parseDuration(book.runtime);
-  const [rating, ratingsCount] = ratings[id] ?? [Number(book.starRating), 120];
+  // Uncurated books get a modest rating so curated ones lead Top rated.
+  const [rating, ratingsCount] = ratings[id] ?? [
+    Math.min(4.5, Number(book.starRating)),
+    120,
+  ];
   return {
     id,
     title: book.title.replace(/^P(?=The )/, ''),

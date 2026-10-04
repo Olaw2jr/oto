@@ -19,6 +19,7 @@ import {
   IconButton,
   ProgressBar,
   Screen,
+  TextLink,
   Txt,
 } from '../../ui';
 
@@ -124,9 +125,16 @@ const HomeScreen = ({navigation}: TabScreenProps<'Home'>) => {
         />
       </View>
 
-      <Txt variant="heading" style={styles.section}>
-        {`Because you finished ${finished.title}`}
-      </Txt>
+      <View style={styles.sectionHead}>
+        <Txt variant="heading" style={styles.sectionTitle}>
+          {`Because you finished ${finished.title}`}
+        </Txt>
+        <TextLink
+          label="See all"
+          accessibilityLabel="See all audiobooks"
+          onPress={() => navigation.navigate('Catalog')}
+        />
+      </View>
       <View style={styles.picks}>
         {becauseYouFinished.picks.map(getBook).map(pick => (
           <Pressable
@@ -203,7 +211,13 @@ const styles = StyleSheet.create({
   liveText: {flex: 1, marginRight: 12},
   liveDot: {width: 8, height: 8, borderRadius: 4, marginRight: 7},
   liveTitle: {marginTop: 5},
-  section: {marginTop: 26},
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 26,
+  },
+  sectionTitle: {flex: 1, marginRight: 12},
   picks: {flexDirection: 'row', marginTop: 14},
   pick: {width: 108, marginRight: 13},
   pickTitle: {marginTop: 9},

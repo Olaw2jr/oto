@@ -3,6 +3,7 @@ export {Button} from './Button';
 export {Card} from './Card';
 export {Checkbox} from './Checkbox';
 export {Chip} from './Chip';
+export {EmptyState} from './EmptyState';
 export {Icon} from './Icon';
 export type {IconName} from './Icon';
 export {IconButton} from './IconButton';

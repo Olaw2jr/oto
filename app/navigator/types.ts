@@ -28,6 +28,10 @@ export type RootStackParamList = {
   UpdateCompose: {bookId?: string} | undefined;
   Thread: {itemId: string};
   Search: undefined;
+  Catalog: undefined;
+  Library: undefined;
+  Shelf: {shelfId: string};
+  SaveToShelf: {bookId: string};
   Settings: undefined;
 };
 

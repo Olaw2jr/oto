@@ -266,3 +266,25 @@ export const authorsForYou = [
   'J. R. R. Tolkien',
   'Matthew McConaughey',
 ];
+
+export type CustomShelf = {id: string; name: string; bookIds: string[]};
+
+export const shelvesSeed: CustomShelf[] = [
+  {
+    id: 'quiet-nights',
+    name: 'Quiet nights',
+    bookIds: ['tuesdays-with-morrie', 'where-the-crawdads-sing'],
+  },
+  {
+    id: 'science',
+    name: 'Science',
+    bookIds: ['starry-messenger', 'project-hail-mary'],
+  },
+];
+
+export const editorsPicks = [
+  'where-the-crawdads-sing',
+  'tuesdays-with-morrie',
+  'the-silmarillion',
+  'greenlights',
+];

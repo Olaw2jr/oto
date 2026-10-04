@@ -4,6 +4,10 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 import BookDetailsScreen from '../features/book/BookDetailsScreen';
 import BookScreen from '../features/book/BookScreen';
+import CatalogScreen from '../features/library/CatalogScreen';
+import LibraryScreen from '../features/library/LibraryScreen';
+import SaveToShelfScreen from '../features/library/SaveToShelfScreen';
+import ShelfScreen from '../features/library/ShelfScreen';
 import PlayerScreen from '../features/player/PlayerScreen';
 import SearchScreen from '../features/search/SearchScreen';
 import SettingsScreen from '../features/settings/SettingsScreen';
@@ -66,6 +70,14 @@ const RootNavigator = () => {
           <Stack.Screen name="Club" component={ClubScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Thread" component={ThreadScreen} />
+          <Stack.Screen name="Catalog" component={CatalogScreen} />
+          <Stack.Screen name="Library" component={LibraryScreen} />
+          <Stack.Screen name="Shelf" component={ShelfScreen} />
+          <Stack.Screen
+            name="SaveToShelf"
+            component={SaveToShelfScreen}
+            options={{presentation: 'modal'}}
+          />
           <Stack.Screen
             name="Search"
             component={SearchScreen}

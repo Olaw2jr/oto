@@ -72,7 +72,9 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
           <IconButton
             icon="bookmark"
             label="Save to a list"
-            onPress={() => {}}
+            onPress={() =>
+              navigation.navigate('SaveToShelf', {bookId: book.id})
+            }
           />
           <IconButton icon="more" label="More" onPress={() => {}} />
         </View>

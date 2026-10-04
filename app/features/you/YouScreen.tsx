@@ -11,10 +11,12 @@ import {useTheme} from '../../theme/ThemeProvider';
 import {
   Avatar,
   Card,
+  EmptyState,
   IconButton,
   ProgressBar,
   Screen,
   Segmented,
+  TextLink,
   Txt,
 } from '../../ui';
 
@@ -97,6 +99,13 @@ const YouScreen = ({navigation}: TabScreenProps<'You'>) => {
         </View>
       </Card>
 
+      <View style={styles.shelfHead}>
+        <Txt variant="heading">Shelves</Txt>
+        <TextLink
+          label="Library"
+          onPress={() => navigation.navigate('Library')}
+        />
+      </View>
       <View style={styles.shelf}>
         <Segmented
           label="Shelf"
@@ -154,9 +163,14 @@ const YouScreen = ({navigation}: TabScreenProps<'You'>) => {
           })}
         </ScrollView>
       ) : (
-        <Txt color="graphite" style={styles.empty}>
-          Nothing on this shelf yet.
-        </Txt>
+        <EmptyState
+          title="Nothing here yet."
+          body="Add books you would like to hear later, and they will wait for you here."
+          action={{
+            label: 'Find a book',
+            onPress: () => navigation.navigate('Discover'),
+          }}
+        />
       )}
     </Screen>
   );
@@ -182,12 +196,17 @@ const styles = StyleSheet.create({
   dots: {flexDirection: 'row', flexWrap: 'wrap', marginTop: 14},
   dotCell: {width: `${100 / 7}%`, alignItems: 'center', marginBottom: 10},
   dot: {width: 12, height: 12, borderRadius: 6},
-  shelf: {marginTop: 20},
+  shelfHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  shelf: {marginTop: 4},
   books: {marginTop: 16, marginHorizontal: -20, paddingHorizontal: 20},
   book: {width: 108, marginRight: 13},
   bookProgress: {marginTop: 8, flexDirection: 'row'},
   bookTitle: {marginTop: 7},
-  empty: {marginTop: 16},
 });
 
 export default YouScreen;
