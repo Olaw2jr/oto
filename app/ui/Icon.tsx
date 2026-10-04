@@ -34,6 +34,7 @@ const icons = {
   note: Outline.PencilSquareIcon,
   check: Outline.CheckIcon,
   clock: Outline.ClockIcon,
+  close: Outline.XMarkIcon,
   calendar: Outline.CalendarIcon,
 };
 

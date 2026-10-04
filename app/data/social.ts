@@ -252,3 +252,17 @@ export const feedSeed: FeedItem[] = [
     comments: [],
   },
 ];
+
+export const recentSearchesSeed = [
+  'crawdads',
+  'quiet literary novels',
+  'Project Hail Mary',
+];
+
+export const authorsForYou = [
+  'Delia Owens',
+  'Andy Weir',
+  'Mitch Albom',
+  'J. R. R. Tolkien',
+  'Matthew McConaughey',
+];

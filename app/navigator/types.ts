@@ -27,6 +27,7 @@ export type RootStackParamList = {
   Club: {clubId: string};
   UpdateCompose: {bookId?: string} | undefined;
   Thread: {itemId: string};
+  Search: undefined;
   Settings: undefined;
 };
 

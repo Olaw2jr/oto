@@ -5,6 +5,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import BookDetailsScreen from '../features/book/BookDetailsScreen';
 import BookScreen from '../features/book/BookScreen';
 import PlayerScreen from '../features/player/PlayerScreen';
+import SearchScreen from '../features/search/SearchScreen';
 import SettingsScreen from '../features/settings/SettingsScreen';
 import ClubScreen from '../features/club/ClubScreen';
 import ThreadScreen from '../features/following/ThreadScreen';
@@ -65,6 +66,11 @@ const RootNavigator = () => {
           <Stack.Screen name="Club" component={ClubScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Thread" component={ThreadScreen} />
+          <Stack.Screen
+            name="Search"
+            component={SearchScreen}
+            options={{animation: 'fade'}}
+          />
           <Stack.Screen
             name="UpdateCompose"
             component={UpdateComposeScreen}
