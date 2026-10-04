@@ -1,12 +1,12 @@
-import React from "react";
-import { View } from "react-native";
+import React, {ReactNode} from 'react';
+import {View} from 'react-native';
 
-import { useTailwind } from "tailwind-rn";
+import {useTailwind} from 'tailwind-rn';
 
-const List = ({ children }) => {
+const List = ({children}: {children: ReactNode}) => {
   const tailwind = useTailwind();
 
-  return <View style={tailwind("")}>{children}</View>;
+  return <View style={tailwind('')}>{children}</View>;
 };
 
 export default List;
