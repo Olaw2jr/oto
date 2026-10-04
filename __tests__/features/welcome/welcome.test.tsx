@@ -2,10 +2,10 @@ import React from 'react';
 import {act, fireEvent, screen} from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import SplashScreen from '../../../app/screens/welcome/SplashScreen';
-import OnboardingScreen from '../../../app/screens/welcome/OnboardingScreen';
-import SignInScreen from '../../../app/screens/welcome/SignInScreen';
-import SignUpScreen from '../../../app/screens/welcome/SignUpScreen';
+import SplashScreen from '../../../app/features/welcome/SplashScreen';
+import OnboardingScreen from '../../../app/features/welcome/OnboardingScreen';
+import SignInScreen from '../../../app/features/welcome/SignInScreen';
+import SignUpScreen from '../../../app/features/welcome/SignUpScreen';
 import {SESSION_STORAGE_KEY} from '../../../app/state/session';
 import {mockNavigation, renderScreen} from '../../test-utils';
 

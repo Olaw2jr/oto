@@ -15,7 +15,7 @@ const Tag: React.FC<AuthorProps> = ({...props}) => {
   return (
     <TouchableOpacity
       style={tailwind('items-start mr-3')}
-      onPress={() => navigation.navigate('PlayerScreen')}>
+      onPress={() => navigation.navigate('Player')}>
       <Text
         style={tailwind(
           'border border-cyan-100 text-cyan-800 text-sm mb-3 px-2.5 py-1 rounded dark:border-cyan-200 dark:text-cyan-500',

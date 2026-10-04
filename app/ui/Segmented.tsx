@@ -9,7 +9,7 @@ type Option<T extends string> = {value: T; label: string};
 type SegmentedProps<T extends string> = {
   label: string;
   options: Option<T>[];
-  value: T;
+  value: T | undefined;
   onChange: (value: T) => void;
 };
 

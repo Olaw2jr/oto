@@ -3,6 +3,7 @@ import {Pressable, StyleSheet, View} from 'react-native';
 import {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
+import {MiniPlayer} from '../components/MiniPlayer';
 import {useTheme} from '../theme/ThemeProvider';
 import {Icon, IconName, Txt} from '../ui';
 import {TabParamList} from './types';
@@ -21,57 +22,66 @@ export const TabBar = ({state, navigation}: BottomTabBarProps) => {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
 
-  return (
-    <View
-      accessibilityRole="tablist"
-      style={[
-        styles.bar,
-        {
-          paddingBottom: Math.max(insets.bottom, 12),
-          backgroundColor: colors.paper,
-          borderTopColor: colors.hairline,
-        },
-      ]}>
-      {state.routes.map((route, index) => {
-        const name = route.name as keyof TabParamList;
-        const focused = state.index === index;
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!focused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
+  const onHome = state.routes[state.index].name === 'Home';
 
-        return (
-          <Pressable
-            key={route.key}
-            accessibilityRole="tab"
-            accessibilityLabel={name}
-            accessibilityState={{selected: focused}}
-            onPress={onPress}
-            style={styles.item}>
-            <View
-              style={[styles.pill, focused && {backgroundColor: colors.tonal}]}>
-              <Icon
-                name={tabIcons[name]}
+  return (
+    <View>
+      {/* Home has its own Continue listening card. */}
+      {onHome ? null : <MiniPlayer />}
+      <View
+        accessibilityRole="tablist"
+        style={[
+          styles.bar,
+          {
+            paddingBottom: Math.max(insets.bottom, 12),
+            backgroundColor: colors.paper,
+            borderTopColor: colors.hairline,
+          },
+        ]}>
+        {state.routes.map((route, index) => {
+          const name = route.name as keyof TabParamList;
+          const focused = state.index === index;
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!focused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          return (
+            <Pressable
+              key={route.key}
+              accessibilityRole="tab"
+              accessibilityLabel={name}
+              accessibilityState={{selected: focused}}
+              onPress={onPress}
+              style={styles.item}>
+              <View
+                style={[
+                  styles.pill,
+                  focused && {backgroundColor: colors.tonal},
+                ]}>
+                <Icon
+                  name={tabIcons[name]}
+                  color={focused ? 'ink' : 'graphite'}
+                  strokeWidth={focused ? 2 : 1.7}
+                />
+              </View>
+              <Txt
+                variant="small"
                 color={focused ? 'ink' : 'graphite'}
-                strokeWidth={focused ? 2 : 1.7}
-              />
-            </View>
-            <Txt
-              variant="small"
-              color={focused ? 'ink' : 'graphite'}
-              weight={focused ? 'semibold' : 'medium'}
-              style={styles.label}>
-              {name}
-            </Txt>
-          </Pressable>
-        );
-      })}
+                weight={focused ? 'semibold' : 'medium'}
+                style={styles.label}>
+                {name}
+              </Txt>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 };
