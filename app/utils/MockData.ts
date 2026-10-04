@@ -1,3 +1,21 @@
+import {ImageSourcePropType} from 'react-native';
+
+export type Book = {
+  id: string;
+  title: string;
+  subtitle: string;
+  cast: string;
+  narrator: string;
+  series?: string;
+  runtime: string;
+  year: string;
+  image: ImageSourcePropType;
+  starRating: string;
+  rating: string;
+  genre: string;
+  summary: string;
+};
+
 export const getComments = async () => {
   return [
     {
@@ -330,7 +348,7 @@ export const getTags = async () => {
   ];
 };
 
-export const getBooks = async () => {
+export const getBooks = async (): Promise<Book[]> => {
   return [
     {
       id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
@@ -459,7 +477,7 @@ export const getBooks = async () => {
       subtitle: '300 Years Before A Game of Thrones',
       cast: 'George R. R. Martin',
       narrator: 'Simon Vance',
-      Series: 'The Targaryen Dynasty: The House of the Dragon',
+      series: 'The Targaryen Dynasty: The House of the Dragon',
       runtime: '26 hrs and 24 mins',
       year: '11-20-18',
       image: require('../assets/images/books/51+EyQja6PL._SL500_.jpg'),
@@ -520,7 +538,7 @@ export const getBooks = async () => {
       subtitle: '',
       cast: 'J. R. R. Tolkien',
       narrator: 'Martin Shaw',
-      Series: 'The Lord of the Rings',
+      series: 'The Lord of the Rings',
       runtime: '14 hrs and 49 mins',
       year: '10-29-15',
       image: require('../assets/images/books/51fL6o4DxBL._SL500_.jpg'),
