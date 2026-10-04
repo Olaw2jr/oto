@@ -108,4 +108,35 @@ describe('RootNavigator', () => {
       screen.getByRole('header', {name: 'Project Hail Mary'}),
     ).toBeOnTheScreen();
   });
+
+  it('posts a status update that shows up in Following', async () => {
+    await signedIn();
+    await renderAsync(<App />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('tab', {name: 'Following'}));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', {name: 'Update your status'}));
+    });
+    fireEvent.changeText(
+      screen.getByLabelText('Thoughts'),
+      'Chapter 14 broke me.',
+    );
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', {name: 'Post update'}));
+    });
+
+    expect(screen.getByText('Chapter 14 broke me.')).toBeOnTheScreen();
+    expect(screen.getByText('is listening')).toBeOnTheScreen();
+  });
+
+  it('opens your club from the Clubs tab', async () => {
+    await signedIn();
+    await renderAsync(<App />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('tab', {name: 'Clubs'}));
+    });
+    expect(screen.getByRole('header', {name: 'Quiet Pages'})).toBeOnTheScreen();
+  });
 });

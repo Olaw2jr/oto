@@ -18,6 +18,7 @@ const icons = {
   bookmark: Outline.BookmarkIcon,
   share: Outline.ArrowUpOnSquareIcon,
   heart: Outline.HeartIcon,
+  heartFilled: Solid.HeartIcon,
   comment: Outline.ChatBubbleOvalLeftIcon,
   plus: Outline.PlusIcon,
   star: Outline.StarIcon,
