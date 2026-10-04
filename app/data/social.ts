@@ -139,6 +139,16 @@ export const homeFriendActivity = {
   quote: 'Quiet, devastating, perfectly paced.',
 };
 
+export type FeedComment = {
+  id: string;
+  by: string;
+  ago: string;
+  body: string;
+  likes: number;
+  // Replies point at the top-level comment they answer.
+  parentId?: string;
+};
+
 export type FeedItem = {
   id: string;
   by: string;
@@ -150,7 +160,7 @@ export type FeedItem = {
   rating?: number;
   body: string;
   likes: number;
-  replies: {by: string; body: string}[];
+  comments: FeedComment[];
   spoiler?: boolean;
 };
 
@@ -164,9 +174,21 @@ export const feedSeed: FeedItem[] = [
     progress: 0.09,
     body: 'He writes about the cosmos like a room you can walk into.',
     likes: 12,
-    replies: [
-      {by: 'zawadi', body: 'Wait until the chapter on borders.'},
-      {by: 'daniel', body: 'Adding this to my list tonight.'},
+    comments: [
+      {
+        id: 'f1c1',
+        by: 'zawadi',
+        ago: '1 h ago',
+        body: 'Wait until the chapter on borders.',
+        likes: 3,
+      },
+      {
+        id: 'f1c2',
+        by: 'daniel',
+        ago: '40 min ago',
+        body: 'Adding this to my list tonight.',
+        likes: 1,
+      },
     ],
   },
   {
@@ -178,7 +200,45 @@ export const feedSeed: FeedItem[] = [
     rating: 4.5,
     body: 'Short, plain and heartbreaking. The kind of book you finish in one sitting.',
     likes: 18,
-    replies: [],
+    comments: [
+      {
+        id: 'f2c1',
+        by: 'mika',
+        ago: '3 h ago',
+        body: 'The ending is so quiet. Did the last chapter get you?',
+        likes: 4,
+      },
+      {
+        id: 'f2c2',
+        by: 'zawadi',
+        ago: '2 h ago',
+        body: 'Almost. I had to pause on the bus.',
+        likes: 2,
+        parentId: 'f2c1',
+      },
+      {
+        id: 'f2c3',
+        by: 'amani',
+        ago: '1 h ago',
+        body: 'Adding it to my list tonight.',
+        likes: 0,
+        parentId: 'f2c1',
+      },
+      {
+        id: 'f2c4',
+        by: 'daniel',
+        ago: '5 h ago',
+        body: 'Is it a good first Albom?',
+        likes: 1,
+      },
+      {
+        id: 'f2c5',
+        by: 'ren',
+        ago: '6 h ago',
+        body: 'Morrie on audio is something else.',
+        likes: 2,
+      },
+    ],
   },
   {
     id: 'f3',
@@ -189,6 +249,6 @@ export const feedSeed: FeedItem[] = [
     bookId: 'where-the-crawdads-sing',
     body: 'Slower than I expected, in the best way.',
     likes: 3,
-    replies: [],
+    comments: [],
   },
 ];
