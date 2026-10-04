@@ -15,7 +15,13 @@ export const librarySeed: Record<string, {status: Status; position?: number}> =
     greenlights: {status: 'finished', position: 1},
   };
 
-export const profileStats = {finished: 41, clubs: 4, following: 188};
+export const profileStats = {
+  finished: 41,
+  // Finished so far this year, before anything you finish in the app.
+  finishedThisYear: 9,
+  clubs: 4,
+  following: 188,
+};
 
 // Last five weeks as on the canvas, oldest first. The final day is today,
 // shown in kaki and not counted until it is over.

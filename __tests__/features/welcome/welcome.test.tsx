@@ -54,20 +54,23 @@ describe('SplashScreen', () => {
 });
 
 describe('OnboardingScreen', () => {
-  it('walks through three steps and ends at create account', async () => {
+  it('walks through four steps and ends at create account', async () => {
     const navigation = mockNavigation();
     await renderScreen(
       <OnboardingScreen navigation={navigation} route={route('Onboarding')} />,
     );
 
     expect(screen.getByText('Find your next listen.')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Step 1 of 3')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Step 1 of 4')).toBeOnTheScreen();
     await press(screen.getByRole('button', {name: 'Continue'}));
 
     expect(screen.getByText('Say where you are.')).toBeOnTheScreen();
     await press(screen.getByRole('button', {name: 'Continue'}));
 
     expect(screen.getByText('Listen together.')).toBeOnTheScreen();
+    await press(screen.getByRole('button', {name: 'Continue'}));
+
+    expect(screen.getByText('What do you like?')).toBeOnTheScreen();
     await press(screen.getByRole('button', {name: 'Get started'}));
 
     expect(navigation.replace).toHaveBeenCalledWith('SignUp');
