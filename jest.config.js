@@ -3,7 +3,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native[^/]*|@react-native(-community)?|@react-navigation)/)',
+    'node_modules/(?!((jest-)?react-native[^/]*|@react-native(-community)?|@react-native-async-storage|@react-navigation)/)',
   ],
   testPathIgnorePatterns: [
     '/node_modules/',

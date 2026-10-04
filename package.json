@@ -37,7 +37,7 @@
     "@react-native/jest-preset": "0.87.0",
     "@react-native/metro-config": "0.87.0",
     "@react-native/typescript-config": "0.87.0",
-    "@testing-library/react-native": "14.0.1",
+    "@testing-library/react-native": "13.3.3",
     "@types/jest": "^29.5.13",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
@@ -49,7 +49,8 @@
     "prettier": "2.8.8",
     "react-test-renderer": "19.2.3",
     "sharp": "^0.33.5",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "@testing-library/jest-native": "5.4.3"
   },
   "resolutions": {
     "@types/react": "^18"
