@@ -17,11 +17,11 @@ import {
 } from 'react-native-heroicons/outline';
 import {useTailwind} from 'tailwind-rn';
 import Comments from './components/Comments';
-import {UpdateStackScreenProps} from '../../navigator/types';
+import {RootStackScreenProps} from '../../navigator/types';
 
 const UpdateDetailsScreen = ({
   navigation: {goBack},
-}: UpdateStackScreenProps<'UpdateDetailsScreen'>) => {
+}: RootStackScreenProps<'UpdateDetailsScreen'>) => {
   const tailwind = useTailwind();
 
   return (
