@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+import {Pressable, StyleSheet, View} from 'react-native';
 
 import {AuthorLinks} from '../../components/AuthorLinks';
 import {BookCover} from '../../components/BookCover';
@@ -227,14 +227,16 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
         </>
       ) : null}
 
-      <View style={styles.about}>
-        <TextLink
-          label="About this book"
-          variant="strong"
-          onPress={() => navigation.navigate('BookDetails', {bookId: book.id})}
-        />
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel="About this book"
+        onPress={() => navigation.navigate('BookDetails', {bookId: book.id})}
+        style={styles.about}>
+        <Txt variant="strong" weight="semibold">
+          About this book
+        </Txt>
         <Icon name="forward" size={18} color="graphite" />
-      </View>
+      </Pressable>
       <Sheet
         visible={moreOpen}
         title={book.title}
@@ -298,6 +300,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 44,
     marginTop: 14,
   },
   sectionHeading: {fontSize: 19},
