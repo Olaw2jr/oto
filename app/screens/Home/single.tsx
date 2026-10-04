@@ -211,7 +211,7 @@ const UpdateDetailsScreen = ({
                     style={tailwind(
                       'flex-1 px-2 ml-2 text-sm font-medium  text-slate-500 dark:text-slate-400',
                     )}>
-                    Listened to this on eyy?
+                    Listened to this on oto?
                   </Text>
                   <View style={tailwind('flex-row')}>
                     <TouchableOpacity

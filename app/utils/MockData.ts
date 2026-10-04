@@ -46,7 +46,7 @@ export const getComments = async (): Promise<CommentData[]> => {
     },
     {
       id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28bc',
-      body: 'Listened to this on eyy?',
+      body: 'Listened to this on oto?',
       userId: 'bd7acbea-c1b1-46c2-aed5-3ad53abb2823',
       username: 'John Doe',
       userAvatar: require('../assets/images/avatar/Memoji-18.png'),
@@ -231,7 +231,7 @@ export const getGenres = async () => {
     {
       id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
       heading: 'What are your friends listening?',
-      cta: 'Chances are your friends are discussing their favorite (and least favorite) books on eyy.',
+      cta: 'Chances are your friends are discussing their favorite (and least favorite) books on oto.',
     },
   ];
 };
@@ -246,7 +246,7 @@ export const getIntro = async () => {
     {
       id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
       heading: 'What are your friends listening?',
-      cta: 'Chances are your friends are discussing their favorite (and least favorite) books on eyy.',
+      cta: 'Chances are your friends are discussing their favorite (and least favorite) books on oto.',
     },
   ];
 };
