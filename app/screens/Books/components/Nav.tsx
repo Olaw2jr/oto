@@ -1,9 +1,9 @@
-import React from 'react';
+import React, {ReactNode} from 'react';
 import {View} from 'react-native';
 
 import {useTailwind} from 'tailwind-rn';
 
-const Nav = ({children}) => {
+const Nav = ({children}: {children: ReactNode}) => {
   const tailwind = useTailwind();
 
   return (

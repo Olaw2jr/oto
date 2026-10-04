@@ -8,11 +8,12 @@ import NavItem from './components/NavItem';
 import List from './components/List';
 import ListItem from './components/ListItem';
 
-import {getBooks as getBooksApi} from '../../utils/MockData';
+import {Book, getBooks as getBooksApi} from '../../utils/MockData';
+import {RootStackScreenProps} from '../../navigator/types';
 
-const BooksScreen = ({navigation}) => {
+const BooksScreen = ({navigation}: RootStackScreenProps<'BooksScreen'>) => {
   const tailwind = useTailwind();
-  const [books, setBooks] = useState([]);
+  const [books, setBooks] = useState<Book[]>([]);
 
   useEffect(() => {
     getBooksApi().then(data => {

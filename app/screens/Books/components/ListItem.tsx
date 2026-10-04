@@ -1,44 +1,29 @@
-/**
- * Render the Breadcrumbs component.
- *
- * @author WebDevStudios
- * @param {object} props             The component attributes as props.
- * @param {Array}  props.breadcrumbs The breadcrumb array.
- * @return {Element}                 The Breadcrumbs component.
- */
-
 import React from 'react';
 import {Image, Text, TouchableOpacity, View} from 'react-native';
 
 import {useTailwind} from 'tailwind-rn';
 import {StarIcon, MinusSmallIcon} from 'react-native-heroicons/outline';
 
-type BookProps = {
-  id: string;
-  title: string;
-  subtitle: string;
-  image: string;
-  starRating: string;
-  rating: string;
-  year: string;
-  genre: string;
-  runtime: string;
-  cast: string;
+import {Book} from '../../../utils/MockData';
+
+type ListItemProps = {
+  book: Book;
+  href: () => void;
 };
 
-const ListItem: React.FC<BookProps> = ({href, ...book}) => {
+const ListItem = ({href, book}: ListItemProps) => {
   const tailwind = useTailwind();
 
   return (
     <TouchableOpacity style={tailwind('flex-row mb-2')} onPress={href}>
       <Image
         source={book.image}
-        accessibilityLabel=""
+        accessibilityLabel={`Cover of ${book.title}`}
         style={tailwind('w-20 h-20 flex-none rounded-md bg-slate-100')}
       />
       <View style={tailwind('relative flex-auto ml-2')}>
         <Text style={tailwind('font-semibold text-base text-slate-400')}>
-          Project Hail Mary
+          {book.title}
         </Text>
         <View style={tailwind('mt-1 flex-row flex-wrap')}>
           <View
@@ -47,19 +32,19 @@ const ListItem: React.FC<BookProps> = ({href, ...book}) => {
               <StarIcon style={tailwind('text-yellow-400 mr-2')} size={18} />
             </View>
             <Text style={tailwind('text-slate-400 text-base font-medium')}>
-              5
+              {book.starRating}
             </Text>
           </View>
           <View style={tailwind('')}>
             <Text
               style={tailwind('text-slate-400 text-sm leading-6 font-normal')}>
-              En
+              {book.rating}
             </Text>
           </View>
           <View style={tailwind('ml-2')}>
             <Text
               style={tailwind('text-slate-400 text-sm leading-6 font-normal')}>
-              May 4 2021
+              {book.year}
             </Text>
           </View>
           <View>
@@ -69,7 +54,7 @@ const ListItem: React.FC<BookProps> = ({href, ...book}) => {
                 style={tailwind(
                   'text-slate-400 text-sm leading-6 font-normal',
                 )}>
-                Adventure
+                {book.genre}
               </Text>
             </View>
           </View>
@@ -80,12 +65,12 @@ const ListItem: React.FC<BookProps> = ({href, ...book}) => {
                 style={tailwind(
                   'text-slate-400 text-sm leading-6 font-normal',
                 )}>
-                16h and 10m
+                {book.runtime}
               </Text>
             </View>
           </View>
           <View style={tailwind('flex-none w-full font-normal')}>
-            <Text style={tailwind('text-slate-400')}>Andy Weir</Text>
+            <Text style={tailwind('text-slate-400')}>{book.cast}</Text>
           </View>
         </View>
       </View>

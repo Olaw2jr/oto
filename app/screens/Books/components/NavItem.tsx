@@ -1,9 +1,15 @@
-import React from 'react';
+import React, {ReactNode} from 'react';
 import {View, TouchableOpacity} from 'react-native';
 
 import {useTailwind} from 'tailwind-rn';
 
-const NavItem = ({href, isActive, children}) => {
+type NavItemProps = {
+  href: () => void;
+  isActive?: boolean;
+  children: ReactNode;
+};
+
+const NavItem = ({href, isActive = false, children}: NavItemProps) => {
   const tailwind = useTailwind();
 
   return (
