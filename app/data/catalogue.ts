@@ -39,6 +39,20 @@ const ratings: Record<string, [number, number]> = {
   'it-ends-with-us': [4.4, 4120],
 };
 
+// The source synopses mark paragraphs with literal "\\r\\n" runs, sometimes
+// wrapped in {} or ().
+export const cleanSummary = (text: string) =>
+  text
+    .replace(/[{(]?(?:\\r\\n|\r\n)+[})]?/g, '\n\n')
+    // Braces also wrap single characters, e.g. {—} or {’}.
+    .replace(/[{}]/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+// Chapter counts where the story needs a specific chapter (the club is on
+// chapter 14 of Where the Crawdads Sing at 28%).
+const chapterCounts: Record<string, number> = {'where-the-crawdads-sing': 48};
+
 export const catalogue: CatalogueBook[] = books.map(book => {
   const id = slug(book.title);
   const durationSec = parseDuration(book.runtime);
@@ -50,12 +64,12 @@ export const catalogue: CatalogueBook[] = books.map(book => {
     narrator: book.narrator,
     series: book.series,
     genre: book.genre,
-    summary: book.summary,
+    summary: cleanSummary(book.summary),
     released: book.year,
     cover: book.image,
     durationSec,
     // About one chapter per 25 minutes of audio.
-    chapters: Math.max(1, Math.round(durationSec / 1500)),
+    chapters: chapterCounts[id] ?? Math.max(1, Math.round(durationSec / 1500)),
     rating,
     ratingsCount,
   };

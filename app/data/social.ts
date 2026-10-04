@@ -36,7 +36,8 @@ export const marginNotes: MarginNote[] = [
     id: 'n1',
     bookId: 'where-the-crawdads-sing',
     by: 'mika',
-    at: 3 * 3600 + 12 * 60 + 12,
+    // Just before Amani's position (28% of 12 h 12 min ≈ 3:24:58).
+    at: 3 * 3600 + 22 * 60 + 12,
     body: 'Read this passage twice. It changes everything that came before.',
   },
   {

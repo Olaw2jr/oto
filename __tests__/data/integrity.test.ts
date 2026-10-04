@@ -48,3 +48,23 @@ describe('mock data integrity', () => {
     expect(chapterAt(book, book.durationSec)).toBe(book.chapters);
   });
 });
+
+describe('catalogue text', () => {
+  it('turns the source line-break markup into paragraphs', () => {
+    const {cleanSummary} = require('../../app/data/catalogue');
+    expect(
+      cleanSummary('One.{\\r\\n\\r\\n}Two.(\\r\\n)Three.\r\n\r\nFour.'),
+    ).toBe('One.\n\nTwo.\n\nThree.\n\nFour.');
+  });
+
+  it('has no markup left in any synopsis', () => {
+    for (const book of catalogue) {
+      expect(book.summary).not.toMatch(/\\r|\\n|[{}]|\r/);
+    }
+  });
+
+  it('puts Where the Crawdads Sing at chapter 14 for the club', () => {
+    const book = getBook('where-the-crawdads-sing');
+    expect(chapterAt(book, book.durationSec * 0.28)).toBe(14);
+  });
+});
