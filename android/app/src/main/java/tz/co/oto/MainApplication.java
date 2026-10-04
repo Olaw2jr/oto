@@ -1,4 +1,4 @@
-package com.eyy;
+package tz.co.oto;
 
 import android.app.Application;
 import com.facebook.react.PackageList;
