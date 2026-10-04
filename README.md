@@ -116,6 +116,10 @@ npm start                 # Metro bundler
 npm run ios               # or: npm run android
 ```
 
+### After pulling native changes
+
+When a pull changes native code or native dependencies (anything under `android/` or `ios/`, React Native itself, or libraries like react-native-svg), a Metro reload isn't enough: rebuild and reinstall with `npm run android` (or `npm run ios`). A stale install shows errors such as `JavaScript version: 0.71.19 / Native version: 0.70.1` or `Error while updating property 'stroke' of a view managed by: RNSVGCircle`.
+
 ## Scripts
 
 | Script | What it does |
