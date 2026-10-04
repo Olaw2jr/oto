@@ -2,11 +2,13 @@ import React, {useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import {chapterAt, getBook} from '../../data/catalogue';
 import {getPerson, ME} from '../../data/people';
 import {listeningDays, profileStats, Status} from '../../data/social';
 import {TabScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {
   Avatar,
@@ -34,12 +36,21 @@ const Stat = ({value, label}: {value: number; label: string}) => (
 );
 
 const YouScreen = ({navigation}: TabScreenProps<'You'>) => {
+  const loading = useFirstLoad('you');
   const {colors} = useTheme();
   const library = useLibrary();
   const me = getPerson(ME);
   const [shelf, setShelf] = useState<Status>('listening');
   const books = library.byStatus(shelf).map(getBook);
   const daysListened = listeningDays.slice(0, -1).filter(Boolean).length;
+
+  if (loading) {
+    return (
+      <Screen>
+        <LoadingState message={'Gathering your shelves'} layout="tiles" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>

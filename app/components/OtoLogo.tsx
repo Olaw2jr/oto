@@ -10,12 +10,15 @@ type OtoLogoProps = {
   inverted?: boolean;
   // Hide from assistive tech when the word "oto" sits next to the mark.
   decorative?: boolean;
+  // What screen readers hear; defaults to the brand name.
+  label?: string;
 };
 
 const OtoLogo = ({
   size,
   inverted = false,
   decorative = false,
+  label = 'oto',
 }: OtoLogoProps) => {
   const palette = inverted ? colors.dark : colors.light;
   const {ring, dot, viewBox} = logo;
@@ -27,7 +30,7 @@ const OtoLogo = ({
       viewBox={`0 0 ${viewBox} ${viewBox}`}
       accessible={!decorative}
       accessibilityRole={decorative ? undefined : 'image'}
-      accessibilityLabel={decorative ? undefined : 'oto'}
+      accessibilityLabel={decorative ? undefined : label}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'yes'}>
       <Circle
         cx={ring.cx}

@@ -3,6 +3,7 @@ import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
 import Svg, {Circle, Path} from 'react-native-svg';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import {CatalogueBook, getBook} from '../../data/catalogue';
 import {discoverFilters, moods, trending} from '../../data/social';
 import {TabScreenProps} from '../../navigator/types';
@@ -10,7 +11,6 @@ import {useFirstLoad} from '../../state/firstLoad';
 import {useLibrary} from '../../state/library';
 import {useTheme} from '../../theme/ThemeProvider';
 import {Chip, Icon, IconButton, Screen, Txt} from '../../ui';
-import {DiscoverSkeleton} from './DiscoverSkeleton';
 
 const MoodGlyph = ({shape, color}: {shape: string; color: string}) => (
   <Svg width={26} height={26} viewBox="0 0 26 26">
@@ -132,7 +132,7 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
       </Pressable>
 
       {loading ? (
-        <DiscoverSkeleton />
+        <LoadingState message="Finding your next listen" layout="tiles" />
       ) : (
         <>
           <ScrollView

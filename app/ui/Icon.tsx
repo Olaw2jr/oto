@@ -38,7 +38,6 @@ const icons = {
   eyeSlash: Outline.EyeSlashIcon,
   mute: Outline.SpeakerXMarkIcon,
   flag: Outline.FlagIcon,
-  offline: Outline.SignalSlashIcon,
   calendar: Outline.CalendarIcon,
 };
 

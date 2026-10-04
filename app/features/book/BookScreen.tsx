@@ -2,11 +2,13 @@ import React from 'react';
 import {StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import {getBook} from '../../data/catalogue';
 import {formatDuration} from '../../data/format';
 import {firstName, getPerson} from '../../data/people';
 import {listeners, reviews, Status} from '../../data/social';
 import {RootStackScreenProps} from '../../navigator/types';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useLibrary} from '../../state/library';
 import {usePlayer} from '../../state/player';
 import {
@@ -48,6 +50,7 @@ const listenersLine = (bookId: string) => {
 
 const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
   const book = getBook(route.params.bookId);
+  const loading = useFirstLoad(`book:${book.id}`);
   const library = useLibrary();
   const player = usePlayer();
   const position = library.positionSec(book.id);
@@ -59,6 +62,21 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
     player.play(book.id);
     navigation.navigate('Player');
   };
+
+  if (loading) {
+    return (
+      <Screen>
+        <View style={styles.bar}>
+          <IconButton
+            icon="back"
+            label="Back"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+        <LoadingState message={'Opening the book'} layout="detail" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>

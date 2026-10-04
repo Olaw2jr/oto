@@ -2,10 +2,12 @@ import React, {useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import {getBook} from '../../data/catalogue';
 import {formatDuration} from '../../data/format';
 import {RootStackScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {Card, Icon, IconButton, ProgressBar, Screen, Txt} from '../../ui';
 import {NewShelfForm} from './NewShelfForm';
@@ -13,10 +15,27 @@ import {NewShelfForm} from './NewShelfForm';
 const countLabel = (n: number) => (n === 1 ? '1 book' : `${n} books`);
 
 const LibraryScreen = ({navigation}: RootStackScreenProps<'Library'>) => {
+  const loading = useFirstLoad('library');
   const {colors} = useTheme();
   const library = useLibrary();
   const [creating, setCreating] = useState(false);
   const listening = library.byStatus('listening').map(getBook);
+
+  if (loading) {
+    return (
+      <Screen>
+        <View style={styles.bar}>
+          <IconButton
+            icon="back"
+            label="Back"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+        <Txt variant="display">Library</Txt>
+        <LoadingState message={'Gathering your shelves'} layout="tiles" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>

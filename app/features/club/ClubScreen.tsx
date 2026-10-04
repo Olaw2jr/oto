@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import OtoLogo from '../../components/OtoLogo';
 import {chapterAt, getBook} from '../../data/catalogue';
 import {getClub, MY_CLUB} from '../../data/clubs';
@@ -12,6 +13,7 @@ import {useLibrary} from '../../state/library';
 import {useSettings} from '../../state/settings';
 import {usePlayer} from '../../state/player';
 import {useSocial} from '../../state/social';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {fonts} from '../../theme/typography';
 import {
@@ -39,6 +41,7 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
   const clubId =
     (route.params as {clubId?: string} | undefined)?.clubId ?? MY_CLUB;
   const club = getClub(clubId);
+  const loading = useFirstLoad(`club:${club.id}`);
   const book = getBook(club.bookId);
   const myPosition = library.positionSec(book.id);
   const settings = useSettings();
@@ -63,6 +66,23 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
     social.addClubPost(club.id, draft.trim());
     setDraft('');
   };
+
+  if (loading) {
+    return (
+      <Screen>
+        {route.name === 'Club' ? (
+          <View style={styles.bar}>
+            <IconButton
+              icon="back"
+              label="Back"
+              onPress={() => navigation.goBack()}
+            />
+          </View>
+        ) : null}
+        <LoadingState message={`Opening ${club.name}`} layout="list" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen

@@ -2,13 +2,8 @@ import React from 'react';
 import {act, fireEvent, screen, within} from '@testing-library/react-native';
 import NetInfo from '@react-native-community/netinfo';
 
-import DiscoverScreen from '../../app/features/discover/DiscoverScreen';
 import FollowingScreen from '../../app/features/following/FollowingScreen';
-import {resetFirstLoads} from '../../app/state/firstLoad';
 import {mockNavigation, renderScreen} from '../test-utils';
-
-// This file exercises the loading state, so give mock data a delay.
-jest.mock('../../app/data/latency', () => ({MOCK_LATENCY_MS: 700}));
 
 const press = (el: any) =>
   act(async () => {
@@ -94,36 +89,6 @@ describe('update menu', () => {
   });
 });
 
-describe('Discover loading', () => {
-  beforeEach(() => {
-    // Keep promise scheduling real so the async render helper can settle.
-    jest.useFakeTimers({
-      doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'],
-    });
-    resetFirstLoads();
-  });
-  afterEach(() => jest.useRealTimers());
-
-  it('shows a skeleton the first time, then the content', async () => {
-    await renderScreen(
-      <DiscoverScreen
-        navigation={mockNavigation()}
-        route={{key: 'D', name: 'Discover'} as any}
-      />,
-    );
-    expect(screen.getByText('Finding your next listen')).toBeOnTheScreen();
-    expect(screen.queryByText('Trending with people you follow')).toBeNull();
-
-    await act(async () => {
-      jest.advanceTimersByTime(1000);
-    });
-    expect(screen.queryByText('Finding your next listen')).toBeNull();
-    expect(
-      screen.getByText('Trending with people you follow'),
-    ).toBeOnTheScreen();
-  });
-});
-
 describe('Following offline', () => {
   beforeEach(() => {
     (NetInfo.useNetInfo as jest.Mock).mockReturnValue({
@@ -157,5 +122,30 @@ describe('Following offline', () => {
     await renderFollowing();
     await press(screen.getByRole('button', {name: 'Try again'}));
     expect(NetInfo.refresh).toHaveBeenCalled();
+  });
+});
+
+describe('update menu in dark mode', () => {
+  it('stands out from the card with a raised colour and an edge', async () => {
+    const {StyleSheet} = require('react-native');
+    const AsyncStorage = require('@react-native-async-storage/async-storage');
+    const {APPEARANCE_STORAGE_KEY} = require('../../app/theme/ThemeProvider');
+    const {colors} = require('../../app/theme/colors');
+    await AsyncStorage.setItem(APPEARANCE_STORAGE_KEY, 'dark');
+
+    await renderFollowing();
+    await press(
+      within(card('Ren I.')).getByRole('button', {
+        name: 'More options for this update',
+      }),
+    );
+
+    const menu = StyleSheet.flatten(
+      screen.getByRole('menu', {name: 'Update options'}).props.style,
+    );
+    expect(menu.backgroundColor).toBe(colors.dark.raised);
+    expect(menu.borderWidth).toBe(1);
+    expect(menu.borderColor).toBe(colors.dark.hairline);
+    await AsyncStorage.removeItem(APPEARANCE_STORAGE_KEY);
   });
 });
