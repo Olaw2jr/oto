@@ -3,7 +3,6 @@ import {
   Text,
   View,
   Image,
-  StatusBar,
   ScrollView,
   TouchableOpacity,
   Dimensions,
@@ -18,8 +17,6 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900')}>
-      <StatusBar translucent backgroundColor="transparent" />
-
       <ScrollView style={tailwind('mx-4')}>
         <View style={tailwind('flex-row items-center mt-6')}>
           <Image

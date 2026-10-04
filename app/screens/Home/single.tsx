@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Image,
   ScrollView,
-  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
@@ -27,8 +26,6 @@ const UpdateDetailsScreen = ({
 
   return (
     <SafeAreaView style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900')}>
-      <StatusBar translucent backgroundColor="transparent" />
-
       <View style={tailwind('flex-row justify-between px-4 mt-4')}>
         <TouchableOpacity onPress={() => goBack()} style={tailwind('')}>
           <ChevronLeftIcon

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, StatusBar, ScrollView, Text} from 'react-native';
+import {View, ScrollView, Text} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {useTailwind} from 'tailwind-rn';
@@ -23,8 +23,6 @@ const BooksScreen = ({navigation}: RootStackScreenProps<'BooksScreen'>) => {
 
   return (
     <SafeAreaView style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900')}>
-      <StatusBar translucent backgroundColor="transparent" />
-
       <ScrollView style={tailwind('mx-4')} showsVerticalScrollIndicator={false}>
         <View style={tailwind('')}>
           <Nav>

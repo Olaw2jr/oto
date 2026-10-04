@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Image,
-  StatusBar,
   Text,
   TouchableOpacity,
   ScrollView,
@@ -24,8 +23,6 @@ const HomeScreen = ({navigation}: UpdateStackScreenProps<'HomeScreen'>) => {
   return (
     <SafeAreaView
       style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900 pb-12')}>
-      <StatusBar translucent backgroundColor="transparent" />
-
       <ScrollView
         style={tailwind('mx-4 mt-4')}
         showsVerticalScrollIndicator={false}>

@@ -4,7 +4,6 @@ import {
   FlatList,
   Image,
   ScrollView,
-  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
@@ -26,8 +25,6 @@ const DiscoverScreen = () => {
   return (
     <SafeAreaView
       style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900 pb-8')}>
-      <StatusBar translucent backgroundColor="transparent" />
-
       <View style={{width: SCREEN_WIDTH}}>
         <View style={tailwind('m-4 flex-row relative')}>
           <View
