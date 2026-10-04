@@ -1,4 +1,5 @@
 import React from 'react';
+import {StatusBar} from 'react-native';
 import {act, fireEvent, screen} from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -138,5 +139,41 @@ describe('RootNavigator', () => {
       fireEvent.press(screen.getByRole('tab', {name: 'Clubs'}));
     });
     expect(screen.getByRole('header', {name: 'Quiet Pages'})).toBeOnTheScreen();
+  });
+
+  it('signs out from Settings back to Sign in', async () => {
+    await signedIn();
+    await renderAsync(<App />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('tab', {name: 'You'}));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', {name: 'Settings'}));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', {name: 'Sign out'}));
+    });
+
+    expect(screen.getByText('Welcome back.')).toBeOnTheScreen();
+  });
+
+  it('switches to dark mode from Settings', async () => {
+    await signedIn();
+    await renderAsync(<App />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('tab', {name: 'You'}));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', {name: 'Settings'}));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('radio', {name: 'Dark'}));
+    });
+
+    expect(screen.UNSAFE_getByType(StatusBar).props.barStyle).toBe(
+      'light-content',
+    );
   });
 });

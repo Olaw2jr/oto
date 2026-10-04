@@ -17,11 +17,17 @@ export const librarySeed: Record<string, {status: Status; position?: number}> =
 
 export const profileStats = {finished: 41, clubs: 4, following: 188};
 
-// Last five weeks, oldest first; the last day is today.
+// Last five weeks as on the canvas, oldest first. The final day is today,
+// shown in kaki and not counted until it is over.
 export const listeningDays = [
-  1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1,
-  1, 1, 1, 1, 1, 0, 1, 1, 1,
-].map(Boolean);
+  [1, 1, 0, 1, 1, 0, 1],
+  [1, 0, 1, 1, 1, 1, 0],
+  [0, 1, 1, 1, 0, 1, 1],
+  [1, 1, 0, 1, 1, 1, 1],
+  [1, 1, 1, 0, 1, 1, 0],
+]
+  .flat()
+  .map(Boolean);
 
 export type MarginNote = {
   id: string;

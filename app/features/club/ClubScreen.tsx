@@ -9,6 +9,7 @@ import {formatClock} from '../../data/format';
 import {getPerson, ME} from '../../data/people';
 import {RootStackScreenProps, TabScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
+import {useSettings} from '../../state/settings';
 import {usePlayer} from '../../state/player';
 import {useSocial} from '../../state/social';
 import {useTheme} from '../../theme/ThemeProvider';
@@ -40,7 +41,8 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
   const club = getClub(clubId);
   const book = getBook(club.bookId);
   const myPosition = library.positionSec(book.id);
-  const [spoilerSafe, setSpoilerSafe] = useState(true);
+  const settings = useSettings();
+  const [spoilerSafe, setSpoilerSafe] = useState(settings.spoilerSafe);
   const [draft, setDraft] = useState('');
 
   const joined = social.joined(club.id);
