@@ -10,14 +10,23 @@ export type CatalogueBook = {
   narrator: string;
   series?: string;
   genre: string;
+  genres: string[];
   summary: string;
   released: string;
+  releasedYear: number;
+  language: string;
   cover: ImageSourcePropType;
   durationSec: number;
   chapters: number;
   rating: number;
   ratingsCount: number;
 };
+
+// Source dates are MM-DD-YY.
+const yearOf = (date: string) => 2000 + Number(date.split('-')[2] ?? 0);
+
+// The source stores the language code in its `rating` field.
+const languages: Record<string, string> = {EN: 'English', English: 'English'};
 
 const slug = (title: string) =>
   title
@@ -64,8 +73,14 @@ export const catalogue: CatalogueBook[] = books.map(book => {
     narrator: book.narrator,
     series: book.series,
     genre: book.genre,
+    genres: book.genre
+      .split(',')
+      .map(g => g.trim())
+      .filter(Boolean),
     summary: cleanSummary(book.summary),
     released: book.year,
+    releasedYear: yearOf(book.year),
+    language: languages[book.rating] ?? book.rating,
     cover: book.image,
     durationSec,
     // About one chapter per 25 minutes of audio.
