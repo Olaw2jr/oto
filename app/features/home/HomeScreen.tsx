@@ -2,6 +2,7 @@ import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import OtoLogo from '../../components/OtoLogo';
 import {chapterAt, getBook} from '../../data/catalogue';
 import {getClub, MY_CLUB} from '../../data/clubs';
@@ -11,6 +12,7 @@ import {becauseYouFinished, homeFriendActivity} from '../../data/social';
 import {dayGreeting} from '../../data/time';
 import {TabScreenProps} from '../../navigator/types';
 import {usePlayer} from '../../state/player';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {
   Avatar,
@@ -19,10 +21,12 @@ import {
   IconButton,
   ProgressBar,
   Screen,
+  TextLink,
   Txt,
 } from '../../ui';
 
 const HomeScreen = ({navigation}: TabScreenProps<'Home'>) => {
+  const loading = useFirstLoad('home');
   const {colors, colorScheme} = useTheme();
   const player = usePlayer();
   const {book, position} = player;
@@ -39,6 +43,14 @@ const HomeScreen = ({navigation}: TabScreenProps<'Home'>) => {
     }
     navigation.navigate('Player');
   };
+
+  if (loading) {
+    return (
+      <Screen>
+        <LoadingState message={'Getting your listening ready'} layout="tiles" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>
@@ -124,9 +136,16 @@ const HomeScreen = ({navigation}: TabScreenProps<'Home'>) => {
         />
       </View>
 
-      <Txt variant="heading" style={styles.section}>
-        {`Because you finished ${finished.title}`}
-      </Txt>
+      <View style={styles.sectionHead}>
+        <Txt variant="heading" style={styles.sectionTitle}>
+          {`Because you finished ${finished.title}`}
+        </Txt>
+        <TextLink
+          label="See all"
+          accessibilityLabel="See all audiobooks"
+          onPress={() => navigation.navigate('Catalog')}
+        />
+      </View>
       <View style={styles.picks}>
         {becauseYouFinished.picks.map(getBook).map(pick => (
           <Pressable
@@ -203,7 +222,13 @@ const styles = StyleSheet.create({
   liveText: {flex: 1, marginRight: 12},
   liveDot: {width: 8, height: 8, borderRadius: 4, marginRight: 7},
   liveTitle: {marginTop: 5},
-  section: {marginTop: 26},
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 26,
+  },
+  sectionTitle: {flex: 1, marginRight: 12},
   picks: {flexDirection: 'row', marginTop: 14},
   pick: {width: 108, marginRight: 13},
   pickTitle: {marginTop: 9},

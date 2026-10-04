@@ -38,3 +38,19 @@ describe('OtoLogo', () => {
     expect(dot.props.fill).toBe(colors.dark.kaki);
   });
 });
+
+describe('OtoLogo muted tone', () => {
+  it('draws the ring and dot in graphite, with no kaki', () => {
+    render(<OtoLogo size={44} tone="muted" />);
+    const [ring, dot] = circles();
+    expect(ring.props.stroke).toBe(colors.light.graphite);
+    expect(dot.props.fill).toBe(colors.light.graphite);
+  });
+
+  it('uses the dark graphite when inverted', () => {
+    render(<OtoLogo size={44} tone="muted" inverted />);
+    const [ring, dot] = circles();
+    expect(ring.props.stroke).toBe(colors.dark.graphite);
+    expect(dot.props.fill).toBe(colors.dark.graphite);
+  });
+});

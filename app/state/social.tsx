@@ -9,7 +9,7 @@ import React, {
 
 import {ClubPost, clubs, MY_CLUB} from '../data/clubs';
 import {ME} from '../data/people';
-import {FeedItem, feedSeed, Status} from '../data/social';
+import {FeedComment, FeedItem, feedSeed, Status} from '../data/social';
 
 export type NewUpdate = {
   bookId: string;
@@ -23,7 +23,15 @@ export type NewUpdate = {
 };
 
 type SocialValue = {
+  // Your feed, without hidden or reported updates and muted people.
   feed: FeedItem[];
+  // Any update by id, including hidden ones (e.g. a thread you just reported).
+  findUpdate: (itemId: string) => FeedItem | undefined;
+  // Someone's updates, hidden ones excluded, whether or not you follow them.
+  updatesBy: (personId: string) => FeedItem[];
+  hideUpdate: (itemId: string) => void;
+  reportUpdate: (itemId: string) => void;
+  mute: (personId: string) => void;
   liked: (id: string) => boolean;
   likeCount: (id: string, base: number) => number;
   toggleLike: (id: string) => void;
@@ -34,6 +42,13 @@ type SocialValue = {
   toggleGoing: (clubId: string) => void;
   clubPosts: (clubId: string) => ClubPost[];
   addClubPost: (clubId: string, body: string, at?: number) => void;
+  comments: (itemId: string) => FeedComment[];
+  addComment: (itemId: string, body: string, parentId?: string) => void;
+  // Everyone in the seed is someone you follow; unfollowing hides their updates.
+  followsPerson: (personId: string) => boolean;
+  toggleFollowPerson: (personId: string) => void;
+  followsAuthor: (name: string) => boolean;
+  toggleFollowAuthor: (name: string) => void;
 };
 
 const SocialContext = createContext<SocialValue | null>(null);
@@ -52,6 +67,13 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
   const [likes, setLikes] = useState<Set<string>>(new Set());
   const [left, setLeft] = useState<Set<string>>(new Set());
   const [rsvps, setRsvps] = useState<Set<string>>(new Set());
+  const [authors, setAuthors] = useState<Set<string>>(new Set());
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [muted, setMuted] = useState<Set<string>>(new Set());
+  const [unfollowed, setUnfollowed] = useState<Set<string>>(new Set());
+  const [addedComments, setAddedComments] = useState<
+    Record<string, FeedComment[]>
+  >({});
   const [posts, setPosts] = useState<Record<string, ClubPost[]>>(() =>
     Object.fromEntries(clubs.map(c => [c.id, c.posts])),
   );
@@ -89,7 +111,7 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
           rating: update.rating,
           body: update.body,
           likes: 0,
-          replies: [],
+          comments: [],
           spoiler: update.spoiler,
         },
         ...current,
@@ -101,9 +123,42 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
     [addClubPost],
   );
 
+  const addComment = useCallback(
+    (itemId: string, body: string, parentId?: string) =>
+      setAddedComments(current => ({
+        ...current,
+        [itemId]: [
+          ...(current[itemId] ?? []),
+          {
+            id: `mine-${Date.now()}`,
+            by: ME,
+            ago: 'Just now',
+            body,
+            likes: 0,
+            parentId,
+          },
+        ],
+      })),
+    [],
+  );
+
   const value = useMemo<SocialValue>(
     () => ({
-      feed,
+      feed: feed.filter(
+        item =>
+          !hidden.has(item.id) &&
+          !muted.has(item.by) &&
+          !unfollowed.has(item.by),
+      ),
+      followsPerson: id => !unfollowed.has(id),
+      toggleFollowPerson: id => setUnfollowed(s => toggle(s, id)),
+      findUpdate: id => feed.find(item => item.id === id),
+      updatesBy: id =>
+        feed.filter(item => item.by === id && !hidden.has(item.id)),
+      hideUpdate: id => setHidden(s => new Set(s).add(id)),
+      // Reports go nowhere yet (no backend); the update is hidden for you.
+      reportUpdate: id => setHidden(s => new Set(s).add(id)),
+      mute: personId => setMuted(s => new Set(s).add(personId)),
       liked: id => likes.has(id),
       likeCount: (id, base) => base + (likes.has(id) ? 1 : 0),
       toggleLike: id => setLikes(s => toggle(s, id)),
@@ -114,8 +169,30 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
       toggleGoing: id => setRsvps(s => toggle(s, id)),
       clubPosts: id => posts[id] ?? [],
       addClubPost,
+      comments: itemId => [
+        ...(feed.find(f => f.id === itemId)?.comments ?? []),
+        ...(addedComments[itemId] ?? []),
+      ],
+      addComment,
+      followsAuthor: name => authors.has(name),
+      toggleFollowAuthor: name => setAuthors(s => toggle(s, name)),
     }),
-    [feed, likes, left, rsvps, posts, postUpdate, addClubPost],
+    [
+      authors,
+      hidden,
+      muted,
+      unfollowed,
+
+      feed,
+      likes,
+      left,
+      rsvps,
+      posts,
+      addedComments,
+      postUpdate,
+      addClubPost,
+      addComment,
+    ],
   );
 
   return (

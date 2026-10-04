@@ -16,6 +16,7 @@ const icons = {
   forward: Outline.ChevronRightIcon,
   more: Outline.EllipsisHorizontalIcon,
   bookmark: Outline.BookmarkIcon,
+  book: Outline.BookOpenIcon,
   share: Outline.ArrowUpOnSquareIcon,
   heart: Outline.HeartIcon,
   heartFilled: Solid.HeartIcon,
@@ -33,6 +34,12 @@ const icons = {
   skipForward: Outline.ArrowUturnRightIcon,
   note: Outline.PencilSquareIcon,
   check: Outline.CheckIcon,
+  clock: Outline.ClockIcon,
+  close: Outline.XMarkIcon,
+  eyeSlash: Outline.EyeSlashIcon,
+  mute: Outline.SpeakerXMarkIcon,
+  flag: Outline.FlagIcon,
+  calendar: Outline.CalendarIcon,
 };
 
 export type IconName = keyof typeof icons;

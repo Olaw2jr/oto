@@ -7,6 +7,7 @@ import {PlayerProvider} from './player';
 import {SessionProvider} from './session';
 import {SettingsProvider} from './settings';
 import {SocialProvider} from './social';
+import {TasteProvider} from './taste';
 
 export const AppProviders = ({children}: {children: ReactNode}) => (
   <SafeAreaProvider>
@@ -15,7 +16,9 @@ export const AppProviders = ({children}: {children: ReactNode}) => (
         <SettingsProvider>
           <LibraryProvider>
             <PlayerProvider>
-              <SocialProvider>{children}</SocialProvider>
+              <SocialProvider>
+                <TasteProvider>{children}</TasteProvider>
+              </SocialProvider>
             </PlayerProvider>
           </LibraryProvider>
         </SettingsProvider>

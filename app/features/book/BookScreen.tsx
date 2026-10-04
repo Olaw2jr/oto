@@ -1,14 +1,20 @@
 import React, {useState} from 'react';
-import {Pressable, StyleSheet, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 
+import {AuthorLinks} from '../../components/AuthorLinks';
 import {BookCover} from '../../components/BookCover';
+import {PersonLink} from '../../components/PersonLink';
+import {LoadingState} from '../../components/LoadingState';
 import {getBook} from '../../data/catalogue';
 import {formatDuration} from '../../data/format';
 import {firstName, getPerson} from '../../data/people';
 import {listeners, reviews, Status} from '../../data/social';
+import {openPerson} from '../../navigator/openPerson';
 import {RootStackScreenProps} from '../../navigator/types';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useLibrary} from '../../state/library';
 import {usePlayer} from '../../state/player';
+import {shareBook} from '../../utils/share';
 import {
   Avatar,
   Button,
@@ -17,6 +23,8 @@ import {
   IconButton,
   Screen,
   Segmented,
+  Sheet,
+  SheetRow,
   TextLink,
   Txt,
 } from '../../ui';
@@ -48,9 +56,10 @@ const listenersLine = (bookId: string) => {
 
 const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
   const book = getBook(route.params.bookId);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const loading = useFirstLoad(`book:${book.id}`);
   const library = useLibrary();
   const player = usePlayer();
-  const [expanded, setExpanded] = useState(false);
   const position = library.positionSec(book.id);
   const status = library.status(book.id);
   const following = listenersLine(book.id);
@@ -60,6 +69,21 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
     player.play(book.id);
     navigation.navigate('Player');
   };
+
+  if (loading) {
+    return (
+      <Screen>
+        <View style={styles.bar}>
+          <IconButton
+            icon="back"
+            label="Back"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+        <LoadingState message={'Opening the book'} layout="detail" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>
@@ -73,9 +97,15 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
           <IconButton
             icon="bookmark"
             label="Save to a list"
-            onPress={() => {}}
+            onPress={() =>
+              navigation.navigate('SaveToShelf', {bookId: book.id})
+            }
           />
-          <IconButton icon="more" label="More" onPress={() => {}} />
+          <IconButton
+            icon="more"
+            label="More"
+            onPress={() => setMoreOpen(true)}
+          />
         </View>
       </View>
 
@@ -87,9 +117,13 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
         <Txt variant="display" align="center" style={styles.title}>
           {book.title}
         </Txt>
-        <Txt align="center" style={styles.author}>
-          {book.author}
-        </Txt>
+        <View style={styles.author}>
+          <AuthorLinks
+            author={book.author}
+            center
+            onOpen={name => navigation.navigate('Author', {name})}
+          />
+        </View>
         <Txt variant="caption" align="center" style={styles.meta}>
           {`${book.rating.toFixed(1)} · ${book.ratingsCount.toLocaleString(
             'en-US',
@@ -114,7 +148,7 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
             label="Share"
             size={52}
             background="segment"
-            onPress={() => {}}
+            onPress={() => shareBook(book)}
           />
         </View>
       </View>
@@ -154,7 +188,11 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
           {bookReviews.map(review => (
             <Card key={review.id} style={styles.review}>
               <View style={styles.reviewHead}>
-                <Avatar name={getPerson(review.by).name} size={32} />
+                <PersonLink
+                  personId={review.by}
+                  onOpen={id => openPerson(navigation, id)}>
+                  <Avatar name={getPerson(review.by).name} size={32} />
+                </PersonLink>
                 <Txt
                   variant="caption"
                   color="ink"
@@ -189,34 +227,43 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
         </>
       ) : null}
 
-      <Txt variant="heading" style={styles.sectionTitle}>
-        About
-      </Txt>
-      <View style={styles.facts}>
-        {[
-          `Narrated by ${book.narrator}`,
-          book.series && `Series: ${book.series}`,
-          book.genre,
-        ]
-          .filter(Boolean)
-          .map(fact => (
-            <Txt key={fact as string} variant="caption">
-              {fact}
-            </Txt>
-          ))}
+      <View style={styles.about}>
+        <TextLink
+          label="About this book"
+          variant="strong"
+          onPress={() => navigation.navigate('BookDetails', {bookId: book.id})}
+        />
+        <Icon name="forward" size={18} color="graphite" />
       </View>
-      <Txt numberOfLines={expanded ? undefined : 5} style={styles.summary}>
-        {book.summary}
-      </Txt>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={expanded ? 'Show less' : 'Read more'}
-        onPress={() => setExpanded(e => !e)}
-        style={styles.more}>
-        <Txt variant="caption" color="ink" weight="semibold">
-          {expanded ? 'Show less' : 'Read more'}
-        </Txt>
-      </Pressable>
+      <Sheet
+        visible={moreOpen}
+        title={book.title}
+        onClose={() => setMoreOpen(false)}>
+        <SheetRow
+          icon="share"
+          label="Share"
+          onPress={() => {
+            setMoreOpen(false);
+            shareBook(book);
+          }}
+        />
+        <SheetRow
+          icon="bookmark"
+          label="Save to a list"
+          onPress={() => {
+            setMoreOpen(false);
+            navigation.navigate('SaveToShelf', {bookId: book.id});
+          }}
+        />
+        <SheetRow
+          icon="book"
+          label="Details"
+          onPress={() => {
+            setMoreOpen(false);
+            navigation.navigate('BookDetails', {bookId: book.id});
+          }}
+        />
+      </Sheet>
     </Screen>
   );
 };
@@ -231,7 +278,7 @@ const styles = StyleSheet.create({
   cover: {alignItems: 'center', marginTop: 6},
   titleBlock: {marginTop: 22},
   title: {lineHeight: 38},
-  author: {marginTop: 6},
+  author: {marginTop: 2},
   meta: {marginTop: 6},
   actions: {flexDirection: 'row', marginTop: 20},
   share: {marginLeft: 10},
@@ -247,6 +294,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   sectionTitle: {fontSize: 19, marginTop: 20},
+  about: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+  },
   sectionHeading: {fontSize: 19},
   review: {marginTop: 6, paddingVertical: 14, paddingHorizontal: 16},
   reviewHead: {flexDirection: 'row', alignItems: 'center'},
@@ -255,9 +308,6 @@ const styles = StyleSheet.create({
   reviewBody: {marginTop: 8},
   reviewStats: {flexDirection: 'row', alignItems: 'center', marginTop: 8},
   stat: {marginLeft: 6, marginRight: 18},
-  facts: {marginTop: 8},
-  summary: {marginTop: 10},
-  more: {minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start'},
 });
 
 export default BookScreen;

@@ -13,6 +13,8 @@ const SignInScreen = ({navigation}: RootStackScreenProps<'SignIn'>) => {
   const {signIn} = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  // No backend yet, so password resets only explain what would happen.
+  const [resetNote, setResetNote] = useState(false);
 
   return (
     <Screen scroll contentStyle={styles.content}>
@@ -62,9 +64,23 @@ const SignInScreen = ({navigation}: RootStackScreenProps<'SignIn'>) => {
         textContentType="password"
       />
       <View style={styles.forgot}>
-        <TextLink label="Forgot password?" role="button" onPress={() => {}} />
+        <TextLink
+          label="Forgot password?"
+          role="button"
+          onPress={() => setResetNote(true)}
+        />
       </View>
 
+      {resetNote ? (
+        <Txt
+          variant="caption"
+          accessibilityRole="alert"
+          style={styles.resetNote}>
+          {email.trim()
+            ? `We'll email a reset link to ${email.trim()}.`
+            : 'Enter your email above and we will send you a reset link.'}
+        </Txt>
+      ) : null}
       <Button label="Sign in" onPress={signIn} />
 
       <View style={styles.switch}>
@@ -86,6 +102,7 @@ const styles = StyleSheet.create({
   subtitle: {marginTop: 8},
   sso: {marginTop: 26},
   spacer: {height: 10},
+  resetNote: {marginBottom: 12},
   forgot: {flexDirection: 'row', justifyContent: 'flex-end'},
   switch: {
     flexDirection: 'row',

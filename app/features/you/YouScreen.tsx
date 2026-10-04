@@ -2,19 +2,31 @@ import React, {useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import {chapterAt, getBook} from '../../data/catalogue';
 import {getPerson, ME} from '../../data/people';
-import {listeningDays, profileStats, Status} from '../../data/social';
+import {
+  librarySeed,
+  listeningDays,
+  profileStats,
+  Status,
+} from '../../data/social';
 import {TabScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
+import {GOAL_OPTIONS, useSettings} from '../../state/settings';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {
   Avatar,
   Card,
+  EmptyState,
   IconButton,
   ProgressBar,
   Screen,
   Segmented,
+  Sheet,
+  SheetRow,
+  TextLink,
   Txt,
 } from '../../ui';
 
@@ -32,12 +44,31 @@ const Stat = ({value, label}: {value: number; label: string}) => (
 );
 
 const YouScreen = ({navigation}: TabScreenProps<'You'>) => {
+  const loading = useFirstLoad('you');
   const {colors} = useTheme();
   const library = useLibrary();
   const me = getPerson(ME);
   const [shelf, setShelf] = useState<Status>('listening');
   const books = library.byStatus(shelf).map(getBook);
+  const settings = useSettings();
+  const [goalOpen, setGoalOpen] = useState(false);
+  const year = new Date().getFullYear();
+  // Seeded books for this year, plus any you finish beyond the seed.
+  const seededFinished = Object.values(librarySeed).filter(
+    e => e.status === 'finished',
+  ).length;
+  const finishedThisYear =
+    profileStats.finishedThisYear +
+    Math.max(0, library.byStatus('finished').length - seededFinished);
   const daysListened = listeningDays.slice(0, -1).filter(Boolean).length;
+
+  if (loading) {
+    return (
+      <Screen>
+        <LoadingState message={'Gathering your shelves'} layout="tiles" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>
@@ -97,6 +128,33 @@ const YouScreen = ({navigation}: TabScreenProps<'You'>) => {
         </View>
       </Card>
 
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Change ${year} goal, ${settings.goal} books`}
+        onPress={() => setGoalOpen(true)}>
+        <Card style={styles.goal}>
+          <View style={styles.weeksHead}>
+            <Txt variant="label">{`${year} goal`}</Txt>
+            <Txt variant="caption" color="ink" weight="semibold">
+              {`${finishedThisYear} of ${settings.goal} books`}
+            </Txt>
+          </View>
+          <View style={styles.goalBar}>
+            <ProgressBar
+              value={finishedThisYear / settings.goal}
+              label={`${year} listening goal`}
+            />
+          </View>
+        </Card>
+      </Pressable>
+
+      <View style={styles.shelfHead}>
+        <Txt variant="heading">Shelves</Txt>
+        <TextLink
+          label="Library"
+          onPress={() => navigation.navigate('Library')}
+        />
+      </View>
       <View style={styles.shelf}>
         <Segmented
           label="Shelf"
@@ -154,10 +212,31 @@ const YouScreen = ({navigation}: TabScreenProps<'You'>) => {
           })}
         </ScrollView>
       ) : (
-        <Txt color="graphite" style={styles.empty}>
-          Nothing on this shelf yet.
-        </Txt>
+        <EmptyState
+          title="Nothing here yet."
+          body="Add books you would like to hear later, and they will wait for you here."
+          action={{
+            label: 'Find a book',
+            onPress: () => navigation.navigate('Discover'),
+          }}
+        />
       )}
+      <Sheet
+        visible={goalOpen}
+        title={`${year} goal`}
+        onClose={() => setGoalOpen(false)}>
+        {GOAL_OPTIONS.map(n => (
+          <SheetRow
+            key={n}
+            label={`${n} books`}
+            selected={settings.goal === n}
+            onPress={() => {
+              settings.set('goal', n);
+              setGoalOpen(false);
+            }}
+          />
+        ))}
+      </Sheet>
     </Screen>
   );
 };
@@ -168,6 +247,8 @@ const styles = StyleSheet.create({
   handle: {fontSize: 13.5, marginTop: 2},
   stats: {flexDirection: 'row', marginTop: 18},
   stat: {flex: 1, alignItems: 'center'},
+  goal: {marginTop: 12, paddingVertical: 16, paddingHorizontal: 18},
+  goalBar: {flexDirection: 'row', marginTop: 12},
   weeks: {
     marginTop: 18,
     paddingTop: 16,
@@ -182,12 +263,17 @@ const styles = StyleSheet.create({
   dots: {flexDirection: 'row', flexWrap: 'wrap', marginTop: 14},
   dotCell: {width: `${100 / 7}%`, alignItems: 'center', marginBottom: 10},
   dot: {width: 12, height: 12, borderRadius: 6},
-  shelf: {marginTop: 20},
+  shelfHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  shelf: {marginTop: 4},
   books: {marginTop: 16, marginHorizontal: -20, paddingHorizontal: 20},
   book: {width: 108, marginRight: 13},
   bookProgress: {marginTop: 8, flexDirection: 'row'},
   bookTitle: {marginTop: 7},
-  empty: {marginTop: 16},
 });
 
 export default YouScreen;

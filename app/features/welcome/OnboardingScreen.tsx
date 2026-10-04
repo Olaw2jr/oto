@@ -3,10 +3,14 @@ import {Image, StyleSheet, View} from 'react-native';
 import Svg, {Circle} from 'react-native-svg';
 
 import {RootStackScreenProps} from '../../navigator/types';
+import {authorsForYou} from '../../data/social';
+import {tasteGenres} from '../../data/taste';
 import {useSession} from '../../state/session';
+import {useSocial} from '../../state/social';
+import {useTaste} from '../../state/taste';
 import {useTheme} from '../../theme/ThemeProvider';
 import {catalogue} from '../../data/catalogue';
-import {Avatar, Button, Screen, TextLink, Txt} from '../../ui';
+import {Avatar, Button, Chip, Pill, Screen, TextLink, Txt} from '../../ui';
 
 const cover = (title: string) => catalogue.find(b => b.title === title)!.cover;
 
@@ -23,7 +27,13 @@ const steps = [
     title: 'Listen together.',
     body: 'Join a book club, pin notes to the exact moment, and keep spoilers where they belong.',
   },
+  {
+    title: 'What do you like?',
+    body: 'Pick a few genres and authors, and we will suggest your first listens.',
+  },
 ];
+
+const TASTE_STEP = 3;
 
 const Covers = () => (
   <View style={styles.coverStage}>
@@ -80,17 +90,16 @@ const Progress = () => {
       </View>
       <View style={styles.pills}>
         {statuses.map(s => (
-          <Txt
+          <Pill
             key={s}
-            variant="caption"
+            label={s}
+            height={36}
+            fontSize={13.5}
             weight={s === 'Listening' ? 'semibold' : 'medium'}
             color={s === 'Listening' ? 'onInk' : 'graphite'}
-            style={[
-              styles.pill,
-              {backgroundColor: s === 'Listening' ? colors.ink : colors.field},
-            ]}>
-            {s}
-          </Txt>
+            background={s === 'Listening' ? 'ink' : 'field'}
+            style={styles.pill}
+          />
         ))}
       </View>
     </View>
@@ -110,13 +119,14 @@ const Together = () => {
       </View>
       <View style={[styles.note, {backgroundColor: colors.paper}]}>
         <View style={styles.noteHead}>
-          <Txt
+          <Pill
+            label="3:12:12"
+            height={26}
             variant="small"
-            color="ink"
             weight="semibold"
-            style={[styles.stamp, {backgroundColor: colors.segment}]}>
-            3:12:12
-          </Txt>
+            background="segment"
+            style={styles.stamp}
+          />
           <Txt variant="caption">Mika</Txt>
         </View>
         <Txt variant="quote" style={styles.noteBody}>
@@ -136,16 +146,30 @@ const Together = () => {
 const OnboardingScreen = ({navigation}: RootStackScreenProps<'Onboarding'>) => {
   const {colors} = useTheme();
   const {completeOnboarding} = useSession();
+  const taste = useTaste();
+  const social = useSocial();
   const [step, setStep] = useState(0);
+  const [genres, setGenres] = useState<string[]>(taste.genres);
+  const [authors, setAuthors] = useState<string[]>(taste.authors);
   const last = step === steps.length - 1;
 
+  const toggle = (list: string[], value: string) =>
+    list.includes(value) ? list.filter(v => v !== value) : [...list, value];
+
   const finish = () => {
+    if (genres.length || authors.length) {
+      taste.save({genres, authors});
+      authors
+        .filter(a => !social.followsAuthor(a))
+        .forEach(a => social.toggleFollowAuthor(a));
+    }
     completeOnboarding();
     navigation.replace('SignUp');
   };
 
   return (
     <Screen
+      scroll={step === TASTE_STEP}
       footer={
         <View style={styles.footer}>
           <View
@@ -178,17 +202,56 @@ const OnboardingScreen = ({navigation}: RootStackScreenProps<'Onboarding'>) => {
           onPress={finish}
         />
       </View>
-      <View style={[styles.stage, {backgroundColor: colors.surface}]}>
-        {step === 0 ? <Covers /> : step === 1 ? <Progress /> : <Together />}
-      </View>
-      <View style={styles.copy}>
-        <Txt variant="display" style={styles.title}>
-          {steps[step].title}
-        </Txt>
-        <Txt color="graphite" style={styles.body}>
-          {steps[step].body}
-        </Txt>
-      </View>
+      {step === TASTE_STEP ? (
+        <View style={styles.copy}>
+          <Txt variant="display" style={styles.title}>
+            {steps[step].title}
+          </Txt>
+          <Txt color="graphite" style={styles.body}>
+            {steps[step].body}
+          </Txt>
+          <Txt variant="label" style={styles.tasteLabel}>
+            Genres
+          </Txt>
+          <View style={styles.choices}>
+            {tasteGenres.map(g => (
+              <Chip
+                key={g.label}
+                label={g.label}
+                selected={genres.includes(g.label)}
+                onPress={() => setGenres(toggle(genres, g.label))}
+              />
+            ))}
+          </View>
+          <Txt variant="label" style={styles.tasteLabel}>
+            Authors
+          </Txt>
+          <View style={styles.choices}>
+            {authorsForYou.map(name => (
+              <Chip
+                key={name}
+                label={name}
+                selected={authors.includes(name)}
+                onPress={() => setAuthors(toggle(authors, name))}
+              />
+            ))}
+          </View>
+        </View>
+      ) : (
+        <>
+          <View style={[styles.stage, {backgroundColor: colors.surface}]}>
+            {step === 0 ? <Covers /> : step === 1 ? <Progress /> : <Together />}
+          </View>
+          <View style={styles.copy}>
+            <Txt variant="display" style={styles.title}>
+              {steps[step].title}
+            </Txt>
+            <Txt color="graphite" style={styles.body}>
+              {steps[step].body}
+            </Txt>
+          </View>
+        </>
+      )}
     </Screen>
   );
 };
@@ -209,15 +272,7 @@ const styles = StyleSheet.create({
   },
   percent: {fontSize: 52, lineHeight: 58},
   pills: {flexDirection: 'row', marginTop: 28},
-  pill: {
-    height: 36,
-    lineHeight: 36,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    marginHorizontal: 4,
-    overflow: 'hidden',
-    fontSize: 13.5,
-  },
+  pill: {paddingHorizontal: 16, marginHorizontal: 4},
   faces: {flexDirection: 'row', paddingLeft: 20},
   overlap: {marginLeft: -20},
   note: {
@@ -228,18 +283,13 @@ const styles = StyleSheet.create({
     marginTop: 26,
   },
   noteHead: {flexDirection: 'row', alignItems: 'center'},
-  stamp: {
-    height: 26,
-    lineHeight: 26,
-    paddingHorizontal: 10,
-    borderRadius: 13,
-    overflow: 'hidden',
-    marginRight: 8,
-  },
+  stamp: {paddingHorizontal: 10, marginRight: 8},
   noteBody: {marginTop: 8, fontSize: 16},
   live: {flexDirection: 'row', alignItems: 'center', marginTop: 26},
   liveDot: {width: 8, height: 8, borderRadius: 4, marginRight: 8},
   copy: {paddingHorizontal: 8, marginTop: 28},
+  tasteLabel: {marginTop: 22, marginBottom: 4},
+  choices: {flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -3},
   title: {fontSize: 36, lineHeight: 42},
   body: {fontSize: 16, lineHeight: 25, marginTop: 12},
   footer: {alignItems: 'stretch'},

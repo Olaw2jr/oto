@@ -10,14 +10,23 @@ export type CatalogueBook = {
   narrator: string;
   series?: string;
   genre: string;
+  genres: string[];
   summary: string;
   released: string;
+  releasedYear: number;
+  language: string;
   cover: ImageSourcePropType;
   durationSec: number;
   chapters: number;
   rating: number;
   ratingsCount: number;
 };
+
+// Source dates are MM-DD-YY.
+const yearOf = (date: string) => 2000 + Number(date.split('-')[2] ?? 0);
+
+// The source stores the language code in its `rating` field.
+const languages: Record<string, string> = {EN: 'English', English: 'English'};
 
 const slug = (title: string) =>
   title
@@ -56,7 +65,11 @@ const chapterCounts: Record<string, number> = {'where-the-crawdads-sing': 48};
 export const catalogue: CatalogueBook[] = books.map(book => {
   const id = slug(book.title);
   const durationSec = parseDuration(book.runtime);
-  const [rating, ratingsCount] = ratings[id] ?? [Number(book.starRating), 120];
+  // Uncurated books get a modest rating so curated ones lead Top rated.
+  const [rating, ratingsCount] = ratings[id] ?? [
+    Math.min(4.5, Number(book.starRating)),
+    120,
+  ];
   return {
     id,
     title: book.title.replace(/^P(?=The )/, ''),
@@ -64,8 +77,14 @@ export const catalogue: CatalogueBook[] = books.map(book => {
     narrator: book.narrator,
     series: book.series,
     genre: book.genre,
+    genres: book.genre
+      .split(',')
+      .map(g => g.trim())
+      .filter(Boolean),
     summary: cleanSummary(book.summary),
     released: book.year,
+    releasedYear: yearOf(book.year),
+    language: languages[book.rating] ?? book.rating,
     cover: book.image,
     durationSec,
     // About one chapter per 25 minutes of audio.
