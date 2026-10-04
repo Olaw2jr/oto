@@ -23,7 +23,8 @@ type LibraryValue = {
   setStatus: (bookId: string, status: Status) => void;
   setPosition: (bookId: string, positionSec: number) => void;
   // Moves the position by a delta, clamped to the book's length.
-  advance: (bookId: string, deltaSec: number) => void;
+  // An optional limit stops it early, e.g. at the end of a chapter.
+  advance: (bookId: string, deltaSec: number, limitSec?: number) => void;
   // Your own 1–5 star rating.
   rating: (bookId: string) => number | undefined;
   setRating: (bookId: string, stars: number | undefined) => void;
@@ -32,6 +33,9 @@ type LibraryValue = {
   shelf: (id: string) => Shelf | undefined;
   createShelf: (name: string, bookId?: string) => string;
   toggleOnShelf: (shelfId: string, bookId: string) => void;
+  // Moments you bookmarked in each book, in seconds, earliest first.
+  bookmarks: (bookId: string) => number[];
+  addBookmark: (bookId: string, at: number) => void;
 };
 
 const LibraryContext = createContext<LibraryValue | null>(null);
@@ -48,6 +52,17 @@ export const LibraryProvider = ({children}: {children: ReactNode}) => {
   const [entries, setEntries] = useState<Record<string, Entry>>(seed);
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [custom, setCustom] = useState<CustomShelf[]>(shelvesSeed);
+  const [marks, setMarks] = useState<Record<string, number[]>>({});
+
+  const addBookmark = useCallback((bookId: string, at: number) => {
+    const second = Math.floor(at);
+    setMarks(current => {
+      const list = current[bookId] ?? [];
+      return list.includes(second)
+        ? current
+        : {...current, [bookId]: [...list, second].sort((a, b) => a - b)};
+    });
+  }, []);
 
   const createShelf = useCallback(
     (name: string, bookId?: string) => {
@@ -120,17 +135,23 @@ export const LibraryProvider = ({children}: {children: ReactNode}) => {
     }));
   }, []);
 
-  const advance = useCallback((bookId: string, deltaSec: number) => {
-    const {durationSec} = getBook(bookId);
-    setEntries(current => {
-      const entry = current[bookId] ?? {status: 'listening', positionSec: 0};
-      const positionSec = Math.min(
-        durationSec,
-        Math.max(0, entry.positionSec + deltaSec),
+  const advance = useCallback(
+    (bookId: string, deltaSec: number, limitSec?: number) => {
+      const durationSec = Math.min(
+        getBook(bookId).durationSec,
+        limitSec ?? Infinity,
       );
-      return {...current, [bookId]: {...entry, positionSec}};
-    });
-  }, []);
+      setEntries(current => {
+        const entry = current[bookId] ?? {status: 'listening', positionSec: 0};
+        const positionSec = Math.min(
+          durationSec,
+          Math.max(0, entry.positionSec + deltaSec),
+        );
+        return {...current, [bookId]: {...entry, positionSec}};
+      });
+    },
+    [],
+  );
 
   const value = useMemo<LibraryValue>(() => {
     const byStatus = (status: Status) =>
@@ -165,6 +186,8 @@ export const LibraryProvider = ({children}: {children: ReactNode}) => {
       shelf: id => shelves.find(s => s.id === id),
       createShelf,
       toggleOnShelf,
+      bookmarks: id => marks[id] ?? [],
+      addBookmark,
     };
   }, [
     entries,
@@ -176,6 +199,8 @@ export const LibraryProvider = ({children}: {children: ReactNode}) => {
     setRating,
     createShelf,
     toggleOnShelf,
+    marks,
+    addBookmark,
   ]);
 
   return (

@@ -16,6 +16,7 @@ const icons = {
   forward: Outline.ChevronRightIcon,
   more: Outline.EllipsisHorizontalIcon,
   bookmark: Outline.BookmarkIcon,
+  book: Outline.BookOpenIcon,
   share: Outline.ArrowUpOnSquareIcon,
   heart: Outline.HeartIcon,
   heartFilled: Solid.HeartIcon,
