@@ -32,7 +32,11 @@ export type Settings = {
   spoilerSafe: boolean;
   notifications: Notifications;
   skip: SkipIntervals;
+  // Books to finish this year.
+  goal: number;
 };
+
+export const GOAL_OPTIONS = [6, 12, 24, 36, 52];
 
 const defaults: Settings = {
   wifiOnly: true,
@@ -40,12 +44,16 @@ const defaults: Settings = {
   spoilerSafe: true,
   notifications: 'clubs',
   skip: {back: 15, forward: 30},
+  goal: 12,
 };
 
 // Keeps only stored values of the right shape.
 const valid = (key: string, value: unknown) => {
   if (key === 'notifications') {
     return typeof value === 'string' && value in NOTIFICATION_LABELS;
+  }
+  if (key === 'goal') {
+    return GOAL_OPTIONS.includes(value as number);
   }
   if (key === 'skip') {
     return SKIP_OPTIONS.some(
