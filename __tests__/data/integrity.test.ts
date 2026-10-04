@@ -26,6 +26,7 @@ describe('mock data integrity', () => {
       ...social.becauseYouFinished.picks,
       social.homeFriendActivity.bookId,
       ...clubs.map(c => c.bookId),
+      ...social.feedSeed.map(f => f.bookId),
     ];
     expect(referenced.filter(id => !bookIds.has(id))).toEqual([]);
   });
@@ -37,6 +38,7 @@ describe('mock data integrity', () => {
       ...Object.values(social.listeners).flatMap(l => l.people),
       social.homeFriendActivity.by,
       ...clubs.flatMap(c => c.posts.map(p => p.by)),
+      ...social.feedSeed.flatMap(f => [f.by, ...f.replies.map(r => r.by)]),
     ];
     expect(() => referenced.forEach(getPerson)).not.toThrow();
     expect(people.length).toBeGreaterThan(0);

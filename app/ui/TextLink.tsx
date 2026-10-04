@@ -11,6 +11,8 @@ type TextLinkProps = {
   color?: ColorToken;
   // Links navigate; use 'button' for in-place actions such as Skip.
   role?: 'link' | 'button';
+  // A fuller name for screen readers, e.g. "Change book" for "Change".
+  accessibilityLabel?: string;
 };
 
 export const TextLink = ({
@@ -19,10 +21,11 @@ export const TextLink = ({
   variant = 'caption',
   color = 'ink',
   role = 'link',
+  accessibilityLabel,
 }: TextLinkProps) => (
   <Pressable
     accessibilityRole={role}
-    accessibilityLabel={label}
+    accessibilityLabel={accessibilityLabel ?? label}
     onPress={onPress}
     style={styles.hit}>
     <Txt variant={variant} color={color} weight="semibold">

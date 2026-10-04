@@ -3,15 +3,13 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 
 import DiscoverScreen from '../features/discover/DiscoverScreen';
 import HomeScreen from '../features/home/HomeScreen';
-import ComingSoonScreen from '../screens/ComingSoonScreen';
+import ClubScreen from '../features/club/ClubScreen';
+import FollowingScreen from '../features/following/FollowingScreen';
 import MyBooksScreen from '../screens/MyBooks';
 import {TabBar} from './TabBar';
 import {TabParamList} from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
-
-const FollowingScreen = () => <ComingSoonScreen title="Following" />;
-const ClubsScreen = () => <ComingSoonScreen title="Clubs" />;
 
 const Tabs = () => (
   <Tab.Navigator
@@ -20,7 +18,7 @@ const Tabs = () => (
     <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Discover" component={DiscoverScreen} />
     <Tab.Screen name="Following" component={FollowingScreen} />
-    <Tab.Screen name="Clubs" component={ClubsScreen} />
+    <Tab.Screen name="Clubs" component={ClubScreen} />
     <Tab.Screen name="You" component={MyBooksScreen} />
   </Tab.Navigator>
 );

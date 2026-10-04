@@ -22,12 +22,13 @@ export const TabBar = ({state, navigation}: BottomTabBarProps) => {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
 
-  const onHome = state.routes[state.index].name === 'Home';
+  // Home has its own Continue listening card and Clubs has a composer.
+  const current = state.routes[state.index].name;
+  const showMiniPlayer = current !== 'Home' && current !== 'Clubs';
 
   return (
     <View>
-      {/* Home has its own Continue listening card. */}
-      {onHome ? null : <MiniPlayer />}
+      {showMiniPlayer ? <MiniPlayer /> : null}
       <View
         accessibilityRole="tablist"
         style={[

@@ -132,3 +132,57 @@ export const homeFriendActivity = {
   bookId: 'it-ends-with-us',
   quote: 'Quiet, devastating, perfectly paced.',
 };
+
+export type FeedItem = {
+  id: string;
+  by: string;
+  ago: string;
+  verb: 'started listening' | 'finished a book' | 'is listening' | 'posted in';
+  bookId: string;
+  clubId?: string;
+  progress?: number;
+  rating?: number;
+  body: string;
+  likes: number;
+  replies: {by: string; body: string}[];
+  spoiler?: boolean;
+};
+
+export const feedSeed: FeedItem[] = [
+  {
+    id: 'f1',
+    by: 'mika',
+    ago: '2 h ago',
+    verb: 'started listening',
+    bookId: 'starry-messenger',
+    progress: 0.09,
+    body: 'He writes about the cosmos like a room you can walk into.',
+    likes: 12,
+    replies: [
+      {by: 'zawadi', body: 'Wait until the chapter on borders.'},
+      {by: 'daniel', body: 'Adding this to my list tonight.'},
+    ],
+  },
+  {
+    id: 'f2',
+    by: 'zawadi',
+    ago: 'Yesterday',
+    verb: 'finished a book',
+    bookId: 'tuesdays-with-morrie',
+    rating: 4.5,
+    body: 'Short, plain and heartbreaking. The kind of book you finish in one sitting.',
+    likes: 18,
+    replies: [],
+  },
+  {
+    id: 'f3',
+    by: 'daniel',
+    ago: 'Yesterday',
+    verb: 'posted in',
+    clubId: 'quiet-pages',
+    bookId: 'where-the-crawdads-sing',
+    body: 'Slower than I expected, in the best way.',
+    likes: 3,
+    replies: [],
+  },
+];

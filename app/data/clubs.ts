@@ -50,6 +50,15 @@ export const clubs: Club[] = [
         likes: 3,
         replies: 0,
       },
+      {
+        id: 'p3',
+        by: 'ren',
+        ago: '1 d ago',
+        at: 9 * 3600 + 40 * 60,
+        body: 'The trial chapters reframe everything. No spoilers, but hold on.',
+        likes: 5,
+        replies: 2,
+      },
     ],
   },
 ];

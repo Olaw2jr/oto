@@ -4,7 +4,8 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 import BookScreen from '../features/book/BookScreen';
 import PlayerScreen from '../features/player/PlayerScreen';
-import ComingSoonScreen from '../screens/ComingSoonScreen';
+import ClubScreen from '../features/club/ClubScreen';
+import UpdateComposeScreen from '../features/following/UpdateComposeScreen';
 import OnboardingScreen from '../features/welcome/OnboardingScreen';
 import SignInScreen from '../features/welcome/SignInScreen';
 import SignUpScreen from '../features/welcome/SignUpScreen';
@@ -15,10 +16,6 @@ import Tabs from './Tabs';
 import {RootStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-// Interim until the social screens land.
-const ClubPlaceholder = () => <ComingSoonScreen title="Quiet Pages" />;
-const UpdatePlaceholder = () => <ComingSoonScreen title="Your update" />;
 
 const RootNavigator = () => {
   const {status} = useSession();
@@ -50,10 +47,10 @@ const RootNavigator = () => {
             component={PlayerScreen}
             options={{animation: 'slide_from_bottom'}}
           />
-          <Stack.Screen name="Club" component={ClubPlaceholder} />
+          <Stack.Screen name="Club" component={ClubScreen} />
           <Stack.Screen
             name="UpdateCompose"
-            component={UpdatePlaceholder}
+            component={UpdateComposeScreen}
             options={{presentation: 'modal'}}
           />
         </Stack.Group>
