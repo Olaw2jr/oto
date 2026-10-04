@@ -6,7 +6,7 @@ import {RootStackScreenProps} from '../../navigator/types';
 import {useSession} from '../../state/session';
 import {useTheme} from '../../theme/ThemeProvider';
 import {catalogue} from '../../data/catalogue';
-import {Avatar, Button, Screen, TextLink, Txt} from '../../ui';
+import {Avatar, Button, Pill, Screen, TextLink, Txt} from '../../ui';
 
 const cover = (title: string) => catalogue.find(b => b.title === title)!.cover;
 
@@ -80,17 +80,16 @@ const Progress = () => {
       </View>
       <View style={styles.pills}>
         {statuses.map(s => (
-          <Txt
+          <Pill
             key={s}
-            variant="caption"
+            label={s}
+            height={36}
+            fontSize={13.5}
             weight={s === 'Listening' ? 'semibold' : 'medium'}
             color={s === 'Listening' ? 'onInk' : 'graphite'}
-            style={[
-              styles.pill,
-              {backgroundColor: s === 'Listening' ? colors.ink : colors.field},
-            ]}>
-            {s}
-          </Txt>
+            background={s === 'Listening' ? 'ink' : 'field'}
+            style={styles.pill}
+          />
         ))}
       </View>
     </View>
@@ -110,13 +109,14 @@ const Together = () => {
       </View>
       <View style={[styles.note, {backgroundColor: colors.paper}]}>
         <View style={styles.noteHead}>
-          <Txt
+          <Pill
+            label="3:12:12"
+            height={26}
             variant="small"
-            color="ink"
             weight="semibold"
-            style={[styles.stamp, {backgroundColor: colors.segment}]}>
-            3:12:12
-          </Txt>
+            background="segment"
+            style={styles.stamp}
+          />
           <Txt variant="caption">Mika</Txt>
         </View>
         <Txt variant="quote" style={styles.noteBody}>
@@ -209,15 +209,7 @@ const styles = StyleSheet.create({
   },
   percent: {fontSize: 52, lineHeight: 58},
   pills: {flexDirection: 'row', marginTop: 28},
-  pill: {
-    height: 36,
-    lineHeight: 36,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    marginHorizontal: 4,
-    overflow: 'hidden',
-    fontSize: 13.5,
-  },
+  pill: {paddingHorizontal: 16, marginHorizontal: 4},
   faces: {flexDirection: 'row', paddingLeft: 20},
   overlap: {marginLeft: -20},
   note: {
@@ -228,14 +220,7 @@ const styles = StyleSheet.create({
     marginTop: 26,
   },
   noteHead: {flexDirection: 'row', alignItems: 'center'},
-  stamp: {
-    height: 26,
-    lineHeight: 26,
-    paddingHorizontal: 10,
-    borderRadius: 13,
-    overflow: 'hidden',
-    marginRight: 8,
-  },
+  stamp: {paddingHorizontal: 10, marginRight: 8},
   noteBody: {marginTop: 8, fontSize: 16},
   live: {flexDirection: 'row', alignItems: 'center', marginTop: 26},
   liveDot: {width: 8, height: 8, borderRadius: 4, marginRight: 8},

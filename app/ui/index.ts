@@ -7,6 +7,7 @@ export {EmptyState} from './EmptyState';
 export {Icon} from './Icon';
 export type {IconName} from './Icon';
 export {IconButton} from './IconButton';
+export {Pill} from './Pill';
 export {ProgressBar} from './ProgressBar';
 export {Segmented} from './Segmented';
 export {Screen} from './Screen';

@@ -14,7 +14,16 @@ import {RootStackScreenProps} from '../../navigator/types';
 import {useSocial} from '../../state/social';
 import {useTheme} from '../../theme/ThemeProvider';
 import {fonts} from '../../theme/typography';
-import {Avatar, Chip, Icon, IconButton, Screen, TextLink, Txt} from '../../ui';
+import {
+  Avatar,
+  Chip,
+  Icon,
+  IconButton,
+  Pill,
+  Screen,
+  TextLink,
+  Txt,
+} from '../../ui';
 
 export const RECENT_SEARCHES_KEY = 'oto.searches';
 const MAX_RECENT = 8;
@@ -240,21 +249,16 @@ const SearchScreen = ({navigation}: RootStackScreenProps<'Search'>) => {
                     accessibilityState={{selected: following}}
                     onPress={() => social.toggleFollowAuthor(name)}
                     style={styles.followHit}>
-                    <Txt
+                    <Pill
+                      label={following ? 'Following' : 'Follow'}
+                      height={30}
                       variant="small"
-                      color={following ? 'onInk' : 'ink'}
                       weight="semibold"
-                      style={[
-                        styles.follow,
-                        {
-                          borderColor: following
-                            ? colors.ink
-                            : colors.switchOff,
-                        },
-                        following && {backgroundColor: colors.ink},
-                      ]}>
-                      {following ? 'Following' : 'Follow'}
-                    </Txt>
+                      color={following ? 'onInk' : 'ink'}
+                      background={following ? 'ink' : undefined}
+                      border={following ? 'ink' : 'switchOff'}
+                      style={styles.follow}
+                    />
                   </Pressable>
                 </View>
               );
@@ -322,14 +326,7 @@ const styles = StyleSheet.create({
   author: {width: 84, alignItems: 'center', marginRight: 10},
   authorName: {marginTop: 6, lineHeight: 16},
   followHit: {minHeight: 44, justifyContent: 'center'},
-  follow: {
-    height: 30,
-    lineHeight: 28,
-    paddingHorizontal: 14,
-    borderRadius: 15,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
+  follow: {paddingHorizontal: 14},
   results: {marginTop: 8},
   row: {flexDirection: 'row', alignItems: 'center', minHeight: 76},
   rowText: {flex: 1, marginLeft: 14},
