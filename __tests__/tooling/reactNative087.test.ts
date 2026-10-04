@@ -47,8 +47,6 @@ describe('React Native 0.87 JavaScript baseline', () => {
   it('uses React 19-compatible testing utilities', () => {
     expect(pkg.devDependencies['@testing-library/react-native']).toBe('13.3.3');
     expect(pkg.devDependencies['@testing-library/jest-native']).toBeUndefined();
-    expect(read('jest.setup.ts')).toContain(
-      "import '@testing-library/react-native/extend-expect';",
-    );
+    expect(read('jest.setup.ts')).not.toContain('@testing-library/jest-native');
   });
 });
