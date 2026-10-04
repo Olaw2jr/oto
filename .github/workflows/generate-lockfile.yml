@@ -16,7 +16,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm install --package-lock-only --ignore-scripts
+      - run: |
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts
       - name: Commit generated lockfile
         run: |
           if git diff --quiet -- package-lock.json; then
