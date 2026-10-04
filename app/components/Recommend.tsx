@@ -1,22 +1,26 @@
 import React from 'react';
-import {Text, View, Image, TouchableOpacity} from 'react-native';
+import {
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  ImageSourcePropType,
+} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StarIcon} from 'react-native-heroicons/outline';
 import {useTailwind} from 'tailwind-rn';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {StackPrams} from '../../App';
 
 type ReadingProps = {
   id: string;
   title: string;
   author: string;
-  cover_url: string;
+  cover_url: ImageSourcePropType;
   rating: number;
 };
 
 const Recommend: React.FC<ReadingProps> = ({...props}) => {
   const tailwind = useTailwind();
-  const navigation = useNavigation<NativeStackNavigationProp<StackPrams>>();
+  const navigation = useNavigation();
 
   return (
     <TouchableOpacity

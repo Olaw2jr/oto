@@ -11,17 +11,9 @@ import DiscoverScreen from '../screens/Discover';
 import BoookScreen from '../screens/MyBooks';
 import ProfileScreen from '../screens/Profile';
 import UpdateStack from './UpdateStack';
+import {TabParamList} from './types';
 
-export type TabPrams = {
-  HomeScreen: any;
-  DiscoverScreen: any;
-  BoookScreen: any;
-  BookDetails: any;
-  ProfileScreen: any;
-  UpdateStack: any;
-};
-
-const Tab = createBottomTabNavigator<TabPrams>();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 const TabsScreen = () => {
   return (

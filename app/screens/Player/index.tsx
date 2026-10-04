@@ -14,8 +14,11 @@ import {
 import {useTailwind} from 'tailwind-rn';
 
 import toHHMMSS from '../../utils/time';
+import {RootStackScreenProps} from '../../navigator/types';
 
-const PlayerScreen = ({navigation: {goBack}}) => {
+const PlayerScreen = ({
+  navigation: {goBack},
+}: RootStackScreenProps<'PlayerScreen'>) => {
   const tailwind = useTailwind();
 
   const [paused, setPaused] = useState(true);

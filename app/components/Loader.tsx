@@ -44,7 +44,7 @@ const LoadingSpinner = () => {
   return (
     <View style={tailwind('flex-1 justify-center items-center')}>
       <Animated.View style={animatedStyle}>
-        <Spinner props={''} />
+        <Spinner />
       </Animated.View>
     </View>
   );

@@ -1,19 +1,23 @@
 import React from 'react';
-import {Text, View, Image, TouchableOpacity} from 'react-native';
+import {
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  ImageSourcePropType,
+} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useTailwind} from 'tailwind-rn';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {StackPrams} from '../../App';
 
 type AuthorProps = {
   id: string;
   name: string;
-  avatar: string;
+  avatar: ImageSourcePropType;
 };
 
 const Author: React.FC<AuthorProps> = ({...props}) => {
   const tailwind = useTailwind();
-  const navigation = useNavigation<NativeStackNavigationProp<StackPrams>>();
+  const navigation = useNavigation();
 
   return (
     <TouchableOpacity

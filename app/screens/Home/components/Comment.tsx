@@ -6,17 +6,25 @@ import {
 } from 'react-native-heroicons/outline';
 
 import {useTailwind} from 'tailwind-rn';
+import {CommentData} from '../../../utils/MockData';
 
-const Comment = ({comment, replies}) => {
+type CommentProps = {
+  comment: CommentData;
+  replies: CommentData[];
+};
+
+const Comment = ({comment, replies}: CommentProps) => {
   const tailwind = useTailwind();
 
   return (
     <View style={tailwind('w-full my-4')}>
       <View style={tailwind('flex flex-row')}>
-        <Image
-          style={tailwind('w-12 h-12 border-2 border-slate-300 rounded-full')}
-          source={comment.userAvatar}
-        />
+        {comment.userAvatar ? (
+          <Image
+            style={tailwind('w-12 h-12 border-2 border-slate-300 rounded-full')}
+            source={comment.userAvatar}
+          />
+        ) : null}
         <View style={tailwind('flex-col mt-1')}>
           <View style={tailwind('flex flex-1 px-4')}>
             <Text

@@ -2,19 +2,12 @@ import React from 'react';
 import {Text, View, Image, TouchableOpacity} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useTailwind} from 'tailwind-rn';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {StackPrams} from '../../App';
 
-type AuthorProps = {
-  id: string;
-  title: string;
-  count: number;
-  books: [];
-};
+import {ShelfData} from '../utils/MockData';
 
-const Shelf: React.FC<AuthorProps> = ({...props}) => {
+const Shelf: React.FC<ShelfData> = ({...props}) => {
   const tailwind = useTailwind();
-  const navigation = useNavigation<NativeStackNavigationProp<StackPrams>>();
+  const navigation = useNavigation();
 
   return (
     <TouchableOpacity

@@ -5,15 +5,9 @@ import TabScreen from './Tabs';
 import PlayerScreen from '../screens/Player';
 import BooksScreen from '../screens/Books';
 import SingleBooksScreen from '../screens/Books/single';
+import {RootStackParamList} from './types';
 
-export type StackPrams = {
-  TabScreen: any;
-  PlayerScreen: any;
-  BooksScreen: any;
-  SingleBooksScreen: any;
-};
-
-const Stack = createNativeStackNavigator<StackPrams>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const StackNavigator = () => {
   return (

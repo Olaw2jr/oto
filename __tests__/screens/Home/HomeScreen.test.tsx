@@ -11,7 +11,7 @@ describe('HomeScreen', () => {
   it('lists the books you are currently listening to', async () => {
     await renderWithProviders(
       <NavigationContainer>
-        <HomeScreen navigation={navigation} />
+        <HomeScreen navigation={navigation} route={{} as any} />
       </NavigationContainer>,
     );
 

@@ -2,19 +2,12 @@ import React, {useEffect, useState} from 'react';
 import {View} from 'react-native';
 
 import {useTailwind} from 'tailwind-rn';
-import {getComments as getCommentsApi} from '../../../utils/MockData';
+import {
+  CommentData,
+  getComments as getCommentsApi,
+} from '../../../utils/MockData';
 import Comment from './Comment';
 import CommentForm from './CommentForm';
-
-type CommentData = {
-  id: string;
-  body: string;
-  username: string;
-  userId?: string;
-  userAvatar?: number;
-  parentId: string | null;
-  createdAt: string;
-};
 
 type CommentsProps = {
   currentUserId: string;

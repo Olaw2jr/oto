@@ -3,13 +3,9 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 import HomeScreen from '../screens/Home';
 import UpdateDetailsScreen from '../screens/Home/single';
+import {UpdateStackParamList} from './types';
 
-export type StackPrams = {
-  HomeScreen: any;
-  UpdateDetailsScreen: any;
-};
-
-const Stack = createNativeStackNavigator<StackPrams>();
+const Stack = createNativeStackNavigator<UpdateStackParamList>();
 
 const UpdateStack = () => {
   return (

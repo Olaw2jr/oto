@@ -1,5 +1,22 @@
 import {ImageSourcePropType} from 'react-native';
 
+export type ShelfData = {
+  id: string;
+  title: string;
+  count: number;
+  books: {id: string; title: string; cover_url: ImageSourcePropType}[];
+};
+
+export type CommentData = {
+  id: string;
+  body: string;
+  username: string;
+  userId?: string;
+  userAvatar?: ImageSourcePropType;
+  parentId: string | null;
+  createdAt: string;
+};
+
 export type Book = {
   id: string;
   title: string;
@@ -16,7 +33,7 @@ export type Book = {
   summary: string;
 };
 
-export const getComments = async () => {
+export const getComments = async (): Promise<CommentData[]> => {
   return [
     {
       id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
