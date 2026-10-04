@@ -1,4 +1,3 @@
-import '@testing-library/react-native/extend-expect';
 import {AccessibilityInfo} from 'react-native';
 
 jest.mock(
