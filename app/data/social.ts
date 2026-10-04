@@ -153,7 +153,14 @@ export type FeedItem = {
   id: string;
   by: string;
   ago: string;
-  verb: 'started listening' | 'finished a book' | 'is listening' | 'posted in';
+  verb:
+    | 'started listening'
+    | 'finished a book'
+    | 'is listening'
+    | 'posted in'
+    | 'wants to listen'
+    | 'rated'
+    | 'made progress';
   bookId: string;
   clubId?: string;
   progress?: number;
@@ -249,6 +256,38 @@ export const feedSeed: FeedItem[] = [
     bookId: 'where-the-crawdads-sing',
     body: 'Slower than I expected, in the best way.',
     likes: 3,
+    comments: [],
+  },
+  {
+    id: 'f4',
+    by: 'daniel',
+    ago: '4 days ago',
+    verb: 'wants to listen',
+    bookId: 'fire-blood-hbo-tie-in-edition',
+    body: '',
+    likes: 0,
+    comments: [],
+  },
+  {
+    id: 'f5',
+    by: 'ren',
+    ago: '3 days ago',
+    verb: 'rated',
+    bookId: 'dreamland',
+    rating: 4,
+    body: 'Beautifully restrained. I kept wanting to shake the narrator.',
+    likes: 6,
+    comments: [],
+  },
+  {
+    id: 'f6',
+    by: 'mika',
+    ago: '3 days ago',
+    verb: 'made progress',
+    bookId: 'greenlights',
+    progress: 0.41,
+    body: '',
+    likes: 2,
     comments: [],
   },
 ];
