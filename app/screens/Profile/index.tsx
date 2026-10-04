@@ -89,10 +89,10 @@ const ProfileScreen = () => {
         <View style={tailwind('w-full mt-4')}>
           <Text style={tailwind('text-sm text-slate-700 dark:text-slate-500')}>
             There are two motives for reading a book; one, that you enjoy it;
-            the other, that you can boast about it [ on Eyy! ].
+            the other, that you can boast about it [ on oto ].
           </Text>
           <Text style={tailwind('text-sm text-slate-700 dark:text-slate-500')}>
-            https://mishock.co.tz/eyy!
+            @jese
           </Text>
 
           <View style={tailwind('flex-row mt-4')}>

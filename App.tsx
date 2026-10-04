@@ -8,7 +8,7 @@ import utilities from './tailwind.json';
 
 import StackNavigator from './app/navigator/Stack';
 
-const Eyy = () => {
+const App = () => {
   return (
     <TailwindProvider utilities={utilities} colorScheme="dark">
       <SafeAreaProvider>
@@ -20,4 +20,4 @@ const Eyy = () => {
   );
 };
 
-export default Eyy;
+export default App;
