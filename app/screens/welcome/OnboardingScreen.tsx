@@ -26,7 +26,7 @@ const steps = [
 ];
 
 const Covers = () => (
-  <>
+  <View style={styles.coverStage}>
     <Image
       source={cover('Project Hail Mary')}
       style={[styles.cover, styles.coverA]}
@@ -39,7 +39,7 @@ const Covers = () => (
       source={cover('Where the Crawdads Sing')}
       style={[styles.cover, styles.coverC]}
     />
-  </>
+  </View>
 );
 
 const Progress = () => {
@@ -197,6 +197,7 @@ const styles = StyleSheet.create({
   skip: {flexDirection: 'row', justifyContent: 'flex-end', marginTop: -4},
   stage: {height: 400, borderRadius: 32, overflow: 'hidden', marginTop: 10},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  coverStage: {width: 350, height: 400, alignSelf: 'center'},
   cover: {position: 'absolute', borderRadius: 10},
   coverA: {width: 150, height: 150, left: 30, top: 44},
   coverB: {width: 150, height: 150, left: 172, top: 112},
