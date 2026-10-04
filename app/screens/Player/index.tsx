@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {StatusBar, TouchableOpacity, View, Image, Text} from 'react-native';
+import {TouchableOpacity, View, Image, Text} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import {
@@ -31,8 +31,6 @@ const PlayerScreen = ({
 
   return (
     <SafeAreaView style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900')}>
-      <StatusBar translucent backgroundColor="transparent" />
-
       <View style={tailwind('flex flex-row justify-between mx-4 mt-8')}>
         <TouchableOpacity onPress={() => goBack()} style={tailwind('')}>
           <ChevronDownIcon

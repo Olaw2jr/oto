@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  StatusBar,
-  ScrollView,
-  Text,
-  Image,
-  TouchableOpacity,
-} from 'react-native';
+import {View, ScrollView, Text, Image, TouchableOpacity} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {useTailwind} from 'tailwind-rn';
@@ -28,8 +21,6 @@ const SingleBooksScreen = ({
 
   return (
     <SafeAreaView style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900')}>
-      <StatusBar translucent backgroundColor="transparent" />
-
       <View style={tailwind('flex-row justify-between px-4 mt-4')}>
         <TouchableOpacity onPress={() => goBack()} style={tailwind('')}>
           <ChevronLeftIcon

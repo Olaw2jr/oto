@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  FlatList,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {FlatList, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {useTailwind} from 'tailwind-rn';
@@ -19,8 +12,6 @@ const BoookScreen = () => {
 
   return (
     <SafeAreaView style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900')}>
-      <StatusBar translucent backgroundColor="transparent" />
-
       <ScrollView style={tailwind('mx-4')}>
         <View style={tailwind('mt-4 flex-row justify-between')}>
           <Text
