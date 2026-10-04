@@ -46,7 +46,12 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
         <View
           accessibilityRole="alert"
           style={[styles.banner, {backgroundColor: colors.raised}]}>
-          <OtoLogo size={24} decorative inverted={colorScheme === 'dark'} />
+          <OtoLogo
+            size={24}
+            decorative
+            tone="muted"
+            inverted={colorScheme === 'dark'}
+          />
           <Txt variant="caption" color="ink" style={styles.bannerText}>
             <Txt variant="caption" color="ink" weight="semibold">
               You are offline.
@@ -59,6 +64,7 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
           <OtoLogo
             size={72}
             label="oto, offline"
+            tone="muted"
             inverted={colorScheme === 'dark'}
           />
           <Txt variant="heading" align="center" style={styles.offlineTitle}>
