@@ -129,7 +129,7 @@ describe('Chip', () => {
 describe('ProgressBar', () => {
   it('exposes its value as a percentage', async () => {
     await renderWithTheme(<ProgressBar value={0.28} label="Progress" />);
-    expect(screen.getByRole('progressbar', {name: 'Progress'})).toHaveProp(
+    expect(screen.getByLabelText('Progress')).toHaveProp(
       'accessibilityValue',
       {min: 0, max: 100, now: 28},
     );
