@@ -23,7 +23,11 @@ export type NewUpdate = {
 };
 
 type SocialValue = {
+  // Your feed, without hidden or reported updates and muted people.
   feed: FeedItem[];
+  hideUpdate: (itemId: string) => void;
+  reportUpdate: (itemId: string) => void;
+  mute: (personId: string) => void;
   liked: (id: string) => boolean;
   likeCount: (id: string, base: number) => number;
   toggleLike: (id: string) => void;
@@ -57,6 +61,8 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
   const [left, setLeft] = useState<Set<string>>(new Set());
   const [rsvps, setRsvps] = useState<Set<string>>(new Set());
   const [authors, setAuthors] = useState<Set<string>>(new Set());
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [muted, setMuted] = useState<Set<string>>(new Set());
   const [addedComments, setAddedComments] = useState<
     Record<string, FeedComment[]>
   >({});
@@ -130,7 +136,11 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
 
   const value = useMemo<SocialValue>(
     () => ({
-      feed,
+      feed: feed.filter(item => !hidden.has(item.id) && !muted.has(item.by)),
+      hideUpdate: id => setHidden(s => new Set(s).add(id)),
+      // Reports go nowhere yet (no backend); the update is hidden for you.
+      reportUpdate: id => setHidden(s => new Set(s).add(id)),
+      mute: personId => setMuted(s => new Set(s).add(personId)),
       liked: id => likes.has(id),
       likeCount: (id, base) => base + (likes.has(id) ? 1 : 0),
       toggleLike: id => setLikes(s => toggle(s, id)),
@@ -151,6 +161,8 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
     }),
     [
       authors,
+      hidden,
+      muted,
 
       feed,
       likes,

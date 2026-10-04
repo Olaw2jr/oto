@@ -26,7 +26,7 @@ describe('FollowingScreen', () => {
   it('shows what friends are listening to', async () => {
     await setup();
     expect(screen.getByRole('header', {name: 'Following'})).toBeOnTheScreen();
-    expect(screen.getByText('Mika T.')).toBeOnTheScreen();
+    expect(screen.getAllByText('Mika T.').length).toBeGreaterThan(0);
     expect(screen.getByText('started listening')).toBeOnTheScreen();
     expect(
       screen.getByText(

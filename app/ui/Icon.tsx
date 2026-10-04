@@ -35,6 +35,10 @@ const icons = {
   check: Outline.CheckIcon,
   clock: Outline.ClockIcon,
   close: Outline.XMarkIcon,
+  eyeSlash: Outline.EyeSlashIcon,
+  mute: Outline.SpeakerXMarkIcon,
+  flag: Outline.FlagIcon,
+  offline: Outline.SignalSlashIcon,
   calendar: Outline.CalendarIcon,
 };
 
