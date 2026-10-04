@@ -103,7 +103,7 @@ describe('UpdateComposeScreen', () => {
     await press(screen.getByRole('button', {name: '4 stars'}));
     expect(
       screen.getByRole('button', {name: '4 stars'}),
-    ).toHaveAccessibilityState({selected: true});
+    ).toBeSelected();
 
     fireEvent.changeText(
       screen.getByLabelText('Thoughts'),
@@ -111,9 +111,7 @@ describe('UpdateComposeScreen', () => {
     );
     expect(
       screen.getByRole('switch', {name: 'Share to Quiet Pages'}),
-    ).toHaveAccessibilityState({
-      checked: true,
-    });
+    ).toBeChecked();
 
     await press(screen.getByRole('button', {name: 'Post update'}));
     expect(navigation.goBack).toHaveBeenCalled();
@@ -138,9 +136,7 @@ describe('UpdateComposeScreen', () => {
     await setup();
     expect(
       screen.getByRole('button', {name: 'Post update'}),
-    ).toHaveAccessibilityState({
-      disabled: true,
-    });
+    ).toBeDisabled();
   });
 
   it('cancels', async () => {
@@ -198,7 +194,7 @@ describe('ClubScreen', () => {
     const safe = screen.getByRole('switch', {
       name: 'Spoiler-safe to where you are',
     });
-    expect(safe).toHaveAccessibilityState({checked: true});
+    expect(safe).toBeChecked();
     expect(
       screen.queryByText(
         'The trial chapters reframe everything. No spoilers, but hold on.',
