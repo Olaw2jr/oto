@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StatusBar, TouchableOpacity, View, Image, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Slider from "@react-native-community/slider";
@@ -12,6 +12,7 @@ import {
   ArrowUturnLeftIcon,
 } from "react-native-heroicons/outline";
 import { useTailwind } from "tailwind-rn";
+import WebTorrent from "webtorrent";
 
 import toHHMMSS from "../../utils/time";
 
@@ -25,6 +26,14 @@ const PlayerScreen = ({ navigation: { goBack } }) => {
   const togglePlay = () => {
     setPaused(!paused);
   };
+
+  useEffect(() => {
+    var client = new WebTorrent();
+
+    client.on("error", (err) => {
+      console.log("Webtorrent error: " + err);
+    });
+  }, []);
 
   return (
     <SafeAreaView style={tailwind("flex-1 bg-slate-100 dark:bg-slate-900")}>
