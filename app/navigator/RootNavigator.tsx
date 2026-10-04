@@ -2,6 +2,7 @@ import React from 'react';
 import {StyleSheet, View} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
+import BookDetailsScreen from '../features/book/BookDetailsScreen';
 import BookScreen from '../features/book/BookScreen';
 import PlayerScreen from '../features/player/PlayerScreen';
 import SettingsScreen from '../features/settings/SettingsScreen';
@@ -54,6 +55,7 @@ const RootNavigator = () => {
         <Stack.Group>
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="Book" component={BookScreen} />
+          <Stack.Screen name="BookDetails" component={BookDetailsScreen} />
           <Stack.Screen
             name="Player"
             component={PlayerScreen}
