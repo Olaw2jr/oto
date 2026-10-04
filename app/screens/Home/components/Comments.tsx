@@ -1,35 +1,58 @@
 import React, {useEffect, useState} from 'react';
-import {Text, View} from 'react-native';
+import {View} from 'react-native';
 
 import {useTailwind} from 'tailwind-rn';
 import {getComments as getCommentsApi} from '../../../utils/MockData';
 import Comment from './Comment';
 import CommentForm from './CommentForm';
 
-const Comments = ({currentUserId}) => {
+type CommentData = {
+  id: string;
+  body: string;
+  username: string;
+  userId?: string;
+  userAvatar?: number;
+  parentId: string | null;
+  createdAt: string;
+};
+
+type CommentsProps = {
+  currentUserId: string;
+};
+
+const byCreatedAt = (a: CommentData, b: CommentData) =>
+  new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+
+const Comments = ({currentUserId}: CommentsProps) => {
   const tailwind = useTailwind();
-  const [backendComments, setBackendComments] = useState([]);
-
-  const rootComments = backendComments.filter(backendComments => {
-    backendComments.parentId === null;
-  });
-
-  const getReplies = commentID => {
-    return backendComments
-      .filter(backendComments => backendComments.parentId === commentID)
-      .sort(
-        (a, b) =>
-          newDate(a.createdAt).getTime() - newDate(b.createdAt).getTime(),
-      );
-  };
+  const [comments, setComments] = useState<CommentData[]>([]);
 
   useEffect(() => {
     getCommentsApi().then(data => {
-      setBackendComments(data);
+      setComments(data);
     });
   }, []);
 
-  const addComment = (text, parrentId) => {};
+  const rootComments = comments.filter(comment => comment.parentId === null);
+
+  const getReplies = (commentId: string) =>
+    comments
+      .filter(comment => comment.parentId === commentId)
+      .sort(byCreatedAt);
+
+  const addComment = (text: string, parentId: string | null = null) => {
+    setComments(current => [
+      ...current,
+      {
+        id: `${currentUserId}-${Date.now()}`,
+        body: text,
+        username: 'You',
+        userId: currentUserId,
+        parentId,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
+  };
 
   return (
     <>
@@ -45,8 +68,8 @@ const Comments = ({currentUserId}) => {
         </View>
       </View>
       <CommentForm
-        submitLabel={`Add a new comment`}
-        handleSubmit={addComment()}
+        submitLabel="Post Comment"
+        handleSubmit={text => addComment(text)}
       />
     </>
   );
