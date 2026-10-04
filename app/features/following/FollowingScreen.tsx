@@ -66,6 +66,7 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
             key={item.id}
             item={item}
             onOpenBook={bookId => navigation.navigate('Book', {bookId})}
+            onOpenThread={itemId => navigation.navigate('Thread', {itemId})}
           />
         ))
       ) : (

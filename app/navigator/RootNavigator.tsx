@@ -7,6 +7,7 @@ import BookScreen from '../features/book/BookScreen';
 import PlayerScreen from '../features/player/PlayerScreen';
 import SettingsScreen from '../features/settings/SettingsScreen';
 import ClubScreen from '../features/club/ClubScreen';
+import ThreadScreen from '../features/following/ThreadScreen';
 import UpdateComposeScreen from '../features/following/UpdateComposeScreen';
 import OnboardingScreen from '../features/welcome/OnboardingScreen';
 import SignInScreen from '../features/welcome/SignInScreen';
@@ -63,6 +64,7 @@ const RootNavigator = () => {
           />
           <Stack.Screen name="Club" component={ClubScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Thread" component={ThreadScreen} />
           <Stack.Screen
             name="UpdateCompose"
             component={UpdateComposeScreen}

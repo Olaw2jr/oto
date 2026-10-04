@@ -11,9 +11,13 @@ import {useSocial} from '../../state/social';
 import {useTheme} from '../../theme/ThemeProvider';
 import {Avatar, Card, Icon, ProgressBar, Txt} from '../../ui';
 
-type FeedCardProps = {item: FeedItem; onOpenBook: (bookId: string) => void};
+type FeedCardProps = {
+  item: FeedItem;
+  onOpenBook: (bookId: string) => void;
+  onOpenThread: (itemId: string) => void;
+};
 
-export const FeedCard = ({item, onOpenBook}: FeedCardProps) => {
+export const FeedCard = ({item, onOpenBook, onOpenThread}: FeedCardProps) => {
   const {colors} = useTheme();
   const social = useSocial();
   const library = useLibrary();
@@ -27,6 +31,11 @@ export const FeedCard = ({item, onOpenBook}: FeedCardProps) => {
     listening: "You're listening",
     finished: 'You finished this',
   };
+  const comments = social.comments(item.id);
+  // The card previews the first two top-level comments; replies stay in the thread.
+  const preview = comments.filter(c => !c.parentId).slice(0, 2);
+  const commentLabel =
+    comments.length === 1 ? '1 comment' : `${comments.length} comments`;
   const verb = item.clubId
     ? `posted in ${getClub(item.clubId).name}`
     : item.verb;
@@ -107,15 +116,16 @@ export const FeedCard = ({item, onOpenBook}: FeedCardProps) => {
             {String(likes)}
           </Txt>
         </Pressable>
-        <View
-          accessible
-          accessibilityLabel={`${item.replies.length} replies`}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={commentLabel}
+          onPress={() => onOpenThread(item.id)}
           style={styles.action}>
           <Icon name="comment" size={20} color="graphite" />
           <Txt variant="caption" style={styles.count}>
-            {String(item.replies.length)}
+            {String(comments.length)}
           </Txt>
-        </View>
+        </Pressable>
         <View style={styles.spacer} />
         {item.by === ME ? null : myStatus ? (
           <Txt variant="caption" style={styles.wantDone}>
@@ -134,11 +144,15 @@ export const FeedCard = ({item, onOpenBook}: FeedCardProps) => {
         )}
       </View>
 
-      {item.replies.length ? (
-        <View style={[styles.replies, {borderTopColor: colors.hairline}]}>
-          {item.replies.map((reply, i) => (
+      {preview.length ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`View ${commentLabel}`}
+          onPress={() => onOpenThread(item.id)}
+          style={[styles.replies, {borderTopColor: colors.hairline}]}>
+          {preview.map((reply, i) => (
             <Txt
-              key={i}
+              key={reply.id}
               variant="caption"
               color="ink"
               style={i > 0 && styles.reply}>
@@ -148,7 +162,7 @@ export const FeedCard = ({item, onOpenBook}: FeedCardProps) => {
               <Txt variant="caption">{reply.body}</Txt>
             </Txt>
           ))}
-        </View>
+        </Pressable>
       ) : null}
     </Card>
   );

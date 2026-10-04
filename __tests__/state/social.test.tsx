@@ -56,3 +56,21 @@ describe('social state', () => {
     });
   });
 });
+
+describe('feed comments', () => {
+  it('adds comments and replies to a post', () => {
+    const {result} = renderHook(() => useSocial(), {wrapper});
+    expect(result.current.comments('f2')).toHaveLength(5);
+
+    act(() => result.current.addComment('f2', 'Me too.', 'f2c1'));
+    act(() => result.current.addComment('f2', 'New thought.'));
+
+    const all = result.current.comments('f2');
+    expect(all).toHaveLength(7);
+    expect(all.find(c => c.body === 'Me too.')).toMatchObject({
+      by: 'amani',
+      parentId: 'f2c1',
+    });
+    expect(all.find(c => c.body === 'New thought.')?.parentId).toBeUndefined();
+  });
+});
