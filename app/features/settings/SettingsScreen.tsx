@@ -148,12 +148,14 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
       <Txt variant="label" style={styles.label}>
         Appearance
       </Txt>
-      <Segmented
-        label="Appearance"
-        options={appearanceOptions}
-        value={preference}
-        onChange={setPreference}
-      />
+      <View style={styles.appearance}>
+        <Segmented
+          label="Appearance"
+          options={appearanceOptions}
+          value={preference}
+          onChange={setPreference}
+        />
+      </View>
 
       <Card style={[styles.group, styles.signOutGroup]}>
         <Pressable
@@ -194,6 +196,7 @@ const styles = StyleSheet.create({
   value: {flexDirection: 'row', alignItems: 'center'},
   valueText: {fontSize: 14.5, marginRight: 4},
   label: {marginTop: 20, marginBottom: -4, marginLeft: 6},
+  appearance: {marginTop: 12},
   signOutGroup: {marginTop: 20},
 });
 
