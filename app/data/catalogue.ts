@@ -1,6 +1,6 @@
 import {ImageSourcePropType} from 'react-native';
 
-import {books} from '../utils/MockData';
+import {books} from './sourceBooks';
 import {parseDuration} from './format';
 
 export type CatalogueBook = {

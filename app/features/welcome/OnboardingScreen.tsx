@@ -5,10 +5,10 @@ import Svg, {Circle} from 'react-native-svg';
 import {RootStackScreenProps} from '../../navigator/types';
 import {useSession} from '../../state/session';
 import {useTheme} from '../../theme/ThemeProvider';
-import {books} from '../../utils/MockData';
+import {catalogue} from '../../data/catalogue';
 import {Avatar, Button, Screen, TextLink, Txt} from '../../ui';
 
-const cover = (title: string) => books.find(b => b.title === title)!.image;
+const cover = (title: string) => catalogue.find(b => b.title === title)!.cover;
 
 const steps = [
   {
