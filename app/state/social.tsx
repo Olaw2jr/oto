@@ -36,6 +36,8 @@ type SocialValue = {
   addClubPost: (clubId: string, body: string, at?: number) => void;
   comments: (itemId: string) => FeedComment[];
   addComment: (itemId: string, body: string, parentId?: string) => void;
+  followsAuthor: (name: string) => boolean;
+  toggleFollowAuthor: (name: string) => void;
 };
 
 const SocialContext = createContext<SocialValue | null>(null);
@@ -54,6 +56,7 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
   const [likes, setLikes] = useState<Set<string>>(new Set());
   const [left, setLeft] = useState<Set<string>>(new Set());
   const [rsvps, setRsvps] = useState<Set<string>>(new Set());
+  const [authors, setAuthors] = useState<Set<string>>(new Set());
   const [addedComments, setAddedComments] = useState<
     Record<string, FeedComment[]>
   >({});
@@ -143,8 +146,12 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
         ...(addedComments[itemId] ?? []),
       ],
       addComment,
+      followsAuthor: name => authors.has(name),
+      toggleFollowAuthor: name => setAuthors(s => toggle(s, name)),
     }),
     [
+      authors,
+
       feed,
       likes,
       left,
