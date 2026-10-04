@@ -27,7 +27,6 @@ npm run ios               # or: npm run android
 | `npm test` | Runs the Jest test suite |
 | `npm run lint` | Runs ESLint over JS/TS sources |
 | `npm run typecheck` | Type-checks the project with `tsc --noEmit` |
-| `npm run build:tailwind` | Regenerates `tailwind.json` for `tailwind-rn` |
 
 ## Project layout
 

@@ -10,7 +10,8 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
-// RN's jest mock returns undefined from these, but tailwind-rn awaits them.
+// RN's jest mock returns undefined from these; make them resolve like the
+// real module.
 (
   [
     'isBoldTextEnabled',

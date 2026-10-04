@@ -2,7 +2,6 @@ import React from 'react';
 import {Text} from 'react-native';
 import {act, fireEvent, render, screen} from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useTailwind} from 'tailwind-rn';
 
 import {
   APPEARANCE_STORAGE_KEY,
@@ -19,13 +18,9 @@ jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({
 
 const Probe = () => {
   const {preference, colorScheme, colors: palette, setPreference} = useTheme();
-  const tailwind = useTailwind();
   return (
     <>
       <Text testID="state">{`${preference}/${colorScheme}/${palette.paper}`}</Text>
-      <Text testID="tw" style={tailwind('text-ink dark:text-ink-dark')}>
-        tw
-      </Text>
       <Text onPress={() => setPreference('dark')}>Dark</Text>
       <Text onPress={() => setPreference('system')}>System</Text>
     </>
@@ -71,17 +66,6 @@ describe('ThemeProvider', () => {
     });
 
     expect(state()).toBe(`dark/dark/${colors.dark.paper}`);
-  });
-
-  it('drives tailwind dark: classes', async () => {
-    await renderProvider();
-    await act(async () => {
-      fireEvent.press(screen.getByText('Dark'));
-    });
-
-    expect(screen.getByTestId('tw')).toHaveStyle({
-      color: 'rgba(241, 239, 232, 1)',
-    });
   });
 
   it('saves the preference and restores it on the next launch', async () => {
