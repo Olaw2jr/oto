@@ -23,13 +23,11 @@ describe('DiscoverScreen', () => {
     ).toBeOnTheScreen();
 
     const forYou = screen.getByRole('button', {name: 'For you'});
-    expect(forYou).toHaveAccessibilityState({selected: true});
+    expect(forYou).toBeSelected();
     fireEvent.press(screen.getByRole('button', {name: 'Short listens'}));
     expect(
       screen.getByRole('button', {name: 'Short listens'}),
-    ).toHaveAccessibilityState({
-      selected: true,
-    });
+    ).toBeSelected();
   });
 
   it('ranks what people you follow are listening to', async () => {
