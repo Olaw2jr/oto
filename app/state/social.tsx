@@ -9,7 +9,7 @@ import React, {
 
 import {ClubPost, clubs, MY_CLUB} from '../data/clubs';
 import {ME} from '../data/people';
-import {FeedItem, feedSeed, Status} from '../data/social';
+import {FeedComment, FeedItem, feedSeed, Status} from '../data/social';
 
 export type NewUpdate = {
   bookId: string;
@@ -34,6 +34,8 @@ type SocialValue = {
   toggleGoing: (clubId: string) => void;
   clubPosts: (clubId: string) => ClubPost[];
   addClubPost: (clubId: string, body: string, at?: number) => void;
+  comments: (itemId: string) => FeedComment[];
+  addComment: (itemId: string, body: string, parentId?: string) => void;
 };
 
 const SocialContext = createContext<SocialValue | null>(null);
@@ -52,6 +54,9 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
   const [likes, setLikes] = useState<Set<string>>(new Set());
   const [left, setLeft] = useState<Set<string>>(new Set());
   const [rsvps, setRsvps] = useState<Set<string>>(new Set());
+  const [addedComments, setAddedComments] = useState<
+    Record<string, FeedComment[]>
+  >({});
   const [posts, setPosts] = useState<Record<string, ClubPost[]>>(() =>
     Object.fromEntries(clubs.map(c => [c.id, c.posts])),
   );
@@ -89,7 +94,7 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
           rating: update.rating,
           body: update.body,
           likes: 0,
-          replies: [],
+          comments: [],
           spoiler: update.spoiler,
         },
         ...current,
@@ -99,6 +104,25 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
       }
     },
     [addClubPost],
+  );
+
+  const addComment = useCallback(
+    (itemId: string, body: string, parentId?: string) =>
+      setAddedComments(current => ({
+        ...current,
+        [itemId]: [
+          ...(current[itemId] ?? []),
+          {
+            id: `mine-${Date.now()}`,
+            by: ME,
+            ago: 'Just now',
+            body,
+            likes: 0,
+            parentId,
+          },
+        ],
+      })),
+    [],
   );
 
   const value = useMemo<SocialValue>(
@@ -114,8 +138,23 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
       toggleGoing: id => setRsvps(s => toggle(s, id)),
       clubPosts: id => posts[id] ?? [],
       addClubPost,
+      comments: itemId => [
+        ...(feed.find(f => f.id === itemId)?.comments ?? []),
+        ...(addedComments[itemId] ?? []),
+      ],
+      addComment,
     }),
-    [feed, likes, left, rsvps, posts, postUpdate, addClubPost],
+    [
+      feed,
+      likes,
+      left,
+      rsvps,
+      posts,
+      addedComments,
+      postUpdate,
+      addClubPost,
+      addComment,
+    ],
   );
 
   return (

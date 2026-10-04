@@ -38,7 +38,7 @@ describe('mock data integrity', () => {
       ...Object.values(social.listeners).flatMap(l => l.people),
       social.homeFriendActivity.by,
       ...clubs.flatMap(c => c.posts.map(p => p.by)),
-      ...social.feedSeed.flatMap(f => [f.by, ...f.replies.map(r => r.by)]),
+      ...social.feedSeed.flatMap(f => [f.by, ...f.comments.map(c => c.by)]),
     ];
     expect(() => referenced.forEach(getPerson)).not.toThrow();
     expect(people.length).toBeGreaterThan(0);
@@ -84,6 +84,19 @@ describe('book facts', () => {
     for (const book of catalogue) {
       expect(String(book.releasedYear)).toMatch(/^(19|20)\d\d$/);
       expect(book.language).toBe('English');
+    }
+  });
+});
+
+describe('feed comments', () => {
+  it('only nests replies under top-level comments of the same post', () => {
+    for (const item of social.feedSeed) {
+      const ids = new Set(
+        item.comments.filter(c => !c.parentId).map(c => c.id),
+      );
+      for (const c of item.comments.filter(x => x.parentId)) {
+        expect(ids.has(c.parentId!)).toBe(true);
+      }
     }
   });
 });
