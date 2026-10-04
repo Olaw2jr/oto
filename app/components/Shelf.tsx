@@ -14,7 +14,7 @@ const Shelf: React.FC<ShelfData> = ({...props}) => {
       style={tailwind(
         'p-2 rounded-md bg-slate-100 dark:bg-slate-800 w-[48%] mr-3 mb-3',
       )}
-      onPress={() => navigation.navigate('PlayerScreen')}>
+      onPress={() => navigation.navigate('Player')}>
       <View style={tailwind('items-start')}>
         <View>
           <Text style={tailwind('text-sm text-slate-900 dark:text-slate-100')}>

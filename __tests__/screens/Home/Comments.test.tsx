@@ -5,6 +5,7 @@ import Comments from '../../../app/screens/Home/components/Comments';
 import {renderWithProviders} from '../../test-utils';
 
 jest.mock('../../../app/utils/MockData', () => ({
+  ...jest.requireActual('../../../app/utils/MockData'),
   getComments: async () => [
     {
       id: 'root-1',

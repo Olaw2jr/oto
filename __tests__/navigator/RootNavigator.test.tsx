@@ -67,4 +67,45 @@ describe('RootNavigator', () => {
     });
     expect(screen.getByRole('header', {name: 'Following'})).toBeOnTheScreen();
   });
+
+  it('opens the player from Home and returns', async () => {
+    await signedIn();
+    await renderAsync(<App />);
+
+    await act(async () => {
+      fireEvent.press(
+        screen.getByRole('button', {name: 'Resume Where the Crawdads Sing'}),
+      );
+    });
+    expect(screen.getByRole('button', {name: 'Pause'})).toBeOnTheScreen();
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', {name: 'Close player'}));
+    });
+    expect(screen.getByRole('tab', {name: 'Home'})).toBeOnTheScreen();
+  });
+
+  it('shows the mini player on other tabs and opens a book from Discover', async () => {
+    await signedIn();
+    await renderAsync(<App />);
+    expect(screen.queryByRole('button', {name: /^Open player:/})).toBeNull();
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('tab', {name: 'Discover'}));
+    });
+    expect(
+      screen.getByRole('button', {
+        name: /^Open player: Where the Crawdads Sing/,
+      }),
+    ).toBeOnTheScreen();
+
+    await act(async () => {
+      fireEvent.press(
+        screen.getByRole('button', {name: /^2\. Project Hail Mary/}),
+      );
+    });
+    expect(
+      screen.getByRole('header', {name: 'Project Hail Mary'}),
+    ).toBeOnTheScreen();
+  });
 });

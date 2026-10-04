@@ -5,8 +5,6 @@ import {
 import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 
-import {Book} from '../utils/MockData';
-
 export type TabParamList = {
   Home: undefined;
   Discover: undefined;
@@ -28,11 +26,6 @@ export type RootStackParamList = {
   Club: {clubId: string};
   UpdateCompose: {bookId?: string} | undefined;
   Settings: undefined;
-  // Legacy routes from before the rebrand, removed as screens are replaced.
-  PlayerScreen: undefined;
-  BooksScreen: undefined;
-  SingleBooksScreen: {book: Book};
-  UpdateDetailsScreen: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> =
