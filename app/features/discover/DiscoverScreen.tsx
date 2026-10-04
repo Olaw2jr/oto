@@ -1,14 +1,18 @@
 import React, {useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, TextInput, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
 import Svg, {Circle, Path} from 'react-native-svg';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import {catalogue, CatalogueBook, getBook} from '../../data/catalogue';
+import {filterRules} from '../../data/moods';
+import {picksForTaste} from '../../data/taste';
 import {discoverFilters, moods, trending} from '../../data/social';
 import {TabScreenProps} from '../../navigator/types';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useLibrary} from '../../state/library';
+import {useTaste} from '../../state/taste';
 import {useTheme} from '../../theme/ThemeProvider';
-import {fonts} from '../../theme/typography';
 import {Chip, Icon, IconButton, Screen, Txt} from '../../ui';
 
 const MoodGlyph = ({shape, color}: {shape: string; color: string}) => (
@@ -111,49 +115,29 @@ const BookRow = ({
 const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
   const {colors} = useTheme();
   const [filter, setFilter] = useState(discoverFilters[0]);
-  const [query, setQuery] = useState('');
   const openBook = (id: string) => navigation.navigate('Book', {bookId: id});
-
-  const needle = query.trim().toLowerCase();
-  const results = needle
-    ? catalogue.filter(b =>
-        `${b.title} ${b.author} ${b.narrator}`.toLowerCase().includes(needle),
-      )
-    : [];
+  const loading = useFirstLoad('discover');
+  const taste = useTaste();
+  const picks = picksForTaste(taste.genres, taste.authors);
 
   return (
     <Screen scroll>
       <Txt variant="display">Discover</Txt>
 
-      <View style={[styles.search, {backgroundColor: colors.raised}]}>
+      {/* Opens the full Search screen. */}
+      <Pressable
+        accessibilityRole="search"
+        accessibilityLabel="Search"
+        onPress={() => navigation.navigate('Search')}
+        style={[styles.search, {backgroundColor: colors.raised}]}>
         <Icon name="search" color="graphite" size={20} />
-        <TextInput
-          accessibilityLabel="Search"
-          placeholder="Titles, authors, clubs, people"
-          placeholderTextColor={colors.graphite}
-          value={query}
-          onChangeText={setQuery}
-          returnKeyType="search"
-          style={[styles.searchInput, {color: colors.ink}]}
-        />
-      </View>
+        <Txt color="graphite" style={styles.searchText}>
+          Titles, authors, clubs, people
+        </Txt>
+      </Pressable>
 
-      {needle ? (
-        <View style={styles.results}>
-          {results.length ? (
-            results.map(book => (
-              <BookRow
-                key={book.id}
-                book={book}
-                onPress={() => openBook(book.id)}
-              />
-            ))
-          ) : (
-            <Txt color="graphite" style={styles.empty}>
-              {`No books match “${query.trim()}”.`}
-            </Txt>
-          )}
-        </View>
+      {loading ? (
+        <LoadingState message="Finding your next listen" layout="tiles" />
       ) : (
         <>
           <ScrollView
@@ -171,18 +155,69 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
             ))}
           </ScrollView>
 
-          <Txt variant="heading" style={styles.heading}>
-            Trending with people you follow
-          </Txt>
-          {trending.map((t, i) => (
-            <BookRow
-              key={t.bookId}
-              book={getBook(t.bookId)}
-              rank={i + 1}
-              note={t.note}
-              onPress={() => openBook(t.bookId)}
-            />
-          ))}
+          {filterRules[filter] ? (
+            <>
+              <Txt variant="heading" style={styles.heading}>
+                {filter}
+              </Txt>
+              {catalogue.filter(filterRules[filter]).map(book => (
+                <BookRow
+                  key={book.id}
+                  book={book}
+                  onPress={() => openBook(book.id)}
+                />
+              ))}
+            </>
+          ) : (
+            <>
+              {picks.length ? (
+                <>
+                  <Txt variant="heading" style={styles.heading}>
+                    Picked for your taste
+                  </Txt>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.picks}
+                    contentContainerStyle={styles.picksContent}>
+                    {picks.slice(0, 8).map(book => (
+                      <Pressable
+                        key={book.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${book.title}, ${book.author}`}
+                        onPress={() => openBook(book.id)}
+                        style={styles.pick}>
+                        <BookCover book={book} size={108} />
+                        <Txt
+                          variant="caption"
+                          color="ink"
+                          weight="semibold"
+                          numberOfLines={2}
+                          style={styles.pickTitle}>
+                          {book.title}
+                        </Txt>
+                        <Txt variant="small" numberOfLines={1}>
+                          {book.author}
+                        </Txt>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </>
+              ) : null}
+              <Txt variant="heading" style={styles.heading}>
+                Trending with people you follow
+              </Txt>
+              {trending.map((t, i) => (
+                <BookRow
+                  key={t.bookId}
+                  book={getBook(t.bookId)}
+                  rank={i + 1}
+                  note={t.note}
+                  onPress={() => openBook(t.bookId)}
+                />
+              ))}
+            </>
+          )}
 
           <Txt variant="heading" style={styles.heading}>
             Listen by mood
@@ -193,7 +228,7 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
                 key={mood.label}
                 accessibilityRole="button"
                 accessibilityLabel={mood.label}
-                onPress={() => setQuery('')}
+                onPress={() => navigation.navigate('Mood', {mood: mood.label})}
                 style={[styles.mood, {backgroundColor: colors.raised}]}>
                 <Txt style={styles.moodLabel}>{mood.label}</Txt>
                 <MoodGlyph shape={mood.shape} color={colors.ink} />
@@ -215,23 +250,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 10,
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontFamily: fonts.sans.regular,
-    fontSize: 15,
-    padding: 0,
-  },
+  searchText: {flex: 1, marginLeft: 10},
   chips: {marginTop: 8, marginHorizontal: -20},
   chipsContent: {paddingHorizontal: 17},
   heading: {marginTop: 14, marginBottom: 6},
+  picks: {marginHorizontal: -20, marginTop: 8},
+  picksContent: {paddingHorizontal: 20},
+  pick: {width: 108, marginRight: 13},
+  pickTitle: {marginTop: 9},
   row: {flexDirection: 'row', alignItems: 'center', height: 76},
   rowMain: {flex: 1, flexDirection: 'row', alignItems: 'center'},
   rank: {width: 20, textAlign: 'center', marginRight: 14},
   rowText: {flex: 1, marginLeft: 14},
   note: {marginTop: 2},
-  results: {marginTop: 10},
-  empty: {marginTop: 20},
   moods: {
     flexDirection: 'row',
     flexWrap: 'wrap',

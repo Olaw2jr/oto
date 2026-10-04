@@ -10,12 +10,18 @@ type OtoLogoProps = {
   inverted?: boolean;
   // Hide from assistive tech when the word "oto" sits next to the mark.
   decorative?: boolean;
+  // What screen readers hear; defaults to the brand name.
+  label?: string;
+  // 'muted' draws ring and dot in graphite: the mark with no voice, e.g. offline.
+  tone?: 'brand' | 'muted';
 };
 
 const OtoLogo = ({
   size,
   inverted = false,
   decorative = false,
+  label = 'oto',
+  tone = 'brand',
 }: OtoLogoProps) => {
   const palette = inverted ? colors.dark : colors.light;
   const {ring, dot, viewBox} = logo;
@@ -27,21 +33,26 @@ const OtoLogo = ({
       viewBox={`0 0 ${viewBox} ${viewBox}`}
       accessible={!decorative}
       accessibilityRole={decorative ? undefined : 'image'}
-      accessibilityLabel={decorative ? undefined : 'oto'}
+      accessibilityLabel={decorative ? undefined : label}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'yes'}>
       <Circle
         cx={ring.cx}
         cy={ring.cy}
         r={ring.r}
         fill="none"
-        stroke={palette.ink}
+        stroke={tone === 'muted' ? palette.graphite : palette.ink}
         strokeWidth={ring.strokeWidth}
         strokeLinecap="round"
         strokeDasharray={ring.dashArray}
         rotation={ring.rotation}
         origin={`${ring.cx}, ${ring.cy}`}
       />
-      <Circle cx={dot.cx} cy={dot.cy} r={dot.r} fill={palette.kaki} />
+      <Circle
+        cx={dot.cx}
+        cy={dot.cy}
+        r={dot.r}
+        fill={tone === 'muted' ? palette.graphite : palette.kaki}
+      />
     </Svg>
   );
 };

@@ -104,7 +104,8 @@ Colours come from the theme tokens in `app/theme/tokens.js`, never from raw hex 
 **Requirements**
 
 - Node 18 (see `.nvmrc`)
-- Xcode with CocoaPods for iOS, and Android Studio with JDK 11 for Android. Follow the React Native 0.70 [environment setup](https://reactnative.dev/docs/0.70/environment-setup).
+- Xcode with CocoaPods for iOS, and Android Studio for Android. Follow the React Native 0.71 [environment setup](https://reactnative.dev/docs/0.71/environment-setup).
+- **JDK 11–17 for Android.** Newer JDKs (18+, including 21) can't run this project's Gradle 7 build. `npm run android` picks JDK 17 automatically when it's installed; if you run Gradle directly, set `export JAVA_HOME=$(/usr/libexec/java_home -v 17)` first.
 
 **Run it**
 
@@ -114,6 +115,10 @@ npm install
 npm start                 # Metro bundler
 npm run ios               # or: npm run android
 ```
+
+### After pulling native changes
+
+When a pull changes native code or native dependencies (anything under `android/` or `ios/`, React Native itself, or libraries like react-native-svg), a Metro reload isn't enough: rebuild and reinstall with `npm run android` (or `npm run ios`). A stale install shows errors such as `JavaScript version: 0.71.19 / Native version: 0.70.1` or `Error while updating property 'stroke' of a view managed by: RNSVGCircle`.
 
 ## Scripts
 

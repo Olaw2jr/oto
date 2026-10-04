@@ -15,7 +15,13 @@ export const librarySeed: Record<string, {status: Status; position?: number}> =
     greenlights: {status: 'finished', position: 1},
   };
 
-export const profileStats = {finished: 41, clubs: 4, following: 188};
+export const profileStats = {
+  finished: 41,
+  // Finished so far this year, before anything you finish in the app.
+  finishedThisYear: 9,
+  clubs: 4,
+  following: 188,
+};
 
 // Last five weeks as on the canvas, oldest first. The final day is today,
 // shown in kaki and not counted until it is over.
@@ -139,18 +145,35 @@ export const homeFriendActivity = {
   quote: 'Quiet, devastating, perfectly paced.',
 };
 
+export type FeedComment = {
+  id: string;
+  by: string;
+  ago: string;
+  body: string;
+  likes: number;
+  // Replies point at the top-level comment they answer.
+  parentId?: string;
+};
+
 export type FeedItem = {
   id: string;
   by: string;
   ago: string;
-  verb: 'started listening' | 'finished a book' | 'is listening' | 'posted in';
+  verb:
+    | 'started listening'
+    | 'finished a book'
+    | 'is listening'
+    | 'posted in'
+    | 'wants to listen'
+    | 'rated'
+    | 'made progress';
   bookId: string;
   clubId?: string;
   progress?: number;
   rating?: number;
   body: string;
   likes: number;
-  replies: {by: string; body: string}[];
+  comments: FeedComment[];
   spoiler?: boolean;
 };
 
@@ -164,9 +187,21 @@ export const feedSeed: FeedItem[] = [
     progress: 0.09,
     body: 'He writes about the cosmos like a room you can walk into.',
     likes: 12,
-    replies: [
-      {by: 'zawadi', body: 'Wait until the chapter on borders.'},
-      {by: 'daniel', body: 'Adding this to my list tonight.'},
+    comments: [
+      {
+        id: 'f1c1',
+        by: 'zawadi',
+        ago: '1 h ago',
+        body: 'Wait until the chapter on borders.',
+        likes: 3,
+      },
+      {
+        id: 'f1c2',
+        by: 'daniel',
+        ago: '40 min ago',
+        body: 'Adding this to my list tonight.',
+        likes: 1,
+      },
     ],
   },
   {
@@ -178,7 +213,45 @@ export const feedSeed: FeedItem[] = [
     rating: 4.5,
     body: 'Short, plain and heartbreaking. The kind of book you finish in one sitting.',
     likes: 18,
-    replies: [],
+    comments: [
+      {
+        id: 'f2c1',
+        by: 'mika',
+        ago: '3 h ago',
+        body: 'The ending is so quiet. Did the last chapter get you?',
+        likes: 4,
+      },
+      {
+        id: 'f2c2',
+        by: 'zawadi',
+        ago: '2 h ago',
+        body: 'Almost. I had to pause on the bus.',
+        likes: 2,
+        parentId: 'f2c1',
+      },
+      {
+        id: 'f2c3',
+        by: 'amani',
+        ago: '1 h ago',
+        body: 'Adding it to my list tonight.',
+        likes: 0,
+        parentId: 'f2c1',
+      },
+      {
+        id: 'f2c4',
+        by: 'daniel',
+        ago: '5 h ago',
+        body: 'Is it a good first Albom?',
+        likes: 1,
+      },
+      {
+        id: 'f2c5',
+        by: 'ren',
+        ago: '6 h ago',
+        body: 'Morrie on audio is something else.',
+        likes: 2,
+      },
+    ],
   },
   {
     id: 'f3',
@@ -189,6 +262,74 @@ export const feedSeed: FeedItem[] = [
     bookId: 'where-the-crawdads-sing',
     body: 'Slower than I expected, in the best way.',
     likes: 3,
-    replies: [],
+    comments: [],
   },
+  {
+    id: 'f4',
+    by: 'daniel',
+    ago: '4 days ago',
+    verb: 'wants to listen',
+    bookId: 'fire-blood-hbo-tie-in-edition',
+    body: '',
+    likes: 0,
+    comments: [],
+  },
+  {
+    id: 'f5',
+    by: 'ren',
+    ago: '3 days ago',
+    verb: 'rated',
+    bookId: 'dreamland',
+    rating: 4,
+    body: 'Beautifully restrained. I kept wanting to shake the narrator.',
+    likes: 6,
+    comments: [],
+  },
+  {
+    id: 'f6',
+    by: 'mika',
+    ago: '3 days ago',
+    verb: 'made progress',
+    bookId: 'greenlights',
+    progress: 0.41,
+    body: '',
+    likes: 2,
+    comments: [],
+  },
+];
+
+export const recentSearchesSeed = [
+  'crawdads',
+  'quiet literary novels',
+  'Project Hail Mary',
+];
+
+export const authorsForYou = [
+  'Delia Owens',
+  'Andy Weir',
+  'Mitch Albom',
+  'J. R. R. Tolkien',
+  'Matthew McConaughey',
+];
+
+export type CustomShelf = {id: string; name: string; bookIds: string[]};
+
+export const shelvesSeed: CustomShelf[] = [
+  {
+    id: 'quiet-nights',
+    name: 'Quiet nights',
+    bookIds: ['tuesdays-with-morrie', 'where-the-crawdads-sing'],
+  },
+  {
+    id: 'science',
+    name: 'Science',
+    bookIds: ['starry-messenger', 'project-hail-mary'],
+  },
+];
+
+export const editorsPicks = [
+  'where-the-crawdads-sing',
+  'tuesdays-with-morrie',
+  'the-silmarillion',
+  'greenlights',
 ];

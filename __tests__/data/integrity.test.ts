@@ -38,7 +38,7 @@ describe('mock data integrity', () => {
       ...Object.values(social.listeners).flatMap(l => l.people),
       social.homeFriendActivity.by,
       ...clubs.flatMap(c => c.posts.map(p => p.by)),
-      ...social.feedSeed.flatMap(f => [f.by, ...f.replies.map(r => r.by)]),
+      ...social.feedSeed.flatMap(f => [f.by, ...f.comments.map(c => c.by)]),
     ];
     expect(() => referenced.forEach(getPerson)).not.toThrow();
     expect(people.length).toBeGreaterThan(0);
@@ -68,5 +68,35 @@ describe('catalogue text', () => {
   it('puts Where the Crawdads Sing at chapter 14 for the club', () => {
     const book = getBook('where-the-crawdads-sing');
     expect(chapterAt(book, book.durationSec * 0.28)).toBe(14);
+  });
+});
+
+describe('book facts', () => {
+  it('reads the release year, language and genres', () => {
+    const book = getBook('where-the-crawdads-sing');
+    expect(book.releasedYear).toBeGreaterThan(1900);
+    expect(book.language).toBe('English');
+    expect(book.genres.length).toBeGreaterThan(0);
+    expect(book.genres.every(g => g === g.trim() && g.length > 0)).toBe(true);
+  });
+
+  it('gives every book a four-digit year and a language', () => {
+    for (const book of catalogue) {
+      expect(String(book.releasedYear)).toMatch(/^(19|20)\d\d$/);
+      expect(book.language).toBe('English');
+    }
+  });
+});
+
+describe('feed comments', () => {
+  it('only nests replies under top-level comments of the same post', () => {
+    for (const item of social.feedSeed) {
+      const ids = new Set(
+        item.comments.filter(c => !c.parentId).map(c => c.id),
+      );
+      for (const c of item.comments.filter(x => x.parentId)) {
+        expect(ids.has(c.parentId!)).toBe(true);
+      }
+    }
   });
 });

@@ -11,16 +11,58 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const SETTINGS_STORAGE_KEY = 'oto.settings';
 
+export type Notifications = 'clubs' | 'all' | 'none';
+export type SkipIntervals = {back: number; forward: number};
+
+export const SKIP_OPTIONS: SkipIntervals[] = [
+  {back: 10, forward: 10},
+  {back: 15, forward: 30},
+  {back: 30, forward: 30},
+];
+
+export const NOTIFICATION_LABELS: Record<Notifications, string> = {
+  clubs: 'Club sessions',
+  all: 'Everything',
+  none: 'Nothing',
+};
+
 export type Settings = {
   wifiOnly: boolean;
   privateProfile: boolean;
   spoilerSafe: boolean;
+  notifications: Notifications;
+  skip: SkipIntervals;
+  // Books to finish this year.
+  goal: number;
 };
+
+export const GOAL_OPTIONS = [6, 12, 24, 36, 52];
 
 const defaults: Settings = {
   wifiOnly: true,
   privateProfile: false,
   spoilerSafe: true,
+  notifications: 'clubs',
+  skip: {back: 15, forward: 30},
+  goal: 12,
+};
+
+// Keeps only stored values of the right shape.
+const valid = (key: string, value: unknown) => {
+  if (key === 'notifications') {
+    return typeof value === 'string' && value in NOTIFICATION_LABELS;
+  }
+  if (key === 'goal') {
+    return GOAL_OPTIONS.includes(value as number);
+  }
+  if (key === 'skip') {
+    return SKIP_OPTIONS.some(
+      o =>
+        o.back === (value as SkipIntervals)?.back &&
+        o.forward === (value as SkipIntervals)?.forward,
+    );
+  }
+  return key in defaults && typeof value === 'boolean';
 };
 
 type SettingsValue = Settings & {
@@ -39,9 +81,7 @@ export const SettingsProvider = ({children}: {children: ReactNode}) => {
         setSettings(current => ({
           ...current,
           ...Object.fromEntries(
-            Object.entries(stored).filter(
-              ([key, value]) => key in defaults && typeof value === 'boolean',
-            ),
+            Object.entries(stored).filter(([key, value]) => valid(key, value)),
           ),
         }));
       })

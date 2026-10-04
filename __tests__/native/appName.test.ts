@@ -22,8 +22,9 @@ describe('oto native identity', () => {
     expect(
       read('android/app/src/main/java/tz/co/oto/MainActivity.java'),
     ).toContain(`return "${moduleName}";`);
+    // React Native 0.71's RCTAppDelegate takes the module name as a property.
     expect(read('ios/Eyy/AppDelegate.mm')).toContain(
-      `RCTAppSetupDefaultRootView(bridge, @"${moduleName}"`,
+      `self.moduleName = @"${moduleName}";`,
     );
   });
 
@@ -31,9 +32,8 @@ describe('oto native identity', () => {
     expect(read('android/app/build.gradle')).toContain(
       'applicationId "tz.co.oto"',
     );
-    expect(read('android/app/src/main/AndroidManifest.xml')).toContain(
-      'package="tz.co.oto"',
-    );
+    // Since React Native 0.71 the package lives in build.gradle as namespace.
+    expect(read('android/app/build.gradle')).toContain('namespace "tz.co.oto"');
     expect(read('ios/Eyy.xcodeproj/project.pbxproj')).toMatch(
       /PRODUCT_BUNDLE_IDENTIFIER = "?tz\.co\.oto"?;/,
     );

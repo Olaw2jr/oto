@@ -70,16 +70,6 @@ describe('BookScreen', () => {
     ).toBeOnTheScreen();
   });
 
-  it('keeps the narrator, genre and synopsis from the original app', async () => {
-    await setup();
-    expect(
-      screen.getByText('Narrated by Cassandra Campbell'),
-    ).toBeOnTheScreen();
-    expect(screen.getByRole('header', {name: 'About'})).toBeOnTheScreen();
-    fireEvent.press(screen.getByRole('button', {name: 'Read more'}));
-    expect(screen.getByRole('button', {name: 'Show less'})).toBeOnTheScreen();
-  });
-
   it('goes back', async () => {
     const navigation = await setup();
     fireEvent.press(screen.getByRole('button', {name: 'Back'}));

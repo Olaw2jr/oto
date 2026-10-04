@@ -2,16 +2,22 @@ import React, {useState} from 'react';
 import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {PersonLink} from '../../components/PersonLink';
+import {LoadingState} from '../../components/LoadingState';
+import {NotificationsSheet} from '../../components/NotificationsSheet';
 import OtoLogo from '../../components/OtoLogo';
 import {chapterAt, getBook} from '../../data/catalogue';
 import {getClub, MY_CLUB} from '../../data/clubs';
 import {formatClock} from '../../data/format';
 import {getPerson, ME} from '../../data/people';
+import {openPerson} from '../../navigator/openPerson';
 import {RootStackScreenProps, TabScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
-import {useSettings} from '../../state/settings';
+import {NOTIFICATION_LABELS, useSettings} from '../../state/settings';
+import {shareClub} from '../../utils/share';
 import {usePlayer} from '../../state/player';
 import {useSocial} from '../../state/social';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {fonts} from '../../theme/typography';
 import {
@@ -22,6 +28,8 @@ import {
   IconButton,
   ProgressBar,
   Screen,
+  Sheet,
+  SheetRow,
   Switch,
   Txt,
 } from '../../ui';
@@ -39,11 +47,13 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
   const clubId =
     (route.params as {clubId?: string} | undefined)?.clubId ?? MY_CLUB;
   const club = getClub(clubId);
+  const loading = useFirstLoad(`club:${club.id}`);
   const book = getBook(club.bookId);
   const myPosition = library.positionSec(book.id);
   const settings = useSettings();
   const [spoilerSafe, setSpoilerSafe] = useState(settings.spoilerSafe);
   const [draft, setDraft] = useState('');
+  const [sheet, setSheet] = useState<'more' | 'notifications' | null>(null);
 
   const joined = social.joined(club.id);
   const going = social.going(club.id);
@@ -63,6 +73,23 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
     social.addClubPost(club.id, draft.trim());
     setDraft('');
   };
+
+  if (loading) {
+    return (
+      <Screen>
+        {route.name === 'Club' ? (
+          <View style={styles.bar}>
+            <IconButton
+              icon="back"
+              label="Back"
+              onPress={() => navigation.goBack()}
+            />
+          </View>
+        ) : null}
+        <LoadingState message={`Opening ${club.name}`} layout="list" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen
@@ -100,7 +127,7 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
         ) : (
           <View />
         )}
-        <IconButton icon="more" label="More" onPress={() => {}} />
+        <IconButton icon="more" label="More" onPress={() => setSheet('more')} />
       </View>
 
       <View style={styles.header}>
@@ -128,9 +155,9 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
         <View style={styles.bell}>
           <IconButton
             icon="bell"
-            label="Notifications"
+            label="Club notifications"
             background="segment"
-            onPress={() => {}}
+            onPress={() => setSheet('notifications')}
           />
         </View>
       </View>
@@ -209,7 +236,11 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
         const person = getPerson(post.by);
         return (
           <View key={post.id} style={styles.post}>
-            <Avatar name={person.name} size={34} />
+            <PersonLink
+              personId={post.by}
+              onOpen={id => openPerson(navigation, id)}>
+              <Avatar name={person.name} size={34} />
+            </PersonLink>
             <View style={styles.postBody}>
               <View style={[styles.row, styles.wrap]}>
                 <Txt variant="caption" color="ink" weight="semibold">
@@ -277,6 +308,30 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
             : `${hidden} posts ahead of you are hidden`}
         </Txt>
       ) : null}
+      <Sheet
+        visible={sheet === 'more'}
+        title={club.name}
+        onClose={() => setSheet(null)}>
+        <SheetRow
+          icon="share"
+          label="Share club"
+          onPress={() => {
+            setSheet(null);
+            shareClub(club);
+          }}
+        />
+        <SheetRow
+          icon="bell"
+          label="Notifications"
+          value={NOTIFICATION_LABELS[settings.notifications]}
+          accessibilityLabel="Notifications"
+          onPress={() => setSheet('notifications')}
+        />
+      </Sheet>
+      <NotificationsSheet
+        visible={sheet === 'notifications'}
+        onClose={() => setSheet(null)}
+      />
     </Screen>
   );
 };

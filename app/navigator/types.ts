@@ -22,9 +22,19 @@ export type RootStackParamList = {
   // Signed in
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   Book: {bookId: string};
+  BookDetails: {bookId: string};
   Player: undefined;
   Club: {clubId: string};
   UpdateCompose: {bookId?: string} | undefined;
+  Thread: {itemId: string};
+  Search: undefined;
+  Catalog: undefined;
+  Library: undefined;
+  Shelf: {shelfId: string};
+  SaveToShelf: {bookId: string};
+  Mood: {mood: string};
+  Person: {personId: string};
+  Author: {name: string};
   Settings: undefined;
 };
 
