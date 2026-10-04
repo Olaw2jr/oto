@@ -95,3 +95,14 @@ describe('player', () => {
     }
   });
 });
+
+describe('library ratings', () => {
+  it('stores your rating for a book', () => {
+    const {result} = renderHook(() => useLibrary(), {wrapper});
+    expect(result.current.rating('project-hail-mary')).toBeUndefined();
+    act(() => result.current.setRating('project-hail-mary', 4));
+    expect(result.current.rating('project-hail-mary')).toBe(4);
+    act(() => result.current.setRating('project-hail-mary', undefined));
+    expect(result.current.rating('project-hail-mary')).toBeUndefined();
+  });
+});

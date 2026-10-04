@@ -9,6 +9,7 @@ export {IconButton} from './IconButton';
 export {ProgressBar} from './ProgressBar';
 export {Segmented} from './Segmented';
 export {Screen} from './Screen';
+export {StarRating} from './StarRating';
 export {Switch} from './Switch';
 export {TextField} from './TextField';
 export {TextLink} from './TextLink';
