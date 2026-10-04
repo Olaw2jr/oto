@@ -10,7 +10,8 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "build:tailwind": "tailwindcss --input input.css --output tailwind.css --no-autoprefixer && tailwind-rn",
     "dev:tailwind": "concurrently \"tailwindcss --input input.css --output tailwind.css --no-autoprefixer --watch\" \"tailwind-rn --watch\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint && npm test"
   },
   "dependencies": {
     "@heroicons/react": "^2.0.13",
@@ -30,11 +31,11 @@
     "@babel/core": "^7.12.9",
     "@babel/runtime": "^7.12.5",
     "@react-native-community/eslint-config": "^2.0.0",
-    "@tailwindcss/typography": "^0.5.4",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^11.5.4",
     "@tsconfig/react-native": "^2.0.0",
     "@types/jest": "^29.5.14",
+    "@types/node": "^18.19.130",
     "@types/react-native": "^0.69.1",
     "@types/react-test-renderer": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
