@@ -1,11 +1,24 @@
-import React, { ReactNode, useState } from "react";
+import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useTailwind } from "tailwind-rn";
 
-const CommentForm = ({ handleSubmit, submitLabel }) => {
+type CommentFormProps = {
+  handleSubmit: (text: string) => void;
+  submitLabel: string;
+};
+
+const CommentForm = ({ handleSubmit, submitLabel }: CommentFormProps) => {
     const tailwind = useTailwind();
-    const[text setText] = useState('')
+    const [text, setText] = useState("");
+
+    const onSubmit = () => {
+      if (!text.trim()) {
+        return;
+      }
+      handleSubmit(text);
+      setText("");
+    };
 
     return (
         <View style={tailwind("flex px-4")}>
@@ -24,10 +37,13 @@ const CommentForm = ({ handleSubmit, submitLabel }) => {
                 )}
                 numberOfLines={3}
                 placeholder="Type Your Comment"
+                value={text}
+                onChangeText={setText}
               />
             </View>
             <View style={tailwind("flex items-end")}>
               <TouchableOpacity
+                onPress={onSubmit}
                 style={tailwind(
                   "bg-slate-600 py-1 px-4 border border-slate-400 rounded-md"
                 )}
@@ -37,7 +53,7 @@ const CommentForm = ({ handleSubmit, submitLabel }) => {
                     "text-slate-400 font-medium text-base tracking-wide"
                   )}
                 >
-                  Post Comment
+                  {submitLabel}
                 </Text>
               </TouchableOpacity>
             </View>
