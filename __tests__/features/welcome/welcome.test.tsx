@@ -149,11 +149,11 @@ describe('SignUpScreen', () => {
     const terms = screen.getByRole('checkbox', {
       name: 'I agree to the Terms and Privacy Policy.',
     });
-    expect(terms).toHaveAccessibilityState({checked: true});
+    expect(terms).toBeChecked();
     fireEvent.press(terms);
     expect(
       screen.getByRole('button', {name: 'Create account'}),
-    ).toHaveAccessibilityState({disabled: true});
+    ).toBeDisabled();
 
     fireEvent.press(terms);
     await press(screen.getByRole('button', {name: 'Create account'}));
