@@ -1,6 +1,8 @@
 // Mock social data following the oto design canvas.
 
-export type Status = 'want' | 'listening' | 'finished';
+import type {LibraryStatus} from '../domain/library';
+
+export type Status = LibraryStatus;
 
 export const CURRENT_BOOK = 'where-the-crawdads-sing';
 
