@@ -30,3 +30,7 @@ UI follows the [oto design canvas](https://claude.ai/artifact/NtXhA3VnydXvCvepVi
 - Shippori Mincho for titles and book names, Figtree for everything else.
 - Kaki (the vermilion accent) appears at most once per screen.
 - Touch targets are at least 44 pt, and text contrast is at least 4.5:1.
+
+## React Native 0.70 gotchas
+
+- Flexbox `gap`, `rowGap` and `columnGap` arrived in React Native 0.71 and are silently ignored on 0.70. Use margins until the upgrade. A test enforces this.

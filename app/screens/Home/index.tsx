@@ -15,9 +15,9 @@ import CurrentlyCard from '../../components/CurrentlyCard';
 import LikeButton from '../../components/LikeButton';
 import CommentButton from '../../components/CommentButton';
 import state from '../../utils/MockData';
-import {UpdateStackScreenProps} from '../../navigator/types';
+import {TabScreenProps} from '../../navigator/types';
 
-const HomeScreen = ({navigation}: UpdateStackScreenProps<'HomeScreen'>) => {
+const HomeScreen = ({navigation}: TabScreenProps<'Home'>) => {
   const tailwind = useTailwind();
 
   return (

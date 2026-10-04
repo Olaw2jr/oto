@@ -1,32 +1,48 @@
-import {NavigatorScreenParams} from '@react-navigation/native';
+import {
+  CompositeScreenProps,
+  NavigatorScreenParams,
+} from '@react-navigation/native';
+import {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 import {Book} from '../utils/MockData';
 
-export type UpdateStackParamList = {
-  HomeScreen: undefined;
-  UpdateDetailsScreen: undefined;
-};
-
 export type TabParamList = {
-  UpdateStack: NavigatorScreenParams<UpdateStackParamList> | undefined;
-  DiscoverScreen: undefined;
-  BoookScreen: undefined;
-  ProfileScreen: undefined;
+  Home: undefined;
+  Discover: undefined;
+  Following: undefined;
+  Clubs: undefined;
+  You: undefined;
 };
 
 export type RootStackParamList = {
-  TabScreen: NavigatorScreenParams<TabParamList> | undefined;
+  // Signed out
+  Splash: undefined;
+  Onboarding: undefined;
+  SignIn: undefined;
+  SignUp: undefined;
+  // Signed in
+  Tabs: NavigatorScreenParams<TabParamList> | undefined;
+  Book: {bookId: string};
+  Player: undefined;
+  Club: {clubId: string};
+  UpdateCompose: {bookId?: string} | undefined;
+  Settings: undefined;
+  // Legacy routes from before the rebrand, removed as screens are replaced.
   PlayerScreen: undefined;
   BooksScreen: undefined;
   SingleBooksScreen: {book: Book};
+  UpdateDetailsScreen: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> =
   NativeStackScreenProps<RootStackParamList, T>;
 
-export type UpdateStackScreenProps<T extends keyof UpdateStackParamList> =
-  NativeStackScreenProps<UpdateStackParamList, T>;
+// Tab screens can also navigate to routes on the root stack.
+export type TabScreenProps<T extends keyof TabParamList> = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, T>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 declare global {
   namespace ReactNavigation {

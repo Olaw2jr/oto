@@ -1,77 +1,28 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {
-  HomeIcon,
-  MagnifyingGlassIcon,
-  BookOpenIcon,
-  UserIcon,
-} from 'react-native-heroicons/outline';
 
+import ComingSoonScreen from '../screens/ComingSoonScreen';
 import DiscoverScreen from '../screens/Discover';
-import BoookScreen from '../screens/MyBooks';
-import ProfileScreen from '../screens/Profile';
-import UpdateStack from './UpdateStack';
+import HomeScreen from '../screens/Home';
+import MyBooksScreen from '../screens/MyBooks';
+import {TabBar} from './TabBar';
 import {TabParamList} from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
-const TabsScreen = () => {
-  return (
-    <Tab.Navigator
-      initialRouteName="UpdateStack"
-      screenOptions={{
-        tabBarActiveTintColor: '#22d3ee',
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#0f172a',
-          borderTopWidth: 0,
-          position: 'absolute',
-          elevation: 0,
-          paddingBottom: 4,
-          opacity: 0.9,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-        },
-      }}>
-      <Tab.Screen
-        name="UpdateStack"
-        component={UpdateStack}
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({color, size}) => <HomeIcon color={color} size={size} />,
-        }}
-      />
-      <Tab.Screen
-        name="DiscoverScreen"
-        component={DiscoverScreen}
-        options={{
-          tabBarLabel: 'Discover',
-          tabBarIcon: ({color, size}) => (
-            <MagnifyingGlassIcon color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="BoookScreen"
-        component={BoookScreen}
-        options={{
-          tabBarLabel: 'My Books',
-          tabBarIcon: ({color, size}) => (
-            <BookOpenIcon color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="ProfileScreen"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({color, size}) => <UserIcon color={color} size={size} />,
-        }}
-      />
-    </Tab.Navigator>
-  );
-};
+const FollowingScreen = () => <ComingSoonScreen title="Following" />;
+const ClubsScreen = () => <ComingSoonScreen title="Clubs" />;
 
-export default TabsScreen;
+const Tabs = () => (
+  <Tab.Navigator
+    screenOptions={{headerShown: false}}
+    tabBar={props => <TabBar {...props} />}>
+    <Tab.Screen name="Home" component={HomeScreen} />
+    <Tab.Screen name="Discover" component={DiscoverScreen} />
+    <Tab.Screen name="Following" component={FollowingScreen} />
+    <Tab.Screen name="Clubs" component={ClubsScreen} />
+    <Tab.Screen name="You" component={MyBooksScreen} />
+  </Tab.Navigator>
+);
+
+export default Tabs;
