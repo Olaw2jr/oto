@@ -34,6 +34,7 @@
     "@testing-library/react-native": "^11.5.4",
     "@tsconfig/react-native": "^2.0.0",
     "@types/jest": "^29.5.14",
+    "@types/node": "^18.19.130",
     "@types/react-native": "^0.69.1",
     "@types/react-test-renderer": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^5.29.0",

@@ -1,0 +1,33 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "app/assets/fonts/Figtree-Bold.ttf",
+      "sha1": "c9ad837b0fea9924ef0de0b679d35ac6d956fed3"
+    },
+    {
+      "path": "app/assets/fonts/Figtree-Medium.ttf",
+      "sha1": "5a2b9db2a1fd3f43439e7d2a062c69c6eaba4cc3"
+    },
+    {
+      "path": "app/assets/fonts/Figtree-OFL.txt",
+      "sha1": "cb6b70d11a028e30a97f267abc3a3060c1447958"
+    },
+    {
+      "path": "app/assets/fonts/Figtree-Regular.ttf",
+      "sha1": "12d08905ace747fa86ea5e3c70fcc4b84c690383"
+    },
+    {
+      "path": "app/assets/fonts/Figtree-SemiBold.ttf",
+      "sha1": "e38d5cfa171e06c5eaeec8749b3a60c428a3d0c9"
+    },
+    {
+      "path": "app/assets/fonts/ShipporiMincho-Medium.ttf",
+      "sha1": "23c35b685a9d86bbdabede55e169d1d58436cb43"
+    },
+    {
+      "path": "app/assets/fonts/ShipporiMincho-OFL.txt",
+      "sha1": "9746ab0be416432aa36412c7840005f4b77576fe"
+    }
+  ]
+}
