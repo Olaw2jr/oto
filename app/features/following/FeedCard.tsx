@@ -26,7 +26,7 @@ export const FeedCard = ({
   onReported,
 }: FeedCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const {colors} = useTheme();
+  const {colors, colorScheme} = useTheme();
   const social = useSocial();
   const library = useLibrary();
   const person = getPerson(item.by);
@@ -97,7 +97,19 @@ export const FeedCard = ({
         <View
           accessibilityRole="menu"
           accessibilityLabel="Update options"
-          style={[styles.menu, {backgroundColor: colors.surface}]}>
+          style={[
+            styles.menu,
+            // On dark cards the surface colour would blend in; lift it.
+            colorScheme === 'dark'
+              ? [
+                  styles.menuEdge,
+                  {
+                    backgroundColor: colors.raised,
+                    borderColor: colors.hairline,
+                  },
+                ]
+              : {backgroundColor: colors.surface},
+          ]}>
           {[
             {
               label: 'Hide this update',
@@ -273,6 +285,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: {width: 0, height: 12},
   },
+  menuEdge: {borderWidth: 1},
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
