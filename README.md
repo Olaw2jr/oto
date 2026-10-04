@@ -60,7 +60,7 @@ The design takes its cues from Kenya Hara's emptiness and restraint, with Apple'
 
 ## Status
 
-This repository is a React Native app that started life as **Eyy** and is being rebranded to oto. It runs on mock data today.
+This repository is a React Native app that started life as **Eyy** and has been rebranded to oto. It runs on mock data today.
 
 | Area | State |
 | --- | --- |
@@ -95,7 +95,7 @@ Colours come from the theme tokens in `app/theme/tokens.js`, never from raw hex 
 
 - [React Native](https://reactnative.dev/) 0.70 with TypeScript
 - [React Navigation](https://reactnavigation.org/) for stacks and tabs
-- [tailwind-rn](https://github.com/vadimdemedes/tailwind-rn) for styling, with `bg-paper dark:bg-paper-dark` style token pairs
+- A themed UI kit (`app/ui`) built on shared design tokens (`app/theme`), with light and dark palettes
 - [react-native-svg](https://github.com/software-mansion/react-native-svg) and [Heroicons](https://heroicons.com/) for graphics
 - Jest and React Native Testing Library for tests
 
@@ -125,8 +125,6 @@ npm run ios               # or: npm run android
 | `npm run lint` | Runs ESLint over JS/TS sources |
 | `npm run typecheck` | Type-checks the project with `tsc --noEmit` |
 | `npm run check` | Runs typecheck, lint and tests together |
-| `npm run build:tailwind` | Regenerates `tailwind.json` for `tailwind-rn` |
-| `npm run dev:tailwind` | Watches and regenerates `tailwind.json` |
 | `npm run icons` | Regenerates the app icons |
 
 ## Project layout
@@ -134,13 +132,17 @@ npm run ios               # or: npm run android
 ```
 app/
   assets/      images and fonts
-  components/  shared UI components
-  navigator/   stack and tab navigators
-  screens/     one folder per screen
-  theme/       design tokens
-  utils/       mock data and helpers
+  components/  shared components (logo, covers, mini player)
+  data/        catalogue and mock social data
+  features/    one folder per area: welcome, home, discover, book,
+               player, following, club, you, settings
+  navigator/   root stack, tabs and the tab bar
+  state/       session, library, player, social and settings
+  theme/       design tokens, fonts and the theme provider
+  ui/          the themed UI kit
 docs/
   images/      logo, banner and App Store images
+scripts/       icon generator
 __tests__/     Jest tests, mirroring app/
 ```
 
