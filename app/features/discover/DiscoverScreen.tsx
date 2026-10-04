@@ -6,9 +6,11 @@ import {BookCover} from '../../components/BookCover';
 import {CatalogueBook, getBook} from '../../data/catalogue';
 import {discoverFilters, moods, trending} from '../../data/social';
 import {TabScreenProps} from '../../navigator/types';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useLibrary} from '../../state/library';
 import {useTheme} from '../../theme/ThemeProvider';
 import {Chip, Icon, IconButton, Screen, Txt} from '../../ui';
+import {DiscoverSkeleton} from './DiscoverSkeleton';
 
 const MoodGlyph = ({shape, color}: {shape: string; color: string}) => (
   <Svg width={26} height={26} viewBox="0 0 26 26">
@@ -111,6 +113,7 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
   const {colors} = useTheme();
   const [filter, setFilter] = useState(discoverFilters[0]);
   const openBook = (id: string) => navigation.navigate('Book', {bookId: id});
+  const loading = useFirstLoad('discover');
 
   return (
     <Screen scroll>
@@ -128,52 +131,56 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
         </Txt>
       </Pressable>
 
-      <>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.chips}
-          contentContainerStyle={styles.chipsContent}>
-          {discoverFilters.map(f => (
-            <Chip
-              key={f}
-              label={f}
-              selected={f === filter}
-              onPress={() => setFilter(f)}
+      {loading ? (
+        <DiscoverSkeleton />
+      ) : (
+        <>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chips}
+            contentContainerStyle={styles.chipsContent}>
+            {discoverFilters.map(f => (
+              <Chip
+                key={f}
+                label={f}
+                selected={f === filter}
+                onPress={() => setFilter(f)}
+              />
+            ))}
+          </ScrollView>
+
+          <Txt variant="heading" style={styles.heading}>
+            Trending with people you follow
+          </Txt>
+          {trending.map((t, i) => (
+            <BookRow
+              key={t.bookId}
+              book={getBook(t.bookId)}
+              rank={i + 1}
+              note={t.note}
+              onPress={() => openBook(t.bookId)}
             />
           ))}
-        </ScrollView>
 
-        <Txt variant="heading" style={styles.heading}>
-          Trending with people you follow
-        </Txt>
-        {trending.map((t, i) => (
-          <BookRow
-            key={t.bookId}
-            book={getBook(t.bookId)}
-            rank={i + 1}
-            note={t.note}
-            onPress={() => openBook(t.bookId)}
-          />
-        ))}
-
-        <Txt variant="heading" style={styles.heading}>
-          Listen by mood
-        </Txt>
-        <View style={styles.moods}>
-          {moods.map(mood => (
-            <Pressable
-              key={mood.label}
-              accessibilityRole="button"
-              accessibilityLabel={mood.label}
-              onPress={() => navigation.navigate('Search')}
-              style={[styles.mood, {backgroundColor: colors.raised}]}>
-              <Txt style={styles.moodLabel}>{mood.label}</Txt>
-              <MoodGlyph shape={mood.shape} color={colors.ink} />
-            </Pressable>
-          ))}
-        </View>
-      </>
+          <Txt variant="heading" style={styles.heading}>
+            Listen by mood
+          </Txt>
+          <View style={styles.moods}>
+            {moods.map(mood => (
+              <Pressable
+                key={mood.label}
+                accessibilityRole="button"
+                accessibilityLabel={mood.label}
+                onPress={() => navigation.navigate('Search')}
+                style={[styles.mood, {backgroundColor: colors.raised}]}>
+                <Txt style={styles.moodLabel}>{mood.label}</Txt>
+                <MoodGlyph shape={mood.shape} color={colors.ink} />
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
     </Screen>
   );
 };
