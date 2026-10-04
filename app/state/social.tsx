@@ -25,6 +25,8 @@ export type NewUpdate = {
 type SocialValue = {
   // Your feed, without hidden or reported updates and muted people.
   feed: FeedItem[];
+  // Any update by id, including hidden ones (e.g. a thread you just reported).
+  findUpdate: (itemId: string) => FeedItem | undefined;
   hideUpdate: (itemId: string) => void;
   reportUpdate: (itemId: string) => void;
   mute: (personId: string) => void;
@@ -137,6 +139,7 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
   const value = useMemo<SocialValue>(
     () => ({
       feed: feed.filter(item => !hidden.has(item.id) && !muted.has(item.by)),
+      findUpdate: id => feed.find(item => item.id === id),
       hideUpdate: id => setHidden(s => new Set(s).add(id)),
       // Reports go nowhere yet (no backend); the update is hidden for you.
       reportUpdate: id => setHidden(s => new Set(s).add(id)),

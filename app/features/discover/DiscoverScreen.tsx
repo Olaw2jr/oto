@@ -4,7 +4,8 @@ import Svg, {Circle, Path} from 'react-native-svg';
 
 import {BookCover} from '../../components/BookCover';
 import {LoadingState} from '../../components/LoadingState';
-import {CatalogueBook, getBook} from '../../data/catalogue';
+import {catalogue, CatalogueBook, getBook} from '../../data/catalogue';
+import {filterRules} from '../../data/moods';
 import {discoverFilters, moods, trending} from '../../data/social';
 import {TabScreenProps} from '../../navigator/types';
 import {useFirstLoad} from '../../state/firstLoad';
@@ -150,18 +151,35 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
             ))}
           </ScrollView>
 
-          <Txt variant="heading" style={styles.heading}>
-            Trending with people you follow
-          </Txt>
-          {trending.map((t, i) => (
-            <BookRow
-              key={t.bookId}
-              book={getBook(t.bookId)}
-              rank={i + 1}
-              note={t.note}
-              onPress={() => openBook(t.bookId)}
-            />
-          ))}
+          {filterRules[filter] ? (
+            <>
+              <Txt variant="heading" style={styles.heading}>
+                {filter}
+              </Txt>
+              {catalogue.filter(filterRules[filter]).map(book => (
+                <BookRow
+                  key={book.id}
+                  book={book}
+                  onPress={() => openBook(book.id)}
+                />
+              ))}
+            </>
+          ) : (
+            <>
+              <Txt variant="heading" style={styles.heading}>
+                Trending with people you follow
+              </Txt>
+              {trending.map((t, i) => (
+                <BookRow
+                  key={t.bookId}
+                  book={getBook(t.bookId)}
+                  rank={i + 1}
+                  note={t.note}
+                  onPress={() => openBook(t.bookId)}
+                />
+              ))}
+            </>
+          )}
 
           <Txt variant="heading" style={styles.heading}>
             Listen by mood
@@ -172,7 +190,7 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
                 key={mood.label}
                 accessibilityRole="button"
                 accessibilityLabel={mood.label}
-                onPress={() => navigation.navigate('Search')}
+                onPress={() => navigation.navigate('Mood', {mood: mood.label})}
                 style={[styles.mood, {backgroundColor: colors.raised}]}>
                 <Txt style={styles.moodLabel}>{mood.label}</Txt>
                 <MoodGlyph shape={mood.shape} color={colors.ink} />

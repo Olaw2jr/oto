@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
@@ -11,6 +11,7 @@ import {RootStackScreenProps} from '../../navigator/types';
 import {useFirstLoad} from '../../state/firstLoad';
 import {useLibrary} from '../../state/library';
 import {usePlayer} from '../../state/player';
+import {shareBook} from '../../utils/share';
 import {
   Avatar,
   Button,
@@ -19,6 +20,8 @@ import {
   IconButton,
   Screen,
   Segmented,
+  Sheet,
+  SheetRow,
   TextLink,
   Txt,
 } from '../../ui';
@@ -50,6 +53,7 @@ const listenersLine = (bookId: string) => {
 
 const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
   const book = getBook(route.params.bookId);
+  const [moreOpen, setMoreOpen] = useState(false);
   const loading = useFirstLoad(`book:${book.id}`);
   const library = useLibrary();
   const player = usePlayer();
@@ -94,7 +98,11 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
               navigation.navigate('SaveToShelf', {bookId: book.id})
             }
           />
-          <IconButton icon="more" label="More" onPress={() => {}} />
+          <IconButton
+            icon="more"
+            label="More"
+            onPress={() => setMoreOpen(true)}
+          />
         </View>
       </View>
 
@@ -133,7 +141,7 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
             label="Share"
             size={52}
             background="segment"
-            onPress={() => {}}
+            onPress={() => shareBook(book)}
           />
         </View>
       </View>
@@ -216,6 +224,35 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
         />
         <Icon name="forward" size={18} color="graphite" />
       </View>
+      <Sheet
+        visible={moreOpen}
+        title={book.title}
+        onClose={() => setMoreOpen(false)}>
+        <SheetRow
+          icon="share"
+          label="Share"
+          onPress={() => {
+            setMoreOpen(false);
+            shareBook(book);
+          }}
+        />
+        <SheetRow
+          icon="bookmark"
+          label="Save to a list"
+          onPress={() => {
+            setMoreOpen(false);
+            navigation.navigate('SaveToShelf', {bookId: book.id});
+          }}
+        />
+        <SheetRow
+          icon="book"
+          label="Details"
+          onPress={() => {
+            setMoreOpen(false);
+            navigation.navigate('BookDetails', {bookId: book.id});
+          }}
+        />
+      </Sheet>
     </Screen>
   );
 };
