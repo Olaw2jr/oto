@@ -40,6 +40,11 @@ describe('colors', () => {
     );
   });
 
+  it.each(schemes)('keeps button text readable on ink in %s mode', scheme => {
+    const {ink, onInk} = colors[scheme];
+    expect(contrast(onInk, ink)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it.each(schemes)('keeps body text at 4.5:1 or more in %s mode', scheme => {
     const {paper, surface, ink, graphite} = colors[scheme];
     for (const bg of [paper, surface]) {
