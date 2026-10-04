@@ -5,5 +5,10 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native[^/]*|@react-native(-community)?|@react-navigation|tailwind-rn)/)',
   ],
-  testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/', 'test-utils'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/android/',
+    '/ios/',
+    'test-utils',
+  ],
 };

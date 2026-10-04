@@ -1,10 +1,10 @@
-import React from "react";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from 'react';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-import TabScreen from "./Tabs";
-import PlayerScreen from "../screens/Player";
-import BooksScreen from "../screens/Books";
-import SingleBooksScreen from "../screens/Books/single";
+import TabScreen from './Tabs';
+import PlayerScreen from '../screens/Player';
+import BooksScreen from '../screens/Books';
+import SingleBooksScreen from '../screens/Books/single';
 
 export type StackPrams = {
   TabScreen: any;
@@ -17,7 +17,7 @@ const Stack = createNativeStackNavigator<StackPrams>();
 
 const StackNavigator = () => {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="TabScreen" component={TabScreen} />
       <Stack.Screen name="PlayerScreen" component={PlayerScreen} />
       <Stack.Screen name="BooksScreen" component={BooksScreen} />

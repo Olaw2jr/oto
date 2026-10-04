@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Image,
   ScrollView,
@@ -7,110 +7,102 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
 
-import { SafeAreaView } from "react-native-safe-area-context";
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {
   StarIcon,
   ChevronLeftIcon,
   HandThumbUpIcon,
   ChatBubbleLeftRightIcon,
-} from "react-native-heroicons/outline";
-import { useTailwind } from "tailwind-rn";
-import Comments from "./components/Comments";
+} from 'react-native-heroicons/outline';
+import {useTailwind} from 'tailwind-rn';
+import Comments from './components/Comments';
 
-const UpdateDetailsScreen = ({ navigation: { goBack } }) => {
+const UpdateDetailsScreen = ({navigation: {goBack}}) => {
   const tailwind = useTailwind();
 
   return (
-    <SafeAreaView style={tailwind("flex-1 bg-slate-100 dark:bg-slate-900")}>
+    <SafeAreaView style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900')}>
       <StatusBar translucent backgroundColor="transparent" />
 
-      <View style={tailwind("flex-row justify-between px-4 mt-4")}>
-        <TouchableOpacity onPress={() => goBack()} style={tailwind("")}>
+      <View style={tailwind('flex-row justify-between px-4 mt-4')}>
+        <TouchableOpacity onPress={() => goBack()} style={tailwind('')}>
           <ChevronLeftIcon
-            style={tailwind("text-slate-700 dark:text-slate-400")}
+            style={tailwind('text-slate-700 dark:text-slate-400')}
           />
         </TouchableOpacity>
         <Text
           style={tailwind(
-            "text-slate-900 dark:text-slate-100 text-lg font-medium"
-          )}
-        >
+            'text-slate-900 dark:text-slate-100 text-lg font-medium',
+          )}>
           Update Details
         </Text>
       </View>
 
-      <ScrollView style={tailwind("mx-4")} showsVerticalScrollIndicator={false}>
-        <View style={tailwind("p-2 mt-6")}>
-          <View style={tailwind("flex-row")}>
+      <ScrollView style={tailwind('mx-4')} showsVerticalScrollIndicator={false}>
+        <View style={tailwind('p-2 mt-6')}>
+          <View style={tailwind('flex-row')}>
             <Image
-              style={tailwind("w-10 h-10 rounded-full")}
-              source={require("../../assets/images/avatar/Memoji-18.png")}
+              style={tailwind('w-10 h-10 rounded-full')}
+              source={require('../../assets/images/avatar/Memoji-18.png')}
               accessibilityLabel="Jese Leos"
             />
-            <View style={tailwind("ml-2 flex-1")}>
-              <View style={tailwind("flex-row")}>
+            <View style={tailwind('ml-2 flex-1')}>
+              <View style={tailwind('flex-row')}>
                 <Text
                   style={tailwind(
-                    "text-base font-medium text-slate-900 dark:text-slate-100"
-                  )}
-                >
+                    'text-base font-medium text-slate-900 dark:text-slate-100',
+                  )}>
                   John Doe
                 </Text>
                 <Text
                   style={tailwind(
-                    "ml-2 text-base font-medium text-slate-500 dark:text-slate-400"
-                  )}
-                >
+                    'ml-2 text-base font-medium text-slate-500 dark:text-slate-400',
+                  )}>
                   rated
                 </Text>
-                <View style={tailwind("flex-row ml-2")}>
+                <View style={tailwind('flex-row ml-2')}>
                   <StarIcon
-                    style={tailwind("w-5 h-5 text-yellow-400")}
+                    style={tailwind('w-5 h-5 text-yellow-400')}
                     size={18}
                   />
                   <Text
                     style={tailwind(
-                      "ml-2 text-base font-medium text-slate-500 dark:text-slate-400"
-                    )}
-                  >
+                      'ml-2 text-base font-medium text-slate-500 dark:text-slate-400',
+                    )}>
                     4.95
                   </Text>
                 </View>
               </View>
               <Text
-                style={tailwind("text-sm text-slate-500 dark:text-slate-400")}
-              >
+                style={tailwind('text-sm text-slate-500 dark:text-slate-400')}>
                 3 days ago
               </Text>
             </View>
           </View>
 
-          <View style={tailwind("flex-row mt-3")}>
+          <View style={tailwind('flex-row mt-3')}>
             <Image
-              style={tailwind("w-24 h-24 rounded-md flex-none")}
-              source={require("../../assets/images/books/51Mc--F6zGL.jpg")}
+              style={tailwind('w-24 h-24 rounded-md flex-none')}
+              source={require('../../assets/images/books/51Mc--F6zGL.jpg')}
               accessibilityLabel="Born a Crime Stories from a South African Childhood"
             />
-            <View style={tailwind("pl-2 flex-1")}>
+            <View style={tailwind('pl-2 flex-1')}>
               <Text
                 style={tailwind(
-                  "text-slate-900 dark:text-slate-100 text-base font-medium"
-                )}
-              >
+                  'text-slate-900 dark:text-slate-100 text-base font-medium',
+                )}>
                 Born a Crime Stories from a South African Childhood
               </Text>
-              <TouchableOpacity style={tailwind("")}>
+              <TouchableOpacity style={tailwind('')}>
                 <Text
-                  style={tailwind("text-sm text-teal-500 dark:text-teal-600")}
-                >
+                  style={tailwind('text-sm text-teal-500 dark:text-teal-600')}>
                   Trevor Noah
                 </Text>
               </TouchableOpacity>
               <Text
-                style={tailwind("text-slate-500 dark:text-slate-400 text-sm")}
-              >
+                style={tailwind('text-slate-500 dark:text-slate-400 text-sm')}>
                 I was really surprised when Trevor Noah was named Jon Stewart's
                 successor on The Daily Show . I inherently knew that they
                 wouldn't pick someone with a sense of humor and style identical
@@ -128,39 +120,36 @@ const UpdateDetailsScreen = ({ navigation: { goBack } }) => {
 
         <Comments currentUserId="bd7acbea-c1b1-46c2-aed5-3ad53abb2823" />
 
-        <View style={tailwind("relative flex")}>
-          <View style={tailwind("px-0")}>
-            <View style={tailwind("flex-col w-full py-4")}>
-              <View style={tailwind("flex flex-row")}>
+        <View style={tailwind('relative flex')}>
+          <View style={tailwind('px-0')}>
+            <View style={tailwind('flex-col w-full py-4')}>
+              <View style={tailwind('flex flex-row')}>
                 <Image
                   style={tailwind(
-                    "w-12 h-12 border-2 border-slate-300 rounded-full"
+                    'w-12 h-12 border-2 border-slate-300 rounded-full',
                   )}
-                  source={require("../../assets/images/avatar/Memoji-17.png")}
+                  source={require('../../assets/images/avatar/Memoji-17.png')}
                 />
-                <View style={tailwind("flex-col mt-1")}>
-                  <View style={tailwind("flex flex-1 px-4")}>
+                <View style={tailwind('flex-col mt-1')}>
+                  <View style={tailwind('flex flex-1 px-4')}>
                     <Text
                       style={tailwind(
-                        "font-bold  text-slate-500 dark:text-slate-400"
-                      )}
-                    >
+                        'font-bold  text-slate-500 dark:text-slate-400',
+                      )}>
                       Noob master
                     </Text>
                     <Text
                       style={tailwind(
-                        "text-xs font-normal text-slate-500 dark:text-slate-400"
-                      )}
-                    >
+                        'text-xs font-normal text-slate-500 dark:text-slate-400',
+                      )}>
                       2 weeks ago
                     </Text>
                   </View>
-                  <View style={tailwind("flex-1 px-2 ml-2")}>
+                  <View style={tailwind('flex-1 px-2 ml-2')}>
                     <Text
                       style={tailwind(
-                        "text-sm text-slate-500 dark:text-slate-400"
-                      )}
-                    >
+                        'text-sm text-slate-500 dark:text-slate-400',
+                      )}>
                       I just couldn't put this book down. There are many moments
                       of comedy gold (that come across even better on audio, but
                       still drew out-loud laughter when I read them in print)
@@ -170,22 +159,20 @@ const UpdateDetailsScreen = ({ navigation: { goBack } }) => {
                       take my time to appreciate the gravity of the issues).
                     </Text>
                   </View>
-                  <View style={tailwind("flex-row")}>
+                  <View style={tailwind('flex-row')}>
                     <TouchableOpacity
-                      style={tailwind("items-center px-1 pt-2")}
-                    >
+                      style={tailwind('items-center px-1 pt-2')}>
                       <ChatBubbleLeftRightIcon
                         style={tailwind(
-                          "ml-2 text-slate-500 dark:text-slate-400"
+                          'ml-2 text-slate-500 dark:text-slate-400',
                         )}
                         size={18}
                       />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={tailwind("items-center px-1 pt-2")}
-                    >
+                      style={tailwind('items-center px-1 pt-2')}>
                       <HandThumbUpIcon
-                        style={tailwind("text-slate-500 dark:text-slate-400")}
+                        style={tailwind('text-slate-500 dark:text-slate-400')}
                         size={18}
                       />
                     </TouchableOpacity>
@@ -193,57 +180,52 @@ const UpdateDetailsScreen = ({ navigation: { goBack } }) => {
                 </View>
               </View>
 
-              <View style={tailwind("my-2 ml-16 border-slate-600")} />
+              <View style={tailwind('my-2 ml-16 border-slate-600')} />
 
-              <View style={tailwind("flex flex-row pt-1 ml-6")}>
+              <View style={tailwind('flex flex-row pt-1 ml-6')}>
                 <Image
                   style={tailwind(
-                    "w-12 h-12 border-2 border-slate-300 rounded-full"
+                    'w-12 h-12 border-2 border-slate-300 rounded-full',
                   )}
-                  source={require("../../assets/images/avatar/Memoji-01.png")}
+                  source={require('../../assets/images/avatar/Memoji-01.png')}
                 />
-                <View style={tailwind("flex-col mt-1")}>
-                  <View style={tailwind("flex flex-1 px-4")}>
+                <View style={tailwind('flex-col mt-1')}>
+                  <View style={tailwind('flex flex-1 px-4')}>
                     <Text
                       style={tailwind(
-                        "font-bold text-slate-500 dark:text-slate-400"
-                      )}
-                    >
+                        'font-bold text-slate-500 dark:text-slate-400',
+                      )}>
                       John Doe
                     </Text>
                     <Text
                       style={tailwind(
-                        "text-xs font-normal text-slate-500 dark:text-slate-400"
-                      )}
-                    >
+                        'text-xs font-normal text-slate-500 dark:text-slate-400',
+                      )}>
                       5 days ago
                     </Text>
                   </View>
                   <Text
                     style={tailwind(
-                      "flex-1 px-2 ml-2 text-sm font-medium  text-slate-500 dark:text-slate-400"
-                    )}
-                  >
+                      'flex-1 px-2 ml-2 text-sm font-medium  text-slate-500 dark:text-slate-400',
+                    )}>
                     Listened to this on eyy?
                   </Text>
-                  <View style={tailwind("flex-row")}>
+                  <View style={tailwind('flex-row')}>
                     <TouchableOpacity
-                      style={tailwind("items-center px-1 pt-2")}
-                    >
+                      style={tailwind('items-center px-1 pt-2')}>
                       <ChatBubbleLeftRightIcon
                         style={tailwind(
-                          "ml-2 text-slate-500 dark:text-slate-400"
+                          'ml-2 text-slate-500 dark:text-slate-400',
                         )}
                         size={18}
                       />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={tailwind("items-center px-1 pt-2")}
-                    >
+                      style={tailwind('items-center px-1 pt-2')}>
                       <HandThumbUpIcon
-                        style={tailwind("text-slate-500 dark:text-slate-400")}
+                        style={tailwind('text-slate-500 dark:text-slate-400')}
                         size={18}
-                        fill={"#94b8a3"}
+                        fill={'#94b8a3'}
                       />
                     </TouchableOpacity>
                   </View>
@@ -251,36 +233,33 @@ const UpdateDetailsScreen = ({ navigation: { goBack } }) => {
               </View>
             </View>
 
-            <View style={tailwind("flex-col w-full py-4 mx-auto mt-2")}>
-              <View style={tailwind("flex flex-row")}>
+            <View style={tailwind('flex-col w-full py-4 mx-auto mt-2')}>
+              <View style={tailwind('flex flex-row')}>
                 <Image
                   style={tailwind(
-                    "w-12 h-12 border-2 border-slate-300 rounded-full"
+                    'w-12 h-12 border-2 border-slate-300 rounded-full',
                   )}
-                  source={require("../../assets/images/avatar/Memoji-18.png")}
+                  source={require('../../assets/images/avatar/Memoji-18.png')}
                 />
-                <View style={tailwind("flex-col mt-1")}>
-                  <View style={tailwind("flex flex-1 px-4")}>
+                <View style={tailwind('flex-col mt-1')}>
+                  <View style={tailwind('flex flex-1 px-4')}>
                     <Text
                       style={tailwind(
-                        "font-bold text-slate-500 dark:text-slate-400"
-                      )}
-                    >
+                        'font-bold text-slate-500 dark:text-slate-400',
+                      )}>
                       Anonymous
                     </Text>
                     <Text
                       style={tailwind(
-                        "text-xs font-normal text-slate-500 dark:text-slate-400"
-                      )}
-                    >
+                        'text-xs font-normal text-slate-500 dark:text-slate-400',
+                      )}>
                       3 days ago
                     </Text>
                   </View>
                   <Text
                     style={tailwind(
-                      "flex-1 px-2 ml-2 text-sm  text-slate-500 dark:text-slate-400"
-                    )}
-                  >
+                      'flex-1 px-2 ml-2 text-sm  text-slate-500 dark:text-slate-400',
+                    )}>
                     If you're going to read this book, definitely listen to the
                     audio version. Trevor Noah is one of the most effortless
                     narrators I've ever listened to. It genuinely feels like he
@@ -293,22 +272,20 @@ const UpdateDetailsScreen = ({ navigation: { goBack } }) => {
                     story, not only because of this unique perspective but also
                     because he is such a wonderful storyteller.
                   </Text>
-                  <View style={tailwind("flex-row")}>
+                  <View style={tailwind('flex-row')}>
                     <TouchableOpacity
-                      style={tailwind("items-center px-1 pt-2")}
-                    >
+                      style={tailwind('items-center px-1 pt-2')}>
                       <ChatBubbleLeftRightIcon
                         style={tailwind(
-                          "ml-2 text-slate-500 dark:text-slate-400"
+                          'ml-2 text-slate-500 dark:text-slate-400',
                         )}
                         size={18}
                       />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={tailwind("items-center px-1 pt-2")}
-                    >
+                      style={tailwind('items-center px-1 pt-2')}>
                       <HandThumbUpIcon
-                        style={tailwind("text-slate-500 dark:text-slate-400")}
+                        style={tailwind('text-slate-500 dark:text-slate-400')}
                         size={18}
                       />
                     </TouchableOpacity>
@@ -319,35 +296,32 @@ const UpdateDetailsScreen = ({ navigation: { goBack } }) => {
           </View>
         </View>
 
-        <View style={tailwind("flex px-4")}>
-          <View style={tailwind("flex -mx-3 mb-6")}>
+        <View style={tailwind('flex px-4')}>
+          <View style={tailwind('flex -mx-3 mb-6')}>
             <Text
               style={tailwind(
-                "pt-3 pb-2 text-slate-900 dark:text-slate-100 text-base"
-              )}
-            >
+                'pt-3 pb-2 text-slate-900 dark:text-slate-100 text-base',
+              )}>
               Add a new comment
             </Text>
-            <View style={tailwind("w-full mb-2 mt-2")}>
+            <View style={tailwind('w-full mb-2 mt-2')}>
               <TextInput
                 style={tailwind(
-                  "rounded border border-slate-400 leading-normal px-3 font-medium"
+                  'rounded border border-slate-400 leading-normal px-3 font-medium',
                 )}
                 numberOfLines={3}
                 placeholder="Type Your Comment"
               />
             </View>
-            <View style={tailwind("flex items-end")}>
+            <View style={tailwind('flex items-end')}>
               <TouchableOpacity
                 style={tailwind(
-                  "bg-slate-600 py-1 px-4 border border-slate-400 rounded-md"
-                )}
-              >
+                  'bg-slate-600 py-1 px-4 border border-slate-400 rounded-md',
+                )}>
                 <Text
                   style={tailwind(
-                    "text-slate-400 font-medium text-base tracking-wide"
-                  )}
-                >
+                    'text-slate-400 font-medium text-base tracking-wide',
+                  )}>
                   Post Comment
                 </Text>
               </TouchableOpacity>

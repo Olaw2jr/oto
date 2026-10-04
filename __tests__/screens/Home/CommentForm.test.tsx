@@ -30,4 +30,3 @@ describe('CommentForm', () => {
     expect(handleSubmit).not.toHaveBeenCalled();
   });
 });
-

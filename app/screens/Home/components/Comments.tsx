@@ -1,30 +1,30 @@
-import React, { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import React, {useEffect, useState} from 'react';
+import {Text, View} from 'react-native';
 
-import { useTailwind } from "tailwind-rn";
-import { getComments as getCommentsApi } from "../../../utils/MockData";
-import Comment from "./Comment";
-import CommentForm from "./CommentForm";
+import {useTailwind} from 'tailwind-rn';
+import {getComments as getCommentsApi} from '../../../utils/MockData';
+import Comment from './Comment';
+import CommentForm from './CommentForm';
 
-const Comments = ({ currentUserId }) => {
+const Comments = ({currentUserId}) => {
   const tailwind = useTailwind();
   const [backendComments, setBackendComments] = useState([]);
 
-  const rootComments = backendComments.filter((backendComments) => {
+  const rootComments = backendComments.filter(backendComments => {
     backendComments.parentId === null;
   });
 
-  const getReplies = (commentID) => {
+  const getReplies = commentID => {
     return backendComments
-      .filter((backendComments) => backendComments.parentId === commentID)
+      .filter(backendComments => backendComments.parentId === commentID)
       .sort(
         (a, b) =>
-          newDate(a.createdAt).getTime() - newDate(b.createdAt).getTime()
+          newDate(a.createdAt).getTime() - newDate(b.createdAt).getTime(),
       );
   };
 
   useEffect(() => {
-    getCommentsApi().then((data) => {
+    getCommentsApi().then(data => {
       setBackendComments(data);
     });
   }, []);
@@ -33,9 +33,9 @@ const Comments = ({ currentUserId }) => {
 
   return (
     <>
-      <View style={tailwind("relative flex")}>
-        <View style={tailwind("px-0")}>
-          {rootComments.map((rootComment) => (
+      <View style={tailwind('relative flex')}>
+        <View style={tailwind('px-0')}>
+          {rootComments.map(rootComment => (
             <Comment
               key={rootComment.id}
               comment={rootComment}

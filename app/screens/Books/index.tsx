@@ -1,48 +1,48 @@
-import React, { useEffect, useState } from "react";
-import { View, StatusBar, ScrollView, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, {useEffect, useState} from 'react';
+import {View, StatusBar, ScrollView, Text} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
-import { useTailwind } from "tailwind-rn";
-import Nav from "./components/Nav";
-import NavItem from "./components/NavItem";
-import List from "./components/List";
-import ListItem from "./components/ListItem";
+import {useTailwind} from 'tailwind-rn';
+import Nav from './components/Nav';
+import NavItem from './components/NavItem';
+import List from './components/List';
+import ListItem from './components/ListItem';
 
-import { getBooks as getBooksApi } from "../../utils/MockData";
+import {getBooks as getBooksApi} from '../../utils/MockData';
 
-const BooksScreen = ({ navigation }) => {
+const BooksScreen = ({navigation}) => {
   const tailwind = useTailwind();
   const [books, setBooks] = useState([]);
 
   useEffect(() => {
-    getBooksApi().then((data) => {
+    getBooksApi().then(data => {
       setBooks(data);
     });
   }, []);
 
   return (
-    <SafeAreaView style={tailwind("flex-1 bg-slate-100 dark:bg-slate-900")}>
+    <SafeAreaView style={tailwind('flex-1 bg-slate-100 dark:bg-slate-900')}>
       <StatusBar translucent backgroundColor="transparent" />
 
-      <ScrollView style={tailwind("mx-4")} showsVerticalScrollIndicator={false}>
-        <View style={tailwind("")}>
+      <ScrollView style={tailwind('mx-4')} showsVerticalScrollIndicator={false}>
+        <View style={tailwind('')}>
           <Nav>
             <NavItem href={() => {}} isActive>
-              <Text style={tailwind("text-sm font-medium")}>New Releases</Text>
+              <Text style={tailwind('text-sm font-medium')}>New Releases</Text>
             </NavItem>
             <NavItem href={() => {}}>
-              <Text style={tailwind("text-sm font-medium")}>Top Rated</Text>
+              <Text style={tailwind('text-sm font-medium')}>Top Rated</Text>
             </NavItem>
             <NavItem href={() => {}}>
-              <Text style={tailwind("text-sm font-medium")}>
+              <Text style={tailwind('text-sm font-medium')}>
                 Vincent’s Picks
               </Text>
             </NavItem>
           </Nav>
           <List>
-            {books.map((book) => (
+            {books.map(book => (
               <ListItem
-                href={() => navigation.navigate("SingleBooksScreen", { book })}
+                href={() => navigation.navigate('SingleBooksScreen', {book})}
                 key={book.id}
                 book={book}
               />
