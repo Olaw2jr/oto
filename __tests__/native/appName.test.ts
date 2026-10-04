@@ -5,7 +5,7 @@ import path from 'path';
 const root = path.resolve(__dirname, '../..');
 const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
-describe('app name', () => {
+describe('oto native identity', () => {
   it('shows "oto" to people on both platforms', () => {
     expect(JSON.parse(read('app.json')).displayName).toBe('oto');
     expect(read('android/app/src/main/res/values/strings.xml')).toContain(
@@ -16,14 +16,30 @@ describe('app name', () => {
     );
   });
 
-  it('keeps the registered module name the native projects expect', () => {
+  it('registers the React Native module as oto', () => {
     const moduleName = JSON.parse(read('app.json')).name;
-    expect(moduleName).toBe('Eyy');
+    expect(moduleName).toBe('oto');
     expect(
-      read('android/app/src/main/java/com/eyy/MainActivity.java'),
+      read('android/app/src/main/java/tz/co/oto/MainActivity.java'),
     ).toContain(`return "${moduleName}";`);
     expect(read('ios/Eyy/AppDelegate.mm')).toContain(
       `RCTAppSetupDefaultRootView(bridge, @"${moduleName}"`,
     );
+  });
+
+  it('uses tz.co.oto as the production identifier on Android and iOS', () => {
+    expect(read('android/app/build.gradle')).toContain(
+      'applicationId "tz.co.oto"',
+    );
+    expect(read('android/app/src/main/AndroidManifest.xml')).toContain(
+      'package="tz.co.oto"',
+    );
+    expect(read('ios/Eyy.xcodeproj/project.pbxproj')).toMatch(
+      /PRODUCT_BUNDLE_IDENTIFIER = "?tz\.co\.oto"?;/,
+    );
+  });
+
+  it('uses oto as the npm package identity', () => {
+    expect(JSON.parse(read('package.json')).name).toBe('oto');
   });
 });
