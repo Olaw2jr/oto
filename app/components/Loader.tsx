@@ -1,13 +1,13 @@
 // https://stackoverflow.com/questions/63937106/try-to-make-my-svg-element-rotating-using-animated-but-it-doesnt-work
 
-import React, {Component, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {View, Animated, Easing} from 'react-native';
 import {useTailwind} from 'tailwind-rn';
 import Spinner from './Spinner';
 
 const LoadingSpinner = () => {
   const tailwind = useTailwind();
-  const [spinAnim, setSpinAnim] = useState(new Animated.Value(0));
+  const [spinAnim] = useState(new Animated.Value(0));
 
   const interpolateRotation = spinAnim.interpolate({
     inputRange: [0, 1],

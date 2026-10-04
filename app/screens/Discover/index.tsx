@@ -12,12 +12,7 @@ import {
 } from 'react-native';
 
 import {SafeAreaView} from 'react-native-safe-area-context';
-import Svg, {Path} from 'react-native-svg';
-import {
-  BellIcon,
-  StarIcon,
-  MagnifyingGlassIcon,
-} from 'react-native-heroicons/outline';
+import {StarIcon, MagnifyingGlassIcon} from 'react-native-heroicons/outline';
 import {useTailwind} from 'tailwind-rn';
 import Recommend from '../../components/Recommend';
 import Genre from '../../components/Genre';

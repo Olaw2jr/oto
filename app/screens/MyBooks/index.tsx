@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   FlatList,
-  Image,
   ScrollView,
   StatusBar,
   Text,
@@ -9,7 +8,6 @@ import {
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import Svg, {Path} from 'react-native-svg';
 
 import {useTailwind} from 'tailwind-rn';
 import Shelf from '../../components/Shelf';

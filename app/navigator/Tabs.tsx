@@ -7,7 +7,6 @@ import {
   UserIcon,
 } from 'react-native-heroicons/outline';
 
-import HomeScreen from '../screens/Home';
 import DiscoverScreen from '../screens/Discover';
 import BoookScreen from '../screens/MyBooks';
 import ProfileScreen from '../screens/Profile';

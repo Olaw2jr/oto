@@ -19,7 +19,7 @@ const PlayerScreen = ({navigation: {goBack}}) => {
   const tailwind = useTailwind();
 
   const [paused, setPaused] = useState(true);
-  const [totalLength, setTotalLength] = useState(68580);
+  const [totalLength] = useState(68580);
   const [currentPosition, setCurrentPosition] = useState(18000);
 
   const togglePlay = () => {
