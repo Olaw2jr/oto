@@ -46,15 +46,11 @@ describe('BookScreen', () => {
     await setup();
     expect(
       screen.getByRole('radio', {name: 'Listening'}),
-    ).toHaveAccessibilityState({
-      checked: true,
-    });
+    ).toBeChecked();
     fireEvent.press(screen.getByRole('radio', {name: 'Finished'}));
     expect(
       screen.getByRole('radio', {name: 'Finished'}),
-    ).toHaveAccessibilityState({
-      checked: true,
-    });
+    ).toBeChecked();
   });
 
   it('shows who you follow is listening and their reviews', async () => {
