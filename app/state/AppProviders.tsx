@@ -5,13 +5,16 @@ import {ThemeProvider} from '../theme/ThemeProvider';
 import {LibraryProvider} from './library';
 import {PlayerProvider} from './player';
 import {SessionProvider} from './session';
+import {SocialProvider} from './social';
 
 export const AppProviders = ({children}: {children: ReactNode}) => (
   <SafeAreaProvider>
     <ThemeProvider>
       <SessionProvider>
         <LibraryProvider>
-          <PlayerProvider>{children}</PlayerProvider>
+          <PlayerProvider>
+            <SocialProvider>{children}</SocialProvider>
+          </PlayerProvider>
         </LibraryProvider>
       </SessionProvider>
     </ThemeProvider>
