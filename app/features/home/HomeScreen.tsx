@@ -2,6 +2,7 @@ import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import OtoLogo from '../../components/OtoLogo';
 import {chapterAt, getBook} from '../../data/catalogue';
 import {getClub, MY_CLUB} from '../../data/clubs';
@@ -11,6 +12,7 @@ import {becauseYouFinished, homeFriendActivity} from '../../data/social';
 import {dayGreeting} from '../../data/time';
 import {TabScreenProps} from '../../navigator/types';
 import {usePlayer} from '../../state/player';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {
   Avatar,
@@ -24,6 +26,7 @@ import {
 } from '../../ui';
 
 const HomeScreen = ({navigation}: TabScreenProps<'Home'>) => {
+  const loading = useFirstLoad('home');
   const {colors, colorScheme} = useTheme();
   const player = usePlayer();
   const {book, position} = player;
@@ -40,6 +43,14 @@ const HomeScreen = ({navigation}: TabScreenProps<'Home'>) => {
     }
     navigation.navigate('Player');
   };
+
+  if (loading) {
+    return (
+      <Screen>
+        <LoadingState message={'Getting your listening ready'} layout="tiles" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>

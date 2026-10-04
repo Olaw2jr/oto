@@ -2,11 +2,13 @@ import React, {useState} from 'react';
 import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import {getBook} from '../../data/catalogue';
 import {firstName, getPerson, ME} from '../../data/people';
 import {FeedComment} from '../../data/social';
 import {RootStackScreenProps} from '../../navigator/types';
 import {useSocial} from '../../state/social';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {fonts} from '../../theme/typography';
 import {Avatar, Icon, IconButton, Screen, Txt} from '../../ui';
@@ -17,6 +19,7 @@ const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
   const {colors} = useTheme();
   const social = useSocial();
   const item = social.feed.find(f => f.id === route.params.itemId)!;
+  const loading = useFirstLoad(`thread:${item.id}`);
   const book = getBook(item.bookId);
   const comments = social.comments(item.id);
   const [draft, setDraft] = useState('');
@@ -107,6 +110,21 @@ const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
       </View>
     </View>
   );
+
+  if (loading) {
+    return (
+      <Screen>
+        <View style={styles.bar}>
+          <IconButton
+            icon="back"
+            label="Back"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+        <LoadingState message={'Loading the conversation'} layout="list" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen

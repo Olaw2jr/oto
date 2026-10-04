@@ -2,11 +2,13 @@ import React, {useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {LoadingState} from '../../components/LoadingState';
 import {catalogue, CatalogueBook} from '../../data/catalogue';
 import {formatDuration} from '../../data/format';
 import {editorsPicks} from '../../data/social';
 import {RootStackScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {Icon, IconButton, Screen, Txt} from '../../ui';
 
@@ -27,9 +29,26 @@ const listFor = (tab: Tab) =>
     : editorsPicks.map(id => catalogue.find(b => b.id === id)!);
 
 const CatalogScreen = ({navigation}: RootStackScreenProps<'Catalog'>) => {
+  const loading = useFirstLoad('catalog');
   const {colors} = useTheme();
   const library = useLibrary();
   const [tab, setTab] = useState<Tab>('New releases');
+
+  if (loading) {
+    return (
+      <Screen>
+        <View style={styles.bar}>
+          <IconButton
+            icon="back"
+            label="Back"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+        <Txt variant="display">Audiobooks</Txt>
+        <LoadingState message={'Fetching audiobooks'} layout="list" />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>

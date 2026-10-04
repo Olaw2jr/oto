@@ -2,12 +2,15 @@ import React, {useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import OtoLogo from '../../components/OtoLogo';
+import {LoadingState} from '../../components/LoadingState';
 import {chapterAt} from '../../data/catalogue';
 import {formatRemaining} from '../../data/format';
 import {TabScreenProps} from '../../navigator/types';
 import {retryConnection, useOnline} from '../../state/network';
 import {usePlayer} from '../../state/player';
 import {useSocial} from '../../state/social';
+import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {Button, Card, Icon, IconButton, Screen, Txt} from '../../ui';
 import {FeedCard} from './FeedCard';
@@ -16,7 +19,8 @@ const filters = ['Friends', 'Clubs', 'Reviews'] as const;
 type Filter = typeof filters[number];
 
 const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
-  const {colors} = useTheme();
+  const loading = useFirstLoad('following');
+  const {colors, colorScheme} = useTheme();
   const {feed} = useSocial();
   const [filter, setFilter] = useState<Filter>('Friends');
   const [reported, setReported] = useState(false);
@@ -42,7 +46,7 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
         <View
           accessibilityRole="alert"
           style={[styles.banner, {backgroundColor: colors.raised}]}>
-          <Icon name="offline" size={22} />
+          <OtoLogo size={24} decorative inverted={colorScheme === 'dark'} />
           <Txt variant="caption" color="ink" style={styles.bannerText}>
             <Txt variant="caption" color="ink" weight="semibold">
               You are offline.
@@ -52,7 +56,11 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
         </View>
 
         <View style={styles.offline}>
-          <Icon name="offline" size={44} color="graphite" strokeWidth={1.4} />
+          <OtoLogo
+            size={72}
+            label="oto, offline"
+            inverted={colorScheme === 'dark'}
+          />
           <Txt variant="heading" align="center" style={styles.offlineTitle}>
             Can't reach your friends.
           </Txt>
@@ -86,6 +94,15 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
             <Icon name="play" size={24} />
           </Card>
         </Pressable>
+      </Screen>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Screen>
+        <Txt variant="display">Following</Txt>
+        <LoadingState message={'Catching up with friends'} layout="list" />
       </Screen>
     );
   }
