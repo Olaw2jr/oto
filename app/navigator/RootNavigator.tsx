@@ -4,6 +4,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 import BookScreen from '../features/book/BookScreen';
 import PlayerScreen from '../features/player/PlayerScreen';
+import SettingsScreen from '../features/settings/SettingsScreen';
 import ClubScreen from '../features/club/ClubScreen';
 import UpdateComposeScreen from '../features/following/UpdateComposeScreen';
 import OnboardingScreen from '../features/welcome/OnboardingScreen';
@@ -18,7 +19,7 @@ import {RootStackParamList} from './types';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator = () => {
-  const {status} = useSession();
+  const {status, hasOnboarded} = useSession();
   const {colors} = useTheme();
 
   if (status === 'loading') {
@@ -32,11 +33,22 @@ const RootNavigator = () => {
         contentStyle: {backgroundColor: colors.paper},
       }}>
       {status === 'signedOut' ? (
+        // The first screen listed opens first: new listeners see the splash
+        // and onboarding, returning ones (or anyone who signed out) Sign in.
         <Stack.Group screenOptions={{animation: 'fade'}}>
-          <Stack.Screen name="Splash" component={SplashScreen} />
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} />
-          <Stack.Screen name="SignIn" component={SignInScreen} />
+          {hasOnboarded ? (
+            <>
+              <Stack.Screen name="SignIn" component={SignInScreen} />
+              <Stack.Screen name="SignUp" component={SignUpScreen} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Splash" component={SplashScreen} />
+              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+              <Stack.Screen name="SignUp" component={SignUpScreen} />
+              <Stack.Screen name="SignIn" component={SignInScreen} />
+            </>
+          )}
         </Stack.Group>
       ) : (
         <Stack.Group>
@@ -48,6 +60,7 @@ const RootNavigator = () => {
             options={{animation: 'slide_from_bottom'}}
           />
           <Stack.Screen name="Club" component={ClubScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen
             name="UpdateCompose"
             component={UpdateComposeScreen}

@@ -1,6 +1,6 @@
-// Single source of truth for oto's design tokens, shared by tailwind.config.js
-// (CommonJS) and the typed theme modules. Values come from the oto design
-// canvas: https://claude.ai/artifact/NtXhA3VnydXvCvepVidLL6
+// Single source of truth for oto's design tokens, shared by the typed theme
+// modules and scripts/generate-icons.js (CommonJS). Values come from the oto
+// design canvas: https://claude.ai/artifact/NtXhA3VnydXvCvepVidLL6
 
 const colors = {
   light: {

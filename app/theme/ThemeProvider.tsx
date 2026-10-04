@@ -10,9 +10,7 @@ import React, {
 import {useColorScheme} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import utilities from '../../tailwind.json';
 import {colors, ColorScheme, Palette} from './colors';
-import {TailwindProvider} from './TailwindProvider';
 
 export type AppearancePreference = 'system' | 'light' | 'dark';
 
@@ -67,11 +65,7 @@ export const ThemeProvider = ({children}: {children: ReactNode}) => {
   );
 
   return (
-    <ThemeContext.Provider value={value}>
-      <TailwindProvider utilities={utilities} colorScheme={colorScheme}>
-        {children}
-      </TailwindProvider>
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 };
 
