@@ -13,10 +13,8 @@
     "icons": "node scripts/generate-icons.js"
   },
   "dependencies": {
-    "@heroicons/react": "^2.0.13",
     "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-native-community/netinfo": "^9.5.0",
-    "@react-native-community/slider": "^4.3.3",
     "@react-navigation/bottom-tabs": "^6.5.1",
     "@react-navigation/native": "^6.1.1",
     "@react-navigation/native-stack": "^6.9.6",
