@@ -42,7 +42,7 @@ const HomeScreen = ({navigation}) => {
 
         <View style={tailwind('mt-4')}>
           <FlatList
-            data={state.CurrentlyListen}
+            data={state.fetchCurrentlyListen}
             horizontal
             showsHorizontalScrollIndicator={false}
             keyExtractor={item => item.id.toString()}
