@@ -2,10 +2,12 @@ import React, {useState} from 'react';
 import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
+import {PersonLink} from '../../components/PersonLink';
 import {LoadingState} from '../../components/LoadingState';
 import {getBook} from '../../data/catalogue';
 import {firstName, getPerson, ME} from '../../data/people';
 import {FeedComment} from '../../data/social';
+import {openPerson} from '../../navigator/openPerson';
 import {RootStackScreenProps} from '../../navigator/types';
 import {useSocial} from '../../state/social';
 import {shareUpdate} from '../../utils/share';
@@ -74,7 +76,11 @@ const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
       {parent ? (
         <View style={[styles.thread, {backgroundColor: colors.hairline}]} />
       ) : null}
-      <Avatar name={getPerson(comment.by).name} size={parent ? 30 : 34} />
+      <PersonLink
+        personId={comment.by}
+        onOpen={id => openPerson(navigation, id)}>
+        <Avatar name={getPerson(comment.by).name} size={parent ? 30 : 34} />
+      </PersonLink>
       <View style={styles.commentBody}>
         <View
           accessible
@@ -199,7 +205,11 @@ const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
       </View>
 
       <View style={styles.head}>
-        <Avatar name={getPerson(item.by).name} size={40} />
+        <PersonLink
+          personId={item.by}
+          onOpen={id => openPerson(navigation, id)}>
+          <Avatar name={getPerson(item.by).name} size={40} />
+        </PersonLink>
         <View style={styles.who}>
           <Txt variant="caption" color="ink">
             <Txt variant="caption" color="ink" weight="semibold">

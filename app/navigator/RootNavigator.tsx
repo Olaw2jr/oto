@@ -10,6 +10,8 @@ import LibraryScreen from '../features/library/LibraryScreen';
 import SaveToShelfScreen from '../features/library/SaveToShelfScreen';
 import ShelfScreen from '../features/library/ShelfScreen';
 import PlayerScreen from '../features/player/PlayerScreen';
+import AuthorScreen from '../features/profiles/AuthorScreen';
+import PersonScreen from '../features/profiles/PersonScreen';
 import SearchScreen from '../features/search/SearchScreen';
 import SettingsScreen from '../features/settings/SettingsScreen';
 import ClubScreen from '../features/club/ClubScreen';
@@ -73,6 +75,8 @@ const RootNavigator = () => {
           <Stack.Screen name="Thread" component={ThreadScreen} />
           <Stack.Screen name="Catalog" component={CatalogScreen} />
           <Stack.Screen name="Mood" component={MoodScreen} />
+          <Stack.Screen name="Person" component={PersonScreen} />
+          <Stack.Screen name="Author" component={AuthorScreen} />
           <Stack.Screen name="Library" component={LibraryScreen} />
           <Stack.Screen name="Shelf" component={ShelfScreen} />
           <Stack.Screen

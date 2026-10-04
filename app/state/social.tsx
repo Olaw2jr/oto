@@ -27,6 +27,8 @@ type SocialValue = {
   feed: FeedItem[];
   // Any update by id, including hidden ones (e.g. a thread you just reported).
   findUpdate: (itemId: string) => FeedItem | undefined;
+  // Someone's updates, hidden ones excluded, whether or not you follow them.
+  updatesBy: (personId: string) => FeedItem[];
   hideUpdate: (itemId: string) => void;
   reportUpdate: (itemId: string) => void;
   mute: (personId: string) => void;
@@ -42,6 +44,9 @@ type SocialValue = {
   addClubPost: (clubId: string, body: string, at?: number) => void;
   comments: (itemId: string) => FeedComment[];
   addComment: (itemId: string, body: string, parentId?: string) => void;
+  // Everyone in the seed is someone you follow; unfollowing hides their updates.
+  followsPerson: (personId: string) => boolean;
+  toggleFollowPerson: (personId: string) => void;
   followsAuthor: (name: string) => boolean;
   toggleFollowAuthor: (name: string) => void;
 };
@@ -65,6 +70,7 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
   const [authors, setAuthors] = useState<Set<string>>(new Set());
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [muted, setMuted] = useState<Set<string>>(new Set());
+  const [unfollowed, setUnfollowed] = useState<Set<string>>(new Set());
   const [addedComments, setAddedComments] = useState<
     Record<string, FeedComment[]>
   >({});
@@ -138,8 +144,17 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
 
   const value = useMemo<SocialValue>(
     () => ({
-      feed: feed.filter(item => !hidden.has(item.id) && !muted.has(item.by)),
+      feed: feed.filter(
+        item =>
+          !hidden.has(item.id) &&
+          !muted.has(item.by) &&
+          !unfollowed.has(item.by),
+      ),
+      followsPerson: id => !unfollowed.has(id),
+      toggleFollowPerson: id => setUnfollowed(s => toggle(s, id)),
       findUpdate: id => feed.find(item => item.id === id),
+      updatesBy: id =>
+        feed.filter(item => item.by === id && !hidden.has(item.id)),
       hideUpdate: id => setHidden(s => new Set(s).add(id)),
       // Reports go nowhere yet (no backend); the update is hidden for you.
       reportUpdate: id => setHidden(s => new Set(s).add(id)),
@@ -166,6 +181,7 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
       authors,
       hidden,
       muted,
+      unfollowed,
 
       feed,
       likes,

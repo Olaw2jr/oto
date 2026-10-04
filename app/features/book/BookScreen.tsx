@@ -1,12 +1,15 @@
 import React, {useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 
+import {AuthorLinks} from '../../components/AuthorLinks';
 import {BookCover} from '../../components/BookCover';
+import {PersonLink} from '../../components/PersonLink';
 import {LoadingState} from '../../components/LoadingState';
 import {getBook} from '../../data/catalogue';
 import {formatDuration} from '../../data/format';
 import {firstName, getPerson} from '../../data/people';
 import {listeners, reviews, Status} from '../../data/social';
+import {openPerson} from '../../navigator/openPerson';
 import {RootStackScreenProps} from '../../navigator/types';
 import {useFirstLoad} from '../../state/firstLoad';
 import {useLibrary} from '../../state/library';
@@ -114,9 +117,13 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
         <Txt variant="display" align="center" style={styles.title}>
           {book.title}
         </Txt>
-        <Txt align="center" style={styles.author}>
-          {book.author}
-        </Txt>
+        <View style={styles.author}>
+          <AuthorLinks
+            author={book.author}
+            center
+            onOpen={name => navigation.navigate('Author', {name})}
+          />
+        </View>
         <Txt variant="caption" align="center" style={styles.meta}>
           {`${book.rating.toFixed(1)} · ${book.ratingsCount.toLocaleString(
             'en-US',
@@ -181,7 +188,11 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
           {bookReviews.map(review => (
             <Card key={review.id} style={styles.review}>
               <View style={styles.reviewHead}>
-                <Avatar name={getPerson(review.by).name} size={32} />
+                <PersonLink
+                  personId={review.by}
+                  onOpen={id => openPerson(navigation, id)}>
+                  <Avatar name={getPerson(review.by).name} size={32} />
+                </PersonLink>
                 <Txt
                   variant="caption"
                   color="ink"
@@ -267,7 +278,7 @@ const styles = StyleSheet.create({
   cover: {alignItems: 'center', marginTop: 6},
   titleBlock: {marginTop: 22},
   title: {lineHeight: 38},
-  author: {marginTop: 6},
+  author: {marginTop: 2},
   meta: {marginTop: 6},
   actions: {flexDirection: 'row', marginTop: 20},
   share: {marginLeft: 10},
