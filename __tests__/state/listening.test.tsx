@@ -106,3 +106,34 @@ describe('library ratings', () => {
     expect(result.current.rating('project-hail-mary')).toBeUndefined();
   });
 });
+
+describe('library shelves', () => {
+  it('lists status shelves then custom ones', () => {
+    const {result} = renderHook(() => useLibrary(), {wrapper});
+    expect(result.current.shelves.map(s => s.id)).toEqual([
+      'want',
+      'finished',
+      'quiet-nights',
+      'science',
+    ]);
+  });
+
+  it('creates shelves with unique ids and toggles books on them', () => {
+    const {result} = renderHook(() => useLibrary(), {wrapper});
+    let first = '';
+    let second = '';
+    act(() => {
+      first = result.current.createShelf('Road trips', 'greenlights');
+    });
+    act(() => {
+      second = result.current.createShelf('Road trips');
+    });
+    expect([first, second]).toEqual(['road-trips', 'road-trips-2']);
+    expect(result.current.shelf('road-trips')?.bookIds).toEqual([
+      'greenlights',
+    ]);
+
+    act(() => result.current.toggleOnShelf('road-trips', 'greenlights'));
+    expect(result.current.shelf('road-trips')?.bookIds).toEqual([]);
+  });
+});
