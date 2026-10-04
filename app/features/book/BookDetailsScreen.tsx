@@ -12,6 +12,7 @@ import {
   Icon,
   IconButton,
   IconName,
+  Pill,
   Screen,
   StarRating,
   Txt,
@@ -129,14 +130,13 @@ const BookDetailsScreen = ({
 
       <View style={styles.chips}>
         {book.genres.map(genre => (
-          <Txt
+          <Pill
             key={genre}
-            variant="caption"
-            color="ink"
-            weight="medium"
-            style={[styles.chip, {backgroundColor: colors.raised}]}>
-            {genre}
-          </Txt>
+            label={genre}
+            height={32}
+            background="raised"
+            style={styles.chip}
+          />
         ))}
       </View>
 
@@ -212,15 +212,7 @@ const styles = StyleSheet.create({
   summary: {fontSize: 16, lineHeight: 25, marginTop: 16},
   more: {minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start'},
   chips: {flexDirection: 'row', flexWrap: 'wrap', marginTop: 4},
-  chip: {
-    height: 32,
-    lineHeight: 32,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginRight: 8,
-    marginBottom: 8,
-  },
+  chip: {paddingHorizontal: 14, marginRight: 8, marginBottom: 8},
   rows: {marginTop: 6},
   row: {
     flexDirection: 'row',
