@@ -1,13 +1,29 @@
-import React, {ReactNode} from 'react';
+import React, {ReactNode, useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 
 import {getPerson, ME} from '../../data/people';
 import {RootStackScreenProps} from '../../navigator/types';
 import {usePlayer} from '../../state/player';
 import {useSession} from '../../state/session';
-import {useSettings} from '../../state/settings';
+import {NotificationsSheet} from '../../components/NotificationsSheet';
+import {
+  NOTIFICATION_LABELS,
+  SKIP_OPTIONS,
+  SkipIntervals,
+  useSettings,
+} from '../../state/settings';
 import {AppearancePreference, useTheme} from '../../theme/ThemeProvider';
-import {Avatar, Card, Icon, Screen, Segmented, Switch, Txt} from '../../ui';
+import {
+  Avatar,
+  Card,
+  Icon,
+  Screen,
+  Segmented,
+  Sheet,
+  SheetRow,
+  Switch,
+  Txt,
+} from '../../ui';
 
 const appearanceOptions: {value: AppearancePreference; label: string}[] = [
   {value: 'system', label: 'System'},
@@ -78,7 +94,10 @@ const SwitchRow = ({
   </Row>
 );
 
+const skipLabel = (s: SkipIntervals) => `${s.back} s · ${s.forward} s`;
+
 const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
+  const [sheet, setSheet] = useState<'skip' | 'notifications' | null>(null);
   const {preference, setPreference} = useTheme();
   const {signOut} = useSession();
   const settings = useSettings();
@@ -119,7 +138,11 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
           value={`${player.rate}×`}
           onPress={player.cycleRate}
         />
-        <ValueRow label="Skip back and forward" value="15 s · 30 s" />
+        <ValueRow
+          label="Skip back and forward"
+          value={skipLabel(settings.skip)}
+          onPress={() => setSheet('skip')}
+        />
         <SwitchRow
           label="Download on Wi-Fi only"
           value={settings.wifiOnly}
@@ -142,7 +165,12 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
           value={settings.spoilerSafe}
           onChange={v => settings.set('spoilerSafe', v)}
         />
-        <ValueRow label="Notifications" value="Club sessions" last />
+        <ValueRow
+          label="Notifications"
+          value={NOTIFICATION_LABELS[settings.notifications]}
+          onPress={() => setSheet('notifications')}
+          last
+        />
       </Card>
 
       <Txt variant="label" style={styles.label}>
@@ -169,6 +197,29 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
           </Row>
         </Pressable>
       </Card>
+      <Sheet
+        visible={sheet === 'skip'}
+        title="Skip back and forward"
+        onClose={() => setSheet(null)}>
+        {SKIP_OPTIONS.map(option => (
+          <SheetRow
+            key={skipLabel(option)}
+            label={skipLabel(option)}
+            selected={
+              option.back === settings.skip.back &&
+              option.forward === settings.skip.forward
+            }
+            onPress={() => {
+              settings.set('skip', option);
+              setSheet(null);
+            }}
+          />
+        ))}
+      </Sheet>
+      <NotificationsSheet
+        visible={sheet === 'notifications'}
+        onClose={() => setSheet(null)}
+      />
     </Screen>
   );
 };

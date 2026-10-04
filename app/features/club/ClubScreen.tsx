@@ -3,6 +3,7 @@ import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 
 import {BookCover} from '../../components/BookCover';
 import {LoadingState} from '../../components/LoadingState';
+import {NotificationsSheet} from '../../components/NotificationsSheet';
 import OtoLogo from '../../components/OtoLogo';
 import {chapterAt, getBook} from '../../data/catalogue';
 import {getClub, MY_CLUB} from '../../data/clubs';
@@ -10,7 +11,8 @@ import {formatClock} from '../../data/format';
 import {getPerson, ME} from '../../data/people';
 import {RootStackScreenProps, TabScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
-import {useSettings} from '../../state/settings';
+import {NOTIFICATION_LABELS, useSettings} from '../../state/settings';
+import {shareClub} from '../../utils/share';
 import {usePlayer} from '../../state/player';
 import {useSocial} from '../../state/social';
 import {useFirstLoad} from '../../state/firstLoad';
@@ -24,6 +26,8 @@ import {
   IconButton,
   ProgressBar,
   Screen,
+  Sheet,
+  SheetRow,
   Switch,
   Txt,
 } from '../../ui';
@@ -47,6 +51,7 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
   const settings = useSettings();
   const [spoilerSafe, setSpoilerSafe] = useState(settings.spoilerSafe);
   const [draft, setDraft] = useState('');
+  const [sheet, setSheet] = useState<'more' | 'notifications' | null>(null);
 
   const joined = social.joined(club.id);
   const going = social.going(club.id);
@@ -120,7 +125,7 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
         ) : (
           <View />
         )}
-        <IconButton icon="more" label="More" onPress={() => {}} />
+        <IconButton icon="more" label="More" onPress={() => setSheet('more')} />
       </View>
 
       <View style={styles.header}>
@@ -148,9 +153,9 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
         <View style={styles.bell}>
           <IconButton
             icon="bell"
-            label="Notifications"
+            label="Club notifications"
             background="segment"
-            onPress={() => {}}
+            onPress={() => setSheet('notifications')}
           />
         </View>
       </View>
@@ -297,6 +302,30 @@ const ClubScreen = ({navigation: nav, route}: ClubScreenProps) => {
             : `${hidden} posts ahead of you are hidden`}
         </Txt>
       ) : null}
+      <Sheet
+        visible={sheet === 'more'}
+        title={club.name}
+        onClose={() => setSheet(null)}>
+        <SheetRow
+          icon="share"
+          label="Share club"
+          onPress={() => {
+            setSheet(null);
+            shareClub(club);
+          }}
+        />
+        <SheetRow
+          icon="bell"
+          label="Notifications"
+          value={NOTIFICATION_LABELS[settings.notifications]}
+          accessibilityLabel="Notifications"
+          onPress={() => setSheet('notifications')}
+        />
+      </Sheet>
+      <NotificationsSheet
+        visible={sheet === 'notifications'}
+        onClose={() => setSheet(null)}
+      />
     </Screen>
   );
 };

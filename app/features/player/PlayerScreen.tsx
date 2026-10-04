@@ -5,10 +5,12 @@ import {BookCover} from '../../components/BookCover';
 import {chapterAt} from '../../data/catalogue';
 import {clubs} from '../../data/clubs';
 import {formatClock} from '../../data/format';
+import {shareBook} from '../../utils/share';
 import {firstName, getPerson} from '../../data/people';
 import {marginNotes} from '../../data/social';
 import {RootStackScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
+import {useSettings} from '../../state/settings';
 import {SleepTimer, usePlayer} from '../../state/player';
 import {useTheme} from '../../theme/ThemeProvider';
 import {
@@ -75,6 +77,7 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
   const {width} = useWindowDimensions();
   const player = usePlayer();
   const library = useLibrary();
+  const {skip} = useSettings();
   const [sheet, setSheet] = useState<'sleep' | 'more' | 'bookmarks' | null>(
     null,
   );
@@ -163,7 +166,11 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
         }}
         accessibilityActions={[{name: 'increment'}, {name: 'decrement'}]}
         onAccessibilityAction={e =>
-          player.skip(e.nativeEvent.actionName === 'increment' ? 30 : -15)
+          player.skip(
+            e.nativeEvent.actionName === 'increment'
+              ? skip.forward
+              : -skip.back,
+          )
         }
         style={styles.scrubber}>
         {notes.map(n => (
@@ -212,9 +219,9 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
         </Pressable>
         <Skip
           icon="skipBack"
-          seconds={15}
-          label="Back 15 seconds"
-          onPress={() => player.skip(-15)}
+          seconds={skip.back}
+          label={`Back ${skip.back} seconds`}
+          onPress={() => player.skip(-skip.back)}
         />
         <IconButton
           icon={playing ? 'pause' : 'play'}
@@ -227,9 +234,9 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
         />
         <Skip
           icon="skipForward"
-          seconds={30}
-          label="Forward 30 seconds"
-          onPress={() => player.skip(30)}
+          seconds={skip.forward}
+          label={`Forward ${skip.forward} seconds`}
+          onPress={() => player.skip(skip.forward)}
         />
         <Pressable
           accessibilityRole="button"
@@ -322,6 +329,14 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
           onPress={() => {
             setSheet(null);
             navigation.navigate('Book', {bookId: book.id});
+          }}
+        />
+        <SheetRow
+          icon="share"
+          label="Share"
+          onPress={() => {
+            setSheet(null);
+            shareBook(book);
           }}
         />
         <SheetRow

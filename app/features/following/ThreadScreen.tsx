@@ -8,21 +8,23 @@ import {firstName, getPerson, ME} from '../../data/people';
 import {FeedComment} from '../../data/social';
 import {RootStackScreenProps} from '../../navigator/types';
 import {useSocial} from '../../state/social';
+import {shareUpdate} from '../../utils/share';
 import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
 import {fonts} from '../../theme/typography';
-import {Avatar, Icon, IconButton, Screen, Txt} from '../../ui';
+import {Avatar, Icon, IconButton, Screen, Sheet, SheetRow, Txt} from '../../ui';
 
 const nameOf = (id: string) => (id === ME ? 'You' : getPerson(id).short);
 
 const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
   const {colors} = useTheme();
   const social = useSocial();
-  const item = social.feed.find(f => f.id === route.params.itemId)!;
+  const item = social.findUpdate(route.params.itemId)!;
   const loading = useFirstLoad(`thread:${item.id}`);
   const book = getBook(item.bookId);
   const comments = social.comments(item.id);
   const [draft, setDraft] = useState('');
+  const [moreOpen, setMoreOpen] = useState(false);
   const [replyTo, setReplyTo] = useState<FeedComment | null>(null);
 
   const topLevel = comments.filter(c => !c.parentId);
@@ -189,7 +191,11 @@ const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
           style={styles.barTitle}>
           Update
         </Txt>
-        <IconButton icon="more" label="More" onPress={() => {}} />
+        <IconButton
+          icon="more"
+          label="More"
+          onPress={() => setMoreOpen(true)}
+        />
       </View>
 
       <View style={styles.head}>
@@ -252,6 +258,30 @@ const ThreadScreen = ({navigation, route}: RootStackScreenProps<'Thread'>) => {
           </View>
         ))}
       </View>
+      <Sheet
+        visible={moreOpen}
+        title="Update"
+        onClose={() => setMoreOpen(false)}>
+        <SheetRow
+          icon="share"
+          label="Share update"
+          onPress={() => {
+            setMoreOpen(false);
+            shareUpdate(nameOf(item.by), book, item.body);
+          }}
+        />
+        {item.by === ME ? null : (
+          <SheetRow
+            icon="flag"
+            label="Report"
+            onPress={() => {
+              setMoreOpen(false);
+              social.reportUpdate(item.id);
+              navigation.goBack();
+            }}
+          />
+        )}
+      </Sheet>
     </Screen>
   );
 };
