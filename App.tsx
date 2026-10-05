@@ -13,8 +13,6 @@ const ThemedApp = () => {
   return (
     <>
       <StatusBar
-        translucent
-        backgroundColor="transparent"
         barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
       />
       <NavigationContainer theme={navigationTheme(colorScheme)}>
