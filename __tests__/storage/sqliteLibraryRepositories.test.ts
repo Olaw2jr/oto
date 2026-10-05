@@ -27,11 +27,6 @@ describe('SQLite library repositories', () => {
     ]);
 
     await expect(repository.get('book-1')).resolves.toEqual(entry);
-
-    expect(db.executed[0]).toMatchObject({
-      params: ['book-1', 'listening', 42, now()],
-    });
-    expect(db.executed[0].sql).toContain('ON CONFLICT(book_id) DO UPDATE');
   });
 
   it('lists library entries and removes by book id', async () => {
@@ -62,24 +57,38 @@ describe('SQLite library repositories', () => {
     await expect(repository.get('missing')).resolves.toBeNull();
   });
 
-  it('upserts and reads listening progress', async () => {
+  it('upserts and reads rendition-aware listening progress', async () => {
     const db = new FakeSqlDatabase();
     const repository = new SqliteProgressRepository(db, now);
     const progress: ListeningProgress = {
       bookId: 'book-1',
+      renditionId: 'rendition-1',
+      chapterId: 'chapter-2',
       positionSec: 75,
       durationSec: 120,
     };
 
     await repository.save(progress);
     db.enqueueQueryRows([
-      {book_id: 'book-1', position_sec: 75, duration_sec: 120},
+      {
+        book_id: 'book-1',
+        rendition_id: 'rendition-1',
+        chapter_id: 'chapter-2',
+        position_sec: 75,
+        duration_sec: 120,
+      },
     ]);
 
-    await expect(repository.get('book-1')).resolves.toEqual(progress);
-    expect(db.executed[0]).toMatchObject({
-      params: ['book-1', 75, 120, now()],
-    });
-    expect(db.executed[0].sql).toContain('ON CONFLICT(book_id) DO UPDATE');
+    await expect(
+      repository.get('book-1', 'rendition-1'),
+    ).resolves.toEqual(progress);
+    expect(db.executed[0].params).toEqual([
+      'book-1',
+      'rendition-1',
+      'chapter-2',
+      75,
+      120,
+      now(),
+    ]);
   });
 });

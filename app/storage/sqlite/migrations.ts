@@ -69,4 +69,16 @@ export const migrations: SqlMigration[] = [
       )`,
     ],
   },
+  {
+    version: 2,
+    name: 'rendition_aware_progress',
+    sql: [
+      `ALTER TABLE listening_progress
+        ADD COLUMN rendition_id TEXT NOT NULL DEFAULT 'legacy'`,
+      `ALTER TABLE listening_progress
+        ADD COLUMN chapter_id TEXT`,
+      `CREATE INDEX IF NOT EXISTS idx_listening_progress_rendition
+        ON listening_progress(book_id, rendition_id)`,
+    ],
+  },
 ];

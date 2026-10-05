@@ -11,6 +11,8 @@ export type LibraryEntry = {
 
 export type ListeningProgress = {
   bookId: BookId;
+  renditionId: string;
+  chapterId?: string;
   positionSec: number;
   durationSec: number;
 };

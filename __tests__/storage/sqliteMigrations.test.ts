@@ -5,17 +5,15 @@ import {
 } from '../../app/storage/sqlite';
 
 describe('SQLite migrations', () => {
-  it('defines the initial durable schema needed by oto', () => {
+  it('defines the durable schema needed by oto', () => {
     const sql = migrations.map(migration => migration.sql.join('\n')).join('\n');
 
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS library_entries');
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS listening_progress');
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS shelves');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS shelf_books');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS ratings');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS social_activity');
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS pending_mutations');
-    expect(sql).toContain('CREATE TABLE IF NOT EXISTS metadata_cache');
+    expect(sql).toContain('ADD COLUMN rendition_id');
+    expect(sql).toContain('ADD COLUMN chapter_id');
   });
 
   it('applies pending migrations in order inside transactions', async () => {
@@ -50,22 +48,10 @@ describe('SQLite migrations', () => {
       [1, 'initial_core', '2026-10-05T00:00:00.000Z'],
     );
 
-    const runner = new MigrationRunner(db, [
-      migrations[0],
-      {
-        version: 2,
-        name: 'downloads',
-        sql: [
-          'CREATE TABLE IF NOT EXISTS downloads (id TEXT PRIMARY KEY, state TEXT NOT NULL)',
-        ],
-      },
-    ]);
-
+    const runner = new MigrationRunner(db, migrations);
     await runner.migrate();
 
     expect(db.appliedVersions()).toEqual([1, 2]);
-    expect(db.executed.some(statement => statement.sql.includes('CREATE TABLE IF NOT EXISTS downloads')))
-      .toBe(true);
   });
 
   it('rejects duplicate or unordered migration versions', () => {

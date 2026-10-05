@@ -1,17 +1,21 @@
 import type {
-  Book,
+  AudioRendition,
   BookId,
+  BookWork,
   LibraryStatus,
+  RenditionId,
 } from '../domain';
 import {clampPosition} from '../domain';
 import type {
   CatalogueRepository,
   LibraryRepository,
   ProgressRepository,
+  RenditionRepository,
 } from '../repositories';
 
 type Dependencies = {
   catalogue: CatalogueRepository;
+  renditions: RenditionRepository;
   library: LibraryRepository;
   progress: ProgressRepository;
 };
@@ -19,7 +23,7 @@ type Dependencies = {
 export class LibraryService {
   constructor(private readonly dependencies: Dependencies) {}
 
-  private async requireBook(bookId: BookId): Promise<Book> {
+  private async requireBook(bookId: BookId): Promise<BookWork> {
     const book = await this.dependencies.catalogue.get(bookId);
     if (!book) {
       throw new Error(`Unknown book: ${bookId}`);
@@ -27,24 +31,51 @@ export class LibraryService {
     return book;
   }
 
+  private async requireRendition(
+    bookId: BookId,
+    renditionId: RenditionId,
+  ): Promise<AudioRendition> {
+    await this.requireBook(bookId);
+    const rendition = await this.dependencies.renditions.get(renditionId);
+    if (!rendition) {
+      throw new Error(`Unknown audio rendition: ${renditionId}`);
+    }
+    if (rendition.workId !== bookId) {
+      throw new Error(
+        `Audio rendition ${renditionId} does not belong to book ${bookId}`,
+      );
+    }
+    return rendition;
+  }
+
   async getStatus(bookId: BookId): Promise<LibraryStatus | undefined> {
     return (await this.dependencies.library.get(bookId))?.status;
   }
 
-  async getPosition(bookId: BookId): Promise<number> {
-    const progress = await this.dependencies.progress.get(bookId);
+  async getPosition(
+    bookId: BookId,
+    renditionId: RenditionId,
+  ): Promise<number> {
+    const progress = await this.dependencies.progress.get(bookId, renditionId);
     if (progress) {
       return progress.positionSec;
     }
     return (await this.dependencies.library.get(bookId))?.positionSec ?? 0;
   }
 
-  async getProgress(bookId: BookId): Promise<number> {
-    const book = await this.requireBook(bookId);
-    if (book.durationSec <= 0) {
+  async getProgress(
+    bookId: BookId,
+    renditionId: RenditionId,
+  ): Promise<number> {
+    const rendition = await this.requireRendition(bookId, renditionId);
+    const durationSec = rendition.durationSec ?? 0;
+    if (durationSec <= 0) {
       return 0;
     }
-    return Math.min(1, (await this.getPosition(bookId)) / book.durationSec);
+    return Math.min(
+      1,
+      (await this.getPosition(bookId, renditionId)) / durationSec,
+    );
   }
 
   async listByStatus(status: LibraryStatus): Promise<BookId[]> {
@@ -53,16 +84,24 @@ export class LibraryService {
       .map(entry => entry.bookId);
   }
 
-  async setStatus(bookId: BookId, status: LibraryStatus): Promise<void> {
-    const book = await this.requireBook(bookId);
+  async setStatus(
+    bookId: BookId,
+    renditionId: RenditionId,
+    status: LibraryStatus,
+  ): Promise<void> {
+    const rendition = await this.requireRendition(bookId, renditionId);
+    const durationSec = rendition.durationSec ?? 0;
     const current = await this.dependencies.library.get(bookId);
-    const currentProgress = await this.dependencies.progress.get(bookId);
+    const currentProgress = await this.dependencies.progress.get(
+      bookId,
+      renditionId,
+    );
     const existingPosition =
       currentProgress?.positionSec ?? current?.positionSec ?? 0;
     const positionSec =
       status === 'finished'
-        ? book.durationSec
-        : clampPosition(existingPosition, book.durationSec);
+        ? durationSec
+        : clampPosition(existingPosition, durationSec);
 
     await this.dependencies.library.save({
       bookId,
@@ -71,15 +110,23 @@ export class LibraryService {
     });
     await this.dependencies.progress.save({
       bookId,
+      renditionId,
+      chapterId: currentProgress?.chapterId,
       positionSec,
-      durationSec: book.durationSec,
+      durationSec,
     });
   }
 
-  async setPosition(bookId: BookId, positionSec: number): Promise<void> {
-    const book = await this.requireBook(bookId);
+  async setPosition(
+    bookId: BookId,
+    renditionId: RenditionId,
+    positionSec: number,
+    chapterId?: string,
+  ): Promise<void> {
+    const rendition = await this.requireRendition(bookId, renditionId);
+    const durationSec = rendition.durationSec ?? 0;
     const current = await this.dependencies.library.get(bookId);
-    const nextPosition = clampPosition(positionSec, book.durationSec);
+    const nextPosition = clampPosition(positionSec, durationSec);
 
     await this.dependencies.library.save({
       bookId,
@@ -88,13 +135,23 @@ export class LibraryService {
     });
     await this.dependencies.progress.save({
       bookId,
+      renditionId,
+      chapterId,
       positionSec: nextPosition,
-      durationSec: book.durationSec,
+      durationSec,
     });
   }
 
-  async advance(bookId: BookId, deltaSec: number): Promise<void> {
-    const currentPosition = await this.getPosition(bookId);
-    await this.setPosition(bookId, currentPosition + deltaSec);
+  async advance(
+    bookId: BookId,
+    renditionId: RenditionId,
+    deltaSec: number,
+  ): Promise<void> {
+    const currentPosition = await this.getPosition(bookId, renditionId);
+    await this.setPosition(
+      bookId,
+      renditionId,
+      currentPosition + deltaSec,
+    );
   }
 }

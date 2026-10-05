@@ -2,35 +2,54 @@ import type {
   CatalogueRepository,
   LibraryRepository,
   ProgressRepository,
+  RenditionRepository,
   SocialRepository,
 } from '../../app/repositories';
 import type {
-  Book,
+  AudioRendition,
+  BookWork,
   LibraryEntry,
   ListeningProgress,
   SocialActivity,
 } from '../../app/domain';
 
 describe('repository contracts', () => {
-  it('supports catalogue lookup without exposing transport details', async () => {
-    const book: Book = {
-      id: 'book-1',
-      title: 'Book One',
-      author: 'Author',
-      narrator: 'Narrator',
-      durationSec: 3600,
-      chapters: 10,
-    };
-    const repository: CatalogueRepository = {
+  const book: BookWork = {
+    id: 'book-1',
+    title: 'Book One',
+    authors: [{name: 'Author'}],
+    subjects: [],
+    identifiers: {},
+  };
+  const rendition: AudioRendition = {
+    id: 'rendition-1',
+    workId: book.id,
+    narrators: [{name: 'Narrator'}],
+    language: 'en',
+    durationSec: 3600,
+    chapters: [],
+    rights: {
+      status: 'public-domain',
+      source: 'test',
+      verifiedAt: '2026-10-05T00:00:00Z',
+    },
+  };
+
+  it('supports catalogue and rendition lookup without transport details', async () => {
+    const catalogue: CatalogueRepository = {
       get: async id => (id === book.id ? book : null),
       list: async () => [book],
     };
+    const renditions: RenditionRepository = {
+      get: async id => (id === rendition.id ? rendition : null),
+      listForWork: async workId => (workId === book.id ? [rendition] : []),
+    };
 
-    expect(await repository.get('book-1')).toEqual(book);
-    expect(await repository.list()).toEqual([book]);
+    expect(await catalogue.get('book-1')).toEqual(book);
+    expect(await renditions.get('rendition-1')).toEqual(rendition);
   });
 
-  it('supports durable library and progress operations', async () => {
+  it('supports durable library and rendition-aware progress operations', async () => {
     const entry: LibraryEntry = {
       bookId: 'book-1',
       status: 'listening',
@@ -38,6 +57,8 @@ describe('repository contracts', () => {
     };
     const progress: ListeningProgress = {
       bookId: 'book-1',
+      renditionId: 'rendition-1',
+      chapterId: 'chapter-1',
       positionSec: 30,
       durationSec: 3600,
     };
@@ -54,7 +75,7 @@ describe('repository contracts', () => {
     };
 
     expect(await library.get('book-1')).toEqual(entry);
-    expect(await positions.get('book-1')).toEqual(progress);
+    expect(await positions.get('book-1', 'rendition-1')).toEqual(progress);
   });
 
   it('keeps social persistence behind its own repository', async () => {
