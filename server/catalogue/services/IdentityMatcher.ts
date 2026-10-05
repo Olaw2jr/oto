@@ -62,7 +62,8 @@ export class IdentityMatcher {
     const ranked = candidates
       .map(candidate => ({candidate, score: this.score(identity, candidate)}))
       .sort((a, b) => b.score - a.score);
-    return (ranked[0]?.score ?? 0) >= minimumScore ? ranked[0].candidate : null;
+    const best = ranked[0];
+    return best && best.score >= minimumScore ? best.candidate : null;
   }
 }
 
