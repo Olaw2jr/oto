@@ -3,41 +3,50 @@ import type {
   TorrentEngine,
   TorrentFile,
   TorrentFileProgress,
-  TorrentSessionId,
 } from './TorrentEngine';
 import type {TorrentResumeStore} from './TorrentResumeStore';
+import {
+  TorrentSessionPool,
+  type TorrentSessionLease,
+} from './TorrentSessionPool';
 
 export type ActiveTorrentDownload = {
   assetId: string;
-  sessionId: TorrentSessionId;
+  sessionId: string;
   file: TorrentFile;
 };
 
 type InternalDownload = ActiveTorrentDownload & {
   source: TorrentMediaSource;
+  lease: TorrentSessionLease;
 };
 
 export class TorrentDownloadManager {
   private readonly active = new Map<string, InternalDownload>();
+  private readonly pool: TorrentSessionPool;
 
   constructor(
-    private readonly engine: TorrentEngine,
+    engineOrPool: TorrentEngine | TorrentSessionPool,
     private readonly resume: TorrentResumeStore,
-  ) {}
+  ) {
+    this.pool =
+      engineOrPool instanceof TorrentSessionPool
+        ? engineOrPool
+        : new TorrentSessionPool(engineOrPool);
+  }
 
   private async chooseFile(
-    sessionId: TorrentSessionId,
+    lease: TorrentSessionLease,
     source: TorrentMediaSource,
-    files: TorrentFile[],
   ): Promise<TorrentFile> {
     if (source.fileIndex !== undefined || source.filePath !== undefined) {
-      return this.engine.selectFile(sessionId, {
+      return this.pool.selectFile(lease, {
         fileIndex: source.fileIndex,
         filePath: source.filePath,
       });
     }
-    if (files.length === 1) {
-      return files[0];
+    if (lease.session.files.length === 1) {
+      return lease.session.files[0];
     }
     throw new Error('Torrent source must identify a file when the torrent contains multiple files');
   }
@@ -51,25 +60,36 @@ export class TorrentDownloadManager {
     }
 
     const resumeData = await this.resume.load(assetId);
-    const session = await this.engine.open(source, resumeData ?? undefined);
-    const file = await this.chooseFile(session.id, source, session.files);
-    await this.engine.setFilePriority(session.id, file.index, 'high');
+    const lease = await this.pool.acquire(source, resumeData ?? undefined);
+    try {
+      const file = await this.chooseFile(lease, source);
+      await this.pool.retainFile(lease, file.index);
 
-    const active = {assetId, source, sessionId: session.id, file};
-    this.active.set(assetId, active);
-    return active;
+      const active = {
+        assetId,
+        source,
+        lease,
+        sessionId: lease.session.id,
+        file,
+      };
+      this.active.set(assetId, active);
+      return active;
+    } catch (error) {
+      await this.pool.release(lease);
+      throw error;
+    }
   }
 
   async progress(assetId: string): Promise<TorrentFileProgress> {
     const active = this.active.get(assetId);
     if (!active) throw new Error(`No active torrent download: ${assetId}`);
-    return this.engine.getProgress(active.sessionId, active.file.index);
+    return this.pool.progress(active.lease, active.file.index);
   }
 
   async checkpoint(assetId: string): Promise<void> {
     const active = this.active.get(assetId);
     if (!active) throw new Error(`No active torrent download: ${assetId}`);
-    const data = await this.engine.exportResumeData(active.sessionId);
+    const data = await this.pool.exportResumeData(active.lease);
     if (data) await this.resume.save(assetId, data);
   }
 
@@ -77,15 +97,16 @@ export class TorrentDownloadManager {
     const active = this.active.get(assetId);
     if (!active) return;
     await this.checkpoint(assetId);
-    await this.engine.setFilePriority(active.sessionId, active.file.index, 'off');
-    await this.engine.close(active.sessionId);
+    await this.pool.releaseFile(active.lease, active.file.index);
+    await this.pool.release(active.lease);
     this.active.delete(assetId);
   }
 
   async complete(assetId: string): Promise<void> {
     const active = this.active.get(assetId);
     if (active) {
-      await this.engine.close(active.sessionId);
+      await this.pool.releaseFile(active.lease, active.file.index);
+      await this.pool.release(active.lease);
       this.active.delete(assetId);
     }
     await this.resume.remove(assetId);

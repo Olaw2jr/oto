@@ -5,7 +5,7 @@ import type {
   RightsInfo,
 } from '../domain';
 import {RightsPolicy} from '../domain/rights';
-import type {PlayableSource} from '../transports';
+import type {PlayableSource, PrepareContext} from '../transports';
 import {TransportRegistry} from '../transports';
 
 export interface DownloadedAssetLocator {
@@ -33,6 +33,7 @@ export class SourceResolver {
   async resolve(
     asset: MediaAsset,
     rights: RightsInfo,
+    context?: PrepareContext,
   ): Promise<PlayableSource> {
     const local = await this.downloaded.locate(asset.id);
     const candidates = [
@@ -46,7 +47,7 @@ export class SourceResolver {
         continue;
       }
       try {
-        return await this.transports.forSource(source).prepare(source);
+        return await this.transports.forSource(source).prepare(source, context);
       } catch (error) {
         lastError = error;
       }

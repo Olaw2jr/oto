@@ -5,3 +5,5 @@ export * from './TorrentDownloadManager';
 export * from './TorrentResumeStore';
 export * from './LocalhostRangeGateway';
 export * from './TorrentStreamTransport';
+export * from './TorrentPiecePlanner';
+export * from './TorrentSessionPool';
