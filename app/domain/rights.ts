@@ -41,7 +41,9 @@ export class RightsPolicy {
       return {allowed: false, reason: 'territory-not-allowed'};
     }
 
-    if (source.kind === 'local' && rights.status === 'user-owned') {
+    // A local file was either imported by the user or persisted after an
+    // earlier authorized acquisition. It no longer needs remote-source trust.
+    if (source.kind === 'local') {
       return {allowed: true, reason: 'allowed'};
     }
 
