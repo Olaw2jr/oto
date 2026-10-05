@@ -5,7 +5,7 @@ import type {
   SocialRepository,
 } from '../../app/repositories';
 import type {
-  Book,
+  BookWork,
   LibraryEntry,
   ListeningProgress,
   SocialActivity,
@@ -13,13 +13,12 @@ import type {
 
 describe('repository contracts', () => {
   it('supports catalogue lookup without exposing transport details', async () => {
-    const book: Book = {
+    const book: BookWork = {
       id: 'book-1',
       title: 'Book One',
-      author: 'Author',
-      narrator: 'Narrator',
-      durationSec: 3600,
-      chapters: 10,
+      authors: [{name: 'Author'}],
+      subjects: [],
+      identifiers: {},
     };
     const repository: CatalogueRepository = {
       get: async id => (id === book.id ? book : null),
@@ -71,6 +70,6 @@ describe('repository contracts', () => {
       saveActivity: async () => {},
     };
 
-    expect(await social.listFeed()).toEqual([activity]);
+    expect(await social.listFeed()).toEqual(activity ? [activity] : []);
   });
 });
