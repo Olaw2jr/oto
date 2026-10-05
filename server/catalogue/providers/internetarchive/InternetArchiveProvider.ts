@@ -66,6 +66,7 @@ export class InternetArchiveProvider implements AssetProvider {
         const sources: ProviderAssetSource[] = [{
           kind: 'https',
           uri: `${this.baseUrl}/download/${encodeURIComponent(ref.externalId)}/${encodedName}`,
+          trustedSourceId: this.id,
         }];
         if (torrent?.name) {
           const torrentName = torrent.name.split('/').map(encodeURIComponent).join('/');
@@ -73,6 +74,7 @@ export class InternetArchiveProvider implements AssetProvider {
             kind: 'torrent',
             torrentUri: `${this.baseUrl}/download/${encodeURIComponent(ref.externalId)}/${torrentName}`,
             filePath: file.name,
+            trustedSourceId: this.id,
           });
         }
 

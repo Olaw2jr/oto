@@ -66,16 +66,18 @@ export type ProviderAudioRendition = {
   rights: RightsInfo;
 };
 
+type TrustedSource = {trustedSourceId?: string};
+
 export type ProviderAssetSource =
-  | {kind: 'https'; uri: string}
-  | {
+  | ({kind: 'https'; uri: string} & TrustedSource)
+  | ({
       kind: 'torrent';
       torrentUri?: string;
       magnetUri?: string;
       infoHash?: string;
       fileIndex?: number;
       filePath?: string;
-    };
+    } & TrustedSource);
 
 export type ProviderAssetManifest = {
   ref: ExternalBookRef;
