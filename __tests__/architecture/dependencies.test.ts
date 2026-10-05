@@ -70,6 +70,30 @@ describe('application dependency direction', () => {
     }
   });
 
+  it('keeps the audio contract independent from React, storage and concrete players', () => {
+    const audio = path.join(app, 'audio');
+    expect(fs.existsSync(audio)).toBe(true);
+
+    const forbidden = [
+      "from 'react'",
+      'from "react"',
+      "from 'react-native'",
+      'from "react-native"',
+      '/state/',
+      '/features/',
+      '/ui/',
+      '@rntp/',
+      'react-native-track-player',
+    ];
+
+    for (const file of sourceFiles(audio)) {
+      const source = fs.readFileSync(file, 'utf8');
+      for (const dependency of forbidden) {
+        expect(source).not.toContain(dependency);
+      }
+    }
+  });
+
   it('defines library identity and state in the domain layer', () => {
     const source = read('app/domain/library.ts');
     expect(source).toContain('export type BookId');
