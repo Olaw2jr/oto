@@ -1,6 +1,6 @@
-import type {Book, BookId} from '../domain';
+import type {BookId, BookWork} from '../domain';
 
 export interface CatalogueRepository {
-  get(id: BookId): Promise<Book | null>;
-  list(): Promise<Book[]>;
+  get(id: BookId): Promise<BookWork | null>;
+  list(): Promise<BookWork[]>;
 }

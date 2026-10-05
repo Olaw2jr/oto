@@ -8,6 +8,7 @@ const tracks: AudioTrack[] = [
   {
     id: 'book-1:chapter-1',
     bookId: 'book-1',
+    renditionId: 'rendition-1',
     chapterId: 'chapter-1',
     title: 'Chapter 1',
     durationSec: 100,
@@ -19,6 +20,7 @@ const tracks: AudioTrack[] = [
   {
     id: 'book-1:chapter-2',
     bookId: 'book-1',
+    renditionId: 'rendition-1',
     chapterId: 'chapter-2',
     title: 'Chapter 2',
     durationSec: 120,

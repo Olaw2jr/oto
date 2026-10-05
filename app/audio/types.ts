@@ -1,4 +1,4 @@
-import type {BookId} from '../domain';
+import type {BookId, RenditionId} from '../domain';
 
 export type AudioSource = {
   kind: 'remote' | 'local';
@@ -9,6 +9,7 @@ export type AudioSource = {
 export type AudioTrack = {
   id: string;
   bookId: BookId;
+  renditionId: RenditionId;
   chapterId: string;
   title: string;
   durationSec?: number;
