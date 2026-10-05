@@ -18,6 +18,7 @@ export class FakeTorrentEngine implements TorrentEngine {
     endByte: number;
   }> = [];
   readonly progress = new Map<string, TorrentFileProgress>();
+  readonly closedSessions: string[] = [];
   lastResumeData?: string;
   private readonly sessionId = 'fake-session';
 
@@ -38,7 +39,9 @@ export class FakeTorrentEngine implements TorrentEngine {
     };
   }
 
-  async close(_sessionId: TorrentSessionId): Promise<void> {}
+  async close(sessionId: TorrentSessionId): Promise<void> {
+    this.closedSessions.push(sessionId);
+  }
 
   async selectFile(
     sessionId: TorrentSessionId,
