@@ -1,6 +1,7 @@
 import type {
   AudioCatalogueProvider,
   CanonicalBookHint,
+  ExternalBookRef,
   JsonHttpClient,
   ProviderAudioRendition,
 } from '../contracts';
@@ -18,6 +19,7 @@ type LibriVoxBook = {
   title?: string;
   language?: string;
   totaltimesecs?: string;
+  url_iarchive?: string;
   authors?: LibriVoxAuthor[];
   sections?: LibriVoxSection[];
 };
@@ -36,6 +38,14 @@ const seconds = (value?: string): number | undefined => {
   if (!value) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+};
+
+const archiveRef = (url?: string): ExternalBookRef | undefined => {
+  if (!url) return undefined;
+  const match = url.match(/archive\.org\/(?:details|download)\/([^/?#]+)/i);
+  return match?.[1]
+    ? {providerId: 'internetarchive', externalId: match[1]}
+    : undefined;
 };
 
 export class LibriVoxProvider implements AudioCatalogueProvider {
@@ -78,9 +88,11 @@ export class LibriVoxProvider implements AudioCatalogueProvider {
         startSec += durationSec ?? 0;
         return chapter;
       });
+      const archive = archiveRef(item.url_iarchive);
 
       return [{
         ref: {providerId: this.id, externalId: item.id},
+        ...(archive ? {assetRefs: [archive]} : {}),
         workHint: {
           title: item.title,
           authors: (item.authors ?? []).map(authorName).filter(Boolean),

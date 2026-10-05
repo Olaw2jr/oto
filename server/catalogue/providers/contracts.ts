@@ -57,6 +57,7 @@ export type ProviderChapter = {
 
 export type ProviderAudioRendition = {
   ref: ExternalBookRef;
+  assetRefs?: ExternalBookRef[];
   workHint: CanonicalBookHint;
   narrators: string[];
   language: string;
@@ -67,7 +68,14 @@ export type ProviderAudioRendition = {
 
 export type ProviderAssetSource =
   | {kind: 'https'; uri: string}
-  | {kind: 'torrent'; torrentUri?: string; magnetUri?: string; infoHash?: string; fileIndex?: number};
+  | {
+      kind: 'torrent';
+      torrentUri?: string;
+      magnetUri?: string;
+      infoHash?: string;
+      fileIndex?: number;
+      filePath?: string;
+    };
 
 export type ProviderAssetManifest = {
   ref: ExternalBookRef;
