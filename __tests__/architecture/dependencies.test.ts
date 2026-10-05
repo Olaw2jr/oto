@@ -48,6 +48,28 @@ describe('application dependency direction', () => {
     }
   });
 
+  it('keeps application services independent from React and presentation state', () => {
+    const services = path.join(app, 'services');
+    expect(fs.existsSync(services)).toBe(true);
+
+    const forbidden = [
+      "from 'react'",
+      'from "react"',
+      "from 'react-native'",
+      'from "react-native"',
+      '/features/',
+      '/state/',
+      '/ui/',
+    ];
+
+    for (const file of sourceFiles(services)) {
+      const source = fs.readFileSync(file, 'utf8');
+      for (const dependency of forbidden) {
+        expect(source).not.toContain(dependency);
+      }
+    }
+  });
+
   it('defines library identity and state in the domain layer', () => {
     const source = read('app/domain/library.ts');
     expect(source).toContain('export type BookId');
