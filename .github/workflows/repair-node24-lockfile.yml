@@ -1,4 +1,4 @@
-name: Repair Node24 lockfile
+name: Diagnose Node24 lockfile
 
 on:
   push:
@@ -7,30 +7,43 @@ on:
       - .github/workflows/repair-node24-lockfile.yml
 
 permissions:
-  contents: write
+  contents: read
+  issues: write
+  pull-requests: write
 
 jobs:
-  repair:
+  diagnose:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-      - name: Capture strict npm resolution
+      - name: Clone and resolve without setup actions
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          set +e
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" repo
+          cd repo
+          git checkout chore/node24-ci-runtime
+          node --version > /tmp/diag.txt 2>&1
+          npm --version >> /tmp/diag.txt 2>&1
           rm -f package-lock.json
-          npm install --package-lock-only --ignore-scripts --strict-peer-deps > lockfile-diagnostic.txt 2>&1
+          set +e
+          npm install --package-lock-only --ignore-scripts --strict-peer-deps >> /tmp/diag.txt 2>&1
           STATUS=$?
-          echo >> lockfile-diagnostic.txt
-          echo "exit_status=$STATUS" >> lockfile-diagnostic.txt
-          exit 0
-      - name: Commit diagnostic
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lockfile-diagnostic.txt
-          if [ -s package-lock.json ]; then git add package-lock.json; fi
-          git commit -m "chore(deps): capture Node 24 lockfile resolution"
-          git push
+          echo "exit_status=$STATUS" >> /tmp/diag.txt
+          python3 - <<'PY'
+import json, os, urllib.request
+body = open('/tmp/diag.txt', encoding='utf-8', errors='replace').read()
+payload = json.dumps({'body': 'Node24 lockfile diagnostic\n\n~~~text\n' + body[-50000:] + '\n~~~'}).encode()
+req = urllib.request.Request(
+    'https://api.github.com/repos/' + os.environ['GITHUB_REPOSITORY'] + '/issues/18/comments',
+    data=payload,
+    method='POST',
+    headers={
+        'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28',
+    },
+)
+with urllib.request.urlopen(req) as response:
+    print(response.status)
+PY
