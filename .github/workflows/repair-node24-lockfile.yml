@@ -19,7 +19,7 @@ jobs:
           node-version-file: .nvmrc
       - run: |
           rm -f package-lock.json
-          npm install --package-lock-only --ignore-scripts
+          npm install --package-lock-only --ignore-scripts --strict-peer-deps
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
