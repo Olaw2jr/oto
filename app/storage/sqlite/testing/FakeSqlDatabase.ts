@@ -8,6 +8,7 @@ export class FakeSqlDatabase implements SqlDatabase {
   readonly executed: Array<{sql: string; params?: SqlParams}> = [];
   transactionCount = 0;
   private readonly versions = new Set<number>();
+  private readonly queryResults: SqlRow[][] = [];
 
   async execute(sql: string, params?: SqlParams): Promise<void> {
     this.executed.push({sql, params});
@@ -26,7 +27,12 @@ export class FakeSqlDatabase implements SqlDatabase {
         .sort((a, b) => a - b)
         .map(version => ({version} as unknown as T));
     }
-    return [];
+    const rows = this.queryResults.shift() ?? [];
+    return rows.map(row => ({...row} as T));
+  }
+
+  enqueueQueryRows(rows: SqlRow[]): void {
+    this.queryResults.push(rows.map(row => ({...row})));
   }
 
   async transaction<T>(work: () => Promise<T>): Promise<T> {

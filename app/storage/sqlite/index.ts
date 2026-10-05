@@ -8,3 +8,5 @@ export {MigrationRunner} from './MigrationRunner';
 export {migrations} from './migrations';
 export type {SqlMigration} from './migrations';
 export {FakeSqlDatabase} from './testing/FakeSqlDatabase';
+export {SqliteLibraryRepository} from './SqliteLibraryRepository';
+export {SqliteProgressRepository} from './SqliteProgressRepository';
