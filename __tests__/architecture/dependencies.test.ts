@@ -118,6 +118,31 @@ describe('application dependency direction', () => {
     }
   });
 
+  it('keeps background scheduling independent from platform schedulers', () => {
+    const background = path.join(app, 'background');
+    expect(fs.existsSync(background)).toBe(true);
+
+    const forbidden = [
+      "from 'react'",
+      'from "react"',
+      "from 'react-native'",
+      'from "react-native"',
+      'WorkManager',
+      'BGTaskScheduler',
+      'HeadlessJsTask',
+      '/features/',
+      '/state/',
+      '/ui/',
+    ];
+
+    for (const file of sourceFiles(background)) {
+      const source = fs.readFileSync(file, 'utf8');
+      for (const dependency of forbidden) {
+        expect(source).not.toContain(dependency);
+      }
+    }
+  });
+
   it('defines library identity and state in the domain layer', () => {
     const source = read('app/domain/library.ts');
     expect(source).toContain('export type BookId');
