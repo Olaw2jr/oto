@@ -1,0 +1,64 @@
+/// <reference types="node" />
+import fs from 'fs';
+import path from 'path';
+
+const root = path.resolve(__dirname, '../..');
+const app = path.join(root, 'app');
+
+const read = (relative: string) =>
+  fs.readFileSync(path.join(root, relative), 'utf8');
+
+const sourceFiles = (dir: string): string[] =>
+  fs
+    .readdirSync(dir, {withFileTypes: true})
+    .flatMap(entry => {
+      const full = path.join(dir, entry.name);
+      return entry.isDirectory()
+        ? sourceFiles(full)
+        : /\.(ts|tsx)$/.test(entry.name)
+        ? [full]
+        : [];
+    });
+
+describe('application dependency direction', () => {
+  it('keeps domain contracts framework and infrastructure independent', () => {
+    const domain = path.join(app, 'domain');
+    expect(fs.existsSync(domain)).toBe(true);
+
+    const forbidden = [
+      'react',
+      'react-native',
+      '/services/',
+      '/repositories/',
+      '/storage/',
+      '/api/',
+      '/audio/',
+      '/sync/',
+      '/background/',
+      '/features/',
+      '/state/',
+      '/ui/',
+    ];
+
+    for (const file of sourceFiles(domain)) {
+      const source = fs.readFileSync(file, 'utf8');
+      for (const dependency of forbidden) {
+        expect(source).not.toContain(dependency);
+      }
+    }
+  });
+
+  it('defines library identity and state in the domain layer', () => {
+    const source = read('app/domain/library.ts');
+    expect(source).toContain('export type BookId');
+    expect(source).toContain('export type LibraryStatus');
+    expect(source).toContain('export type LibraryEntry');
+    expect(source).toContain('export type ListeningProgress');
+  });
+
+  it('keeps the existing mock-data Status API as a domain alias', () => {
+    const social = read('app/data/social.ts');
+    expect(social).toContain("from '../domain/library'");
+    expect(social).toContain('export type Status = LibraryStatus');
+  });
+});
