@@ -1,0 +1,55 @@
+name: iOS CI
+
+on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - 'Gemfile'
+      - 'Gemfile.lock'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'app.json'
+      - '.nvmrc'
+      - '.github/workflows/ios-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - 'Gemfile'
+      - 'Gemfile.lock'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'app.json'
+      - '.nvmrc'
+      - '.github/workflows/ios-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+      - run: npm ci
+      - name: Install CocoaPods dependencies
+        run: bundle exec pod install --project-directory=ios
+      - name: Build iOS simulator app
+        run: |
+          xcodebuild \
+            -workspace ios/Eyy.xcworkspace \
+            -scheme Eyy \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
