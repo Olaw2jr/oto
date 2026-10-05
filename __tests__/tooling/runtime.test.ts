@@ -11,6 +11,12 @@ describe('JavaScript runtime baseline', () => {
     expect(JSON.parse(read('package.json')).engines?.node).toBe('>=24 <25');
   });
 
+  it('keeps the transitional RN 0.71 React peers deterministic', () => {
+    const pkg = JSON.parse(read('package.json'));
+    expect(pkg.dependencies.react).toBe('18.2.0');
+    expect(pkg.devDependencies['react-test-renderer']).toBe('18.2.0');
+  });
+
   it('uses current Node 24-based GitHub actions', () => {
     const workflow = read('.github/workflows/ci.yml');
     expect(workflow).toContain('actions/checkout@v7');
