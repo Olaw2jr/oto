@@ -22,8 +22,8 @@ describe('oto native identity', () => {
     expect(
       read('android/app/src/main/java/tz/co/oto/MainActivity.kt'),
     ).toContain(`getMainComponentName(): String = "${moduleName}"`);
-    expect(read('ios/Eyy/AppDelegate.mm')).toContain(
-      `RCTAppSetupDefaultRootView(bridge, @"${moduleName}"`,
+    expect(read('ios/Eyy/AppDelegate.swift')).toContain(
+      `withModuleName: "${moduleName}"`,
     );
   });
 
