@@ -3,3 +3,5 @@ export * from './FakeTorrentEngine';
 export * from './NativeTorrentEngine';
 export * from './TorrentDownloadManager';
 export * from './TorrentResumeStore';
+export * from './LocalhostRangeGateway';
+export * from './TorrentStreamTransport';
