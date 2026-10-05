@@ -19,6 +19,7 @@ export class FakeTorrentEngine implements TorrentEngine {
   }> = [];
   readonly progress = new Map<string, TorrentFileProgress>();
   readonly closedSessions: string[] = [];
+  openCount = 0;
   lastResumeData?: string;
   private readonly sessionId = 'fake-session';
 
@@ -31,6 +32,7 @@ export class FakeTorrentEngine implements TorrentEngine {
     if (!source.torrentUri && !source.magnetUri && !source.infoHash) {
       throw new Error('Torrent source requires a descriptor, magnet URI or info hash');
     }
+    this.openCount += 1;
     this.lastResumeData = resumeData;
     return {
       id: this.sessionId,
