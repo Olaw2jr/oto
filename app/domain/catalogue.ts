@@ -91,6 +91,7 @@ export type TorrentMediaSource = {
   magnetUri?: string;
   infoHash?: string;
   fileIndex?: number;
+  filePath?: string;
   trustedSourceId?: string;
 };
 
