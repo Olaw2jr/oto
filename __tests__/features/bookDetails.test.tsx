@@ -103,6 +103,17 @@ describe('BookScreen', () => {
       bookId: 'where-the-crawdads-sing',
     });
   });
+
+  it('makes the whole About row, chevron included, the link', async () => {
+    await renderScreen(
+      <BookScreen
+        navigation={mockNavigation()}
+        route={routeFor('Book', 'where-the-crawdads-sing')}
+      />,
+    );
+    const link = screen.getByRole('link', {name: 'About this book'});
+    expect(link).toHaveStyle({flexDirection: 'row', minHeight: 44});
+  });
 });
 
 describe('rating and reviewing together', () => {
