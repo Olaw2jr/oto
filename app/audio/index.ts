@@ -9,3 +9,4 @@ export type {
 } from './types';
 export {FakeAudioEngine} from './testing/FakeAudioEngine';
 export * from './SourceResolver';
+export * from './rntp';

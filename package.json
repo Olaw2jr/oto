@@ -25,7 +25,8 @@
     "react-native-heroicons": "4.0.0",
     "react-native-safe-area-context": "5.10.1",
     "react-native-screens": "4.28.0",
-    "react-native-svg": "15.15.5"
+    "react-native-svg": "15.15.5",
+    "react-native-track-player": "4.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

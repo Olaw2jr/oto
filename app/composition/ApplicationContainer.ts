@@ -8,6 +8,7 @@ import type {
   ProgressRepository,
   RenditionRepository,
 } from '../repositories';
+import type {AudioEngine} from '../audio';
 import type {LibraryService} from '../services/LibraryService';
 import type {SqlDatabase} from '../storage/sqlite';
 
@@ -22,6 +23,9 @@ export type ApplicationContainer = {
     library: LibraryService;
   };
   library: LibraryProviderAdapter;
+  audio: {
+    createEngine(): Promise<AudioEngine>;
+  };
   storage: {
     openDatabase(): Promise<SqlDatabase>;
   };
@@ -46,6 +50,14 @@ export const createApplicationContainer = (): ApplicationContainer => {
       library: libraryGraph.service,
     },
     library: libraryGraph.adapter,
+    audio: {
+      createEngine: async () => {
+        const {createNativeRntpAudioEngine} = await import(
+          '../audio/rntp/createNativeRntpAudioEngine'
+        );
+        return createNativeRntpAudioEngine();
+      },
+    },
     storage: {
       openDatabase,
     },
