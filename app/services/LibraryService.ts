@@ -127,10 +127,11 @@ export class LibraryService {
     const durationSec = rendition.durationSec ?? 0;
     const current = await this.dependencies.library.get(bookId);
     const nextPosition = clampPosition(positionSec, durationSec);
+    const status = current?.status === 'finished' ? 'finished' : 'listening';
 
     await this.dependencies.library.save({
       bookId,
-      status: current?.status ?? 'listening',
+      status,
       positionSec: nextPosition,
     });
     await this.dependencies.progress.save({

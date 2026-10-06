@@ -119,6 +119,19 @@ describe('LibraryService', () => {
     });
   });
 
+  it('moves a wanted book to listening when playback position is saved', async () => {
+    const {service, library} = setup();
+    await service.setStatus(book.id, rendition.id, 'want');
+
+    await service.setPosition(book.id, rendition.id, 25);
+
+    expect(await library.get(book.id)).toEqual({
+      bookId: book.id,
+      status: 'listening',
+      positionSec: 25,
+    });
+  });
+
   it('clamps seeks and advances to the rendition duration', async () => {
     const {service} = setup();
 
