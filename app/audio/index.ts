@@ -13,3 +13,4 @@ export * from './SourceResolver';
 export * from './rntp';
 export * from './session';
 export * from './controls';
+export * from './sleep';
