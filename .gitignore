@@ -57,3 +57,11 @@ coverage/
 
 # Logs
 *.log
+
+# Release signing material
+/android/keystores/
+*.p12
+*.mobileprovision
+*.provisionprofile
+*.cer
+config/release/private.*
