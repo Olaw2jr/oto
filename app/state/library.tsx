@@ -5,12 +5,14 @@ import React, {
   useContext,
   useMemo,
   useState,
+  useSyncExternalStore,
 } from 'react';
 
-import {getBook} from '../data/catalogue';
-import {CustomShelf, librarySeed, shelvesSeed, Status} from '../data/social';
-
-type Entry = {status: Status; positionSec: number};
+import {
+  createSeedLibraryProviderAdapter,
+  type LibraryProviderAdapter,
+} from '../adapters/library';
+import {CustomShelf, shelvesSeed, Status} from '../data/social';
 
 export type Shelf = CustomShelf & {custom: boolean};
 
@@ -40,16 +42,21 @@ type LibraryValue = {
 
 const LibraryContext = createContext<LibraryValue | null>(null);
 
-const seed = (): Record<string, Entry> =>
-  Object.fromEntries(
-    Object.entries(librarySeed).map(([id, {status, position = 0}]) => [
-      id,
-      {status, positionSec: position * getBook(id).durationSec},
-    ]),
+export const LibraryProvider = ({
+  children,
+  adapter: providedAdapter,
+}: {
+  children: ReactNode;
+  adapter?: LibraryProviderAdapter;
+}) => {
+  const [adapter] = useState(
+    () => providedAdapter ?? createSeedLibraryProviderAdapter(),
   );
-
-export const LibraryProvider = ({children}: {children: ReactNode}) => {
-  const [entries, setEntries] = useState<Record<string, Entry>>(seed);
+  const revision = useSyncExternalStore(
+    adapter.subscribe,
+    adapter.getSnapshot,
+    adapter.getSnapshot,
+  );
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [custom, setCustom] = useState<CustomShelf[]>(shelvesSeed);
   const [marks, setMarks] = useState<Record<string, number[]>>({});
@@ -112,74 +119,31 @@ export const LibraryProvider = ({children}: {children: ReactNode}) => {
     });
   }, []);
 
-  const setStatus = useCallback((bookId: string, status: Status) => {
-    setEntries(current => ({
-      ...current,
-      [bookId]: {
-        status,
-        positionSec:
-          status === 'finished'
-            ? getBook(bookId).durationSec
-            : current[bookId]?.positionSec ?? 0,
-      },
-    }));
-  }, []);
-
-  const setPosition = useCallback((bookId: string, positionSec: number) => {
-    setEntries(current => ({
-      ...current,
-      [bookId]: {
-        status: current[bookId]?.status ?? 'listening',
-        positionSec,
-      },
-    }));
-  }, []);
-
-  const advance = useCallback(
-    (bookId: string, deltaSec: number, limitSec?: number) => {
-      const durationSec = Math.min(
-        getBook(bookId).durationSec,
-        limitSec ?? Infinity,
-      );
-      setEntries(current => {
-        const entry = current[bookId] ?? {status: 'listening', positionSec: 0};
-        const positionSec = Math.min(
-          durationSec,
-          Math.max(0, entry.positionSec + deltaSec),
-        );
-        return {...current, [bookId]: {...entry, positionSec}};
-      });
-    },
-    [],
-  );
-
   const value = useMemo<LibraryValue>(() => {
-    const byStatus = (status: Status) =>
-      Object.keys(entries).filter(id => entries[id].status === status);
     const shelves: Shelf[] = [
       {
         id: 'want',
         name: 'Want to listen',
-        bookIds: byStatus('want'),
+        bookIds: adapter.byStatus('want'),
         custom: false,
       },
       {
         id: 'finished',
         name: 'Finished',
-        bookIds: byStatus('finished'),
+        bookIds: adapter.byStatus('finished'),
         custom: false,
       },
       ...custom.map(s => ({...s, custom: true})),
     ];
+
     return {
-      status: id => entries[id]?.status,
-      positionSec: id => entries[id]?.positionSec ?? 0,
-      progress: id =>
-        Math.min(1, (entries[id]?.positionSec ?? 0) / getBook(id).durationSec),
-      byStatus,
-      setStatus,
-      setPosition,
-      advance,
+      status: adapter.status,
+      positionSec: adapter.positionSec,
+      progress: adapter.progress,
+      byStatus: adapter.byStatus,
+      setStatus: adapter.setStatus,
+      setPosition: adapter.setPosition,
+      advance: adapter.advance,
       rating: id => ratings[id],
       setRating,
       shelves,
@@ -190,12 +154,10 @@ export const LibraryProvider = ({children}: {children: ReactNode}) => {
       addBookmark,
     };
   }, [
-    entries,
+    adapter,
+    revision,
     ratings,
     custom,
-    setStatus,
-    setPosition,
-    advance,
     setRating,
     createShelf,
     toggleOnShelf,
