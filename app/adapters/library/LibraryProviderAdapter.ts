@@ -104,7 +104,7 @@ export class ServiceLibraryProviderAdapter implements LibraryProviderAdapter {
 
     this.library.setOptimistic({
       bookId,
-      status: this.status(bookId) ?? 'listening',
+      status: statusAfterPosition(this.status(bookId)),
       positionSec: nextPosition,
     });
     this.progressRepository.setOptimistic({
@@ -179,5 +179,9 @@ export const createSeedLibraryProviderAdapter =
       bookId => getBook(bookId).durationSec,
     );
   };
+
+const statusAfterPosition = (
+  status: LibraryStatus | undefined,
+): LibraryStatus => (status === 'finished' ? 'finished' : 'listening');
 
 export {seedRenditionId};

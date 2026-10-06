@@ -119,6 +119,8 @@ export const LibraryProvider = ({
     });
   }, []);
 
+  // The external-store revision is an invalidation signal for adapter-derived shelves.
+  /* eslint-disable react-hooks/exhaustive-deps */
   const value = useMemo<LibraryValue>(() => {
     const shelves: Shelf[] = [
       {
@@ -155,7 +157,6 @@ export const LibraryProvider = ({
     };
   }, [
     adapter,
-    revision,
     ratings,
     custom,
     setRating,
@@ -163,7 +164,9 @@ export const LibraryProvider = ({
     toggleOnShelf,
     marks,
     addBookmark,
+    revision,
   ]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   return (
     <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>
