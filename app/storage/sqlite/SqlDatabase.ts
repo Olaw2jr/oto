@@ -3,11 +3,14 @@ export type SqlParams = readonly SqlValue[];
 
 export type SqlRow = Record<string, SqlValue>;
 
-export interface SqlDatabase {
+export interface SqlExecutor {
   execute(sql: string, params?: SqlParams): Promise<void>;
   query<T extends SqlRow = SqlRow>(
     sql: string,
     params?: SqlParams,
   ): Promise<T[]>;
-  transaction<T>(work: () => Promise<T>): Promise<T>;
+}
+
+export interface SqlDatabase extends SqlExecutor {
+  transaction<T>(work: (transaction: SqlExecutor) => Promise<T>): Promise<T>;
 }
