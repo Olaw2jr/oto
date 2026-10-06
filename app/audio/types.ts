@@ -39,3 +39,8 @@ export type LoadOptions = {
 };
 
 export type PlaybackListener = (snapshot: PlaybackSnapshot) => void;
+
+export type PlaybackControlConfiguration = {
+  backwardSec: number;
+  forwardSec: number;
+};

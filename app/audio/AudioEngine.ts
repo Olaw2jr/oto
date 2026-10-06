@@ -13,6 +13,9 @@ export interface AudioEngine {
   skipBy(deltaSec: number): Promise<void>;
   skipToTrack(trackId: string): Promise<void>;
   setRate(rate: number): Promise<void>;
+  configureControls(
+    configuration: import('./types').PlaybackControlConfiguration,
+  ): Promise<void>;
   getSnapshot(): Promise<PlaybackSnapshot>;
   subscribe(listener: PlaybackListener): () => void;
 }

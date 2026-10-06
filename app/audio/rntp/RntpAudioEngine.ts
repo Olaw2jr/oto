@@ -2,6 +2,7 @@ import type {AudioEngine} from '../AudioEngine';
 import type {
   AudioTrack,
   LoadOptions,
+  PlaybackControlConfiguration,
   PlaybackListener,
   PlaybackSnapshot,
   PlaybackState,
@@ -55,6 +56,10 @@ const toNativeTrack = (track: AudioTrack): RntpTrack => ({
 export class RntpAudioEngine implements AudioEngine {
   private initialized = false;
   private tracks: AudioTrack[] = [];
+  private controlConfiguration: PlaybackControlConfiguration = {
+    backwardSec: 15,
+    forwardSec: 30,
+  };
 
   constructor(private readonly driver: RntpDriver) {}
 
@@ -63,7 +68,7 @@ export class RntpAudioEngine implements AudioEngine {
       return;
     }
     await this.driver.setupPlayer();
-    await configureBackgroundPlayback(this.driver);
+    await configureBackgroundPlayback(this.driver, this.controlConfiguration);
     this.initialized = true;
   }
 
@@ -132,6 +137,26 @@ export class RntpAudioEngine implements AudioEngine {
     }
     await this.ensureSetup();
     await this.driver.setRate(rate);
+  }
+
+  async configureControls(
+    configuration: PlaybackControlConfiguration,
+  ): Promise<void> {
+    if (
+      !Number.isFinite(configuration.backwardSec) ||
+      !Number.isFinite(configuration.forwardSec) ||
+      configuration.backwardSec <= 0 ||
+      configuration.forwardSec <= 0
+    ) {
+      throw new Error('Skip intervals must be positive finite seconds');
+    }
+    this.controlConfiguration = {...configuration};
+    if (this.initialized) {
+      await configureBackgroundPlayback(
+        this.driver,
+        this.controlConfiguration,
+      );
+    }
   }
 
   async getSnapshot(): Promise<PlaybackSnapshot> {

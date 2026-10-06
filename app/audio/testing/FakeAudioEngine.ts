@@ -3,6 +3,7 @@ import type {
   AudioTrack,
   LoadOptions,
   PlaybackListener,
+  PlaybackControlConfiguration,
   PlaybackSnapshot,
   PlaybackState,
 } from '../types';
@@ -16,6 +17,10 @@ export class FakeAudioEngine implements AudioEngine {
     rate: 1,
   };
   private readonly listeners = new Set<PlaybackListener>();
+  controlConfiguration: PlaybackControlConfiguration = {
+    backwardSec: 15,
+    forwardSec: 30,
+  };
 
   async load(tracks: AudioTrack[], options: LoadOptions = {}): Promise<void> {
     if (tracks.length === 0) {
@@ -99,6 +104,20 @@ export class FakeAudioEngine implements AudioEngine {
     }
     this.snapshot = {...this.snapshot, rate};
     this.emit();
+  }
+
+  async configureControls(
+    configuration: PlaybackControlConfiguration,
+  ): Promise<void> {
+    if (
+      !Number.isFinite(configuration.backwardSec) ||
+      !Number.isFinite(configuration.forwardSec) ||
+      configuration.backwardSec <= 0 ||
+      configuration.forwardSec <= 0
+    ) {
+      throw new Error('Skip intervals must be positive finite seconds');
+    }
+    this.controlConfiguration = {...configuration};
   }
 
   async getSnapshot(): Promise<PlaybackSnapshot> {
