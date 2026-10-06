@@ -25,6 +25,8 @@ export type RntpTrack = {
   description?: string;
   duration?: number;
   contentType?: string;
+  streamType?: 'progressive' | 'hls';
+  isLiveStream?: boolean;
   bookId: string;
   renditionId: string;
   chapterId: string;

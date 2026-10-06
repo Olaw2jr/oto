@@ -1,6 +1,7 @@
 export type {AudioEngine} from './AudioEngine';
 export type {
   AudioSource,
+  AudioStreamType,
   AudioTrack,
   LoadOptions,
   PlaybackControlConfiguration,
@@ -16,3 +17,4 @@ export * from './controls';
 export * from './sleep';
 export * from './preload';
 export * from './cache';
+export * from './live';

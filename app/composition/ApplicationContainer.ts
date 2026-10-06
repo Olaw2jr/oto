@@ -10,6 +10,7 @@ import type {
 } from '../repositories';
 import {
   ChapterPlaybackSession,
+  LivePlaybackSession,
   type AudioEngine,
   type SleepTimerController,
 } from '../audio';
@@ -34,6 +35,7 @@ export type ApplicationContainer = {
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
+    createLiveSession(): Promise<LivePlaybackSession>;
     createSleepTimer(): Promise<SleepTimerController>;
   };
   storage: {
@@ -104,6 +106,8 @@ export const createApplicationContainer = (): ApplicationContainer => {
     audio: {
       createEngine,
       createPersistentSession,
+      createLiveSession: async () =>
+        new LivePlaybackSession(await createEngine()),
       createSleepTimer: async () => {
         const {createNativeSleepTimerController} = await import(
           '../adapters/audio/createNativeSleepTimerController'

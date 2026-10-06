@@ -4,6 +4,7 @@ import TrackPlayer, {
   IOSCategory,
   IOSCategoryMode,
   PitchAlgorithm,
+  TrackType,
   type Track,
 } from 'react-native-track-player';
 
@@ -51,6 +52,11 @@ export class NativeRntpDriver implements RntpDriver {
     await TrackPlayer.setQueue(
       tracks.map(track => ({
         ...track,
+        type:
+          track.streamType === 'hls'
+            ? TrackType.HLS
+            : TrackType.Default,
+        isLiveStream: track.isLiveStream,
         pitchAlgorithm: PitchAlgorithm.Voice,
       })) as Track[],
     );

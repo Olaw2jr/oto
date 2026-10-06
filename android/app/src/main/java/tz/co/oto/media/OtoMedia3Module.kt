@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -106,7 +107,16 @@ class OtoMedia3Module(
         .setCustomCacheKey(mediaId)
         .setMediaMetadata(metadata)
 
-    if (data.hasKey("contentType") && !data.isNull("contentType")) {
+    val streamType =
+      if (data.hasKey("streamType") && !data.isNull("streamType")) {
+        data.getString("streamType")
+      } else {
+        null
+      }
+
+    if (streamType == "hls") {
+      builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+    } else if (data.hasKey("contentType") && !data.isNull("contentType")) {
       builder.setMimeType(data.getString("contentType"))
     }
     return builder.build()

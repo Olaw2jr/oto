@@ -1,9 +1,12 @@
 import type {BookId, RenditionId} from '../domain';
 
+export type AudioStreamType = 'progressive' | 'hls';
+
 export type AudioSource = {
   kind: 'remote' | 'local';
   uri: string;
   mimeType?: string;
+  streamType?: AudioStreamType;
 };
 
 export type AudioTrack = {
@@ -17,6 +20,7 @@ export type AudioTrack = {
   artwork?: string;
   description?: string;
   durationSec?: number;
+  isLive?: boolean;
   source: AudioSource;
 };
 
