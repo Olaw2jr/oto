@@ -146,7 +146,7 @@ export class RntpAudioEngine implements AudioEngine {
       state: mapState(nativeState),
       trackId: track?.id,
       positionSec: progress.position,
-      durationSec: track?.durationSec ?? progress.duration || undefined,
+      durationSec: track?.durationSec ?? (progress.duration || undefined),
       rate,
     };
   }
