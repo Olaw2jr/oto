@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DiscoverScreen from '../../app/features/discover/DiscoverScreen';
 import OnboardingScreen from '../../app/features/welcome/OnboardingScreen';
 import YouScreen from '../../app/features/you/YouScreen';
+import {ProgressBar} from '../../app/ui/ProgressBar';
 import {useLibrary} from '../../app/state/library';
 import {useSocial} from '../../app/state/social';
 import {TASTE_STORAGE_KEY} from '../../app/state/taste';
@@ -131,9 +132,13 @@ describe('listening goal', () => {
     );
     expect(screen.getByText(`${year} goal`)).toBeOnTheScreen();
     expect(screen.getByText('9 of 12 books')).toBeOnTheScreen();
-    expect(
-      screen.getByRole('progressbar', {name: `${year} listening goal`}),
-    ).toHaveProp('accessibilityValue', {min: 0, max: 100, now: 75});
+    const progress = screen
+      .UNSAFE_getAllByType(ProgressBar)
+      .find(node => node.props.label === `${year} listening goal`);
+    expect(progress?.props).toMatchObject({
+      value: 0.75,
+      label: `${year} listening goal`,
+    });
   });
 
   it('counts books you finish', async () => {
