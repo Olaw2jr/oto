@@ -140,45 +140,64 @@ export class ServiceLibraryProviderAdapter implements LibraryProviderAdapter {
   };
 }
 
-export const createSeedLibraryProviderAdapter =
-  (): ServiceLibraryProviderAdapter => {
-    const catalogue = new SeedCatalogueRepository();
-    const renditions = new SeedRenditionRepository();
+export type SeedLibraryGraph = {
+  catalogue: SeedCatalogueRepository;
+  renditions: SeedRenditionRepository;
+  library: ObservableLibraryRepository;
+  progress: ObservableProgressRepository;
+  service: LibraryService;
+  adapter: ServiceLibraryProviderAdapter;
+};
 
-    const libraryEntries = Object.entries(librarySeed).map(
-      ([bookId, seed]) => {
-        const durationSec = getBook(bookId).durationSec;
-        return {
-          bookId,
-          status: seed.status,
-          positionSec: (seed.position ?? 0) * durationSec,
-        };
-      },
-    );
-    const progressEntries = libraryEntries.map(entry => ({
-      bookId: entry.bookId,
-      renditionId: seedRenditionId(entry.bookId),
-      positionSec: entry.positionSec,
-      durationSec: getBook(entry.bookId).durationSec,
-    }));
+export const createSeedLibraryGraph = (): SeedLibraryGraph => {
+  const catalogue = new SeedCatalogueRepository();
+  const renditions = new SeedRenditionRepository();
 
-    const library = new ObservableLibraryRepository(libraryEntries);
-    const progress = new ObservableProgressRepository(progressEntries);
-    const service = new LibraryService({
-      catalogue,
-      renditions,
-      library,
-      progress,
-    });
+  const libraryEntries = Object.entries(librarySeed).map(
+    ([bookId, seed]) => {
+      const durationSec = getBook(bookId).durationSec;
+      return {
+        bookId,
+        status: seed.status,
+        positionSec: (seed.position ?? 0) * durationSec,
+      };
+    },
+  );
+  const progressEntries = libraryEntries.map(entry => ({
+    bookId: entry.bookId,
+    renditionId: seedRenditionId(entry.bookId),
+    positionSec: entry.positionSec,
+    durationSec: getBook(entry.bookId).durationSec,
+  }));
 
-    return new ServiceLibraryProviderAdapter(
-      service,
-      library,
-      progress,
-      seedRenditionId,
-      bookId => getBook(bookId).durationSec,
-    );
+  const library = new ObservableLibraryRepository(libraryEntries);
+  const progress = new ObservableProgressRepository(progressEntries);
+  const service = new LibraryService({
+    catalogue,
+    renditions,
+    library,
+    progress,
+  });
+  const providerAdapter = new ServiceLibraryProviderAdapter(
+    service,
+    library,
+    progress,
+    seedRenditionId,
+    bookId => getBook(bookId).durationSec,
+  );
+
+  return {
+    catalogue,
+    renditions,
+    library,
+    progress,
+    service,
+    adapter: providerAdapter,
   };
+};
+
+export const createSeedLibraryProviderAdapter =
+  (): ServiceLibraryProviderAdapter => createSeedLibraryGraph().adapter;
 
 const statusAfterPosition = (
   status: LibraryStatus | undefined,
