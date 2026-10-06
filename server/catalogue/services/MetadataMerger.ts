@@ -46,7 +46,11 @@ export class MetadataMerger {
   ): Provenanced<T> | undefined {
     return records
       .map(select)
-      .filter((value): value is Provenanced<T> => Boolean(value))
+      .filter(
+        (value): value is Provenanced<T> =>
+          value !== undefined &&
+          !(Array.isArray(value.value) && value.value.length === 0),
+      )
       .sort((a, b) => this.rank(a.providerId) - this.rank(b.providerId))[0];
   }
 
