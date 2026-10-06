@@ -19,6 +19,7 @@ describe('React Native 0.87 iOS baseline', () => {
     expect(podfile).toContain('prepare_react_native_project!');
     expect(podfile).toContain('use_react_native!');
     expect(podfile).not.toContain('FlipperConfiguration');
+    expect(podfile).toContain("build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'");
   });
 
   it('uses the Swift React Native app delegate and oto module name', () => {
@@ -42,6 +43,8 @@ describe('React Native 0.87 iOS baseline', () => {
     expect(exists('ios/Eyy/PrivacyInfo.xcprivacy')).toBe(true);
     const privacy = read('ios/Eyy/PrivacyInfo.xcprivacy');
     expect(privacy).toContain('NSPrivacyAccessedAPITypes');
+    const project = read('ios/Eyy.xcodeproj/project.pbxproj');
+    expect(project).not.toContain('\\n\\t\\tA100');
     const plist = read('ios/Eyy/Info.plist');
     expect(plist).toContain('<key>NSAllowsLocalNetworking</key>');
     expect(plist).toMatch(/<key>UIRequiredDeviceCapabilities<\/key>[\s\S]*<string>arm64<\/string>/);
