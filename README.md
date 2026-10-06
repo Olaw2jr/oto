@@ -33,8 +33,6 @@ The design takes its cues from Kenya Hara's emptiness and restraint, with Apple'
 
 ## Screens
 
-> These are concept screens from the [oto design canvas](https://claude.ai/artifact/NtXhA3VnydXvCvepVidLL6), the source of truth for the design. They are not screenshots of the running app. See [Status](#status) for what is built.
-
 <table>
   <tr>
     <td><img src="docs/images/app-store/01-home.png" alt="Home" width="100%"></td>
