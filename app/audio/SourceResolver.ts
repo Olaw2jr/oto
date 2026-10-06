@@ -23,11 +23,21 @@ const order = (source: MediaSource): number => {
   }
 };
 
+export interface PlaybackCacheWarmHint {
+  locate(assetId: string): Promise<LocalMediaSource | null>;
+  warm(
+    assetId: string,
+    playable: PlayableSource,
+    sizeBytes?: number,
+  ): void;
+}
+
 export class SourceResolver {
   constructor(
     private readonly transports: TransportRegistry,
     private readonly rightsPolicy: RightsPolicy,
     private readonly downloaded: DownloadedAssetLocator,
+    private readonly cache?: PlaybackCacheWarmHint,
   ) {}
 
   async resolve(
@@ -35,7 +45,9 @@ export class SourceResolver {
     rights: RightsInfo,
     context?: PrepareContext,
   ): Promise<PlayableSource> {
-    const local = await this.downloaded.locate(asset.id);
+    const local =
+      (await this.cache?.locate(asset.id)) ??
+      (await this.downloaded.locate(asset.id));
     const candidates = [
       ...(local ? [local] : []),
       ...asset.sources,
@@ -47,7 +59,13 @@ export class SourceResolver {
         continue;
       }
       try {
-        return await this.transports.forSource(source).prepare(source, context);
+        const playable = await this.transports
+          .forSource(source)
+          .prepare(source, context);
+        if (source.kind !== 'local') {
+          this.cache?.warm(asset.id, playable, asset.sizeBytes);
+        }
+        return playable;
       } catch (error) {
         lastError = error;
       }
