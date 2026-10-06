@@ -19,6 +19,10 @@ export type RntpTrack = {
   id: string;
   url: string;
   title: string;
+  artist?: string;
+  album?: string;
+  artwork?: string;
+  description?: string;
   duration?: number;
   contentType?: string;
   bookId: string;
