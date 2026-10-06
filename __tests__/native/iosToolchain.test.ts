@@ -19,6 +19,7 @@ describe('React Native 0.87 iOS baseline', () => {
     expect(podfile).toContain('prepare_react_native_project!');
     expect(podfile).toContain('use_react_native!');
     expect(podfile).not.toContain('FlipperConfiguration');
+    expect(podfile).toContain("build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'");
   });
 
   it('uses the Swift React Native app delegate and oto module name', () => {
