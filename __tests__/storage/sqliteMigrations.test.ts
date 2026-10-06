@@ -24,6 +24,9 @@ describe('SQLite migrations', () => {
 
     expect(db.appliedVersions()).toEqual(migrations.map(m => m.version));
     expect(db.transactionCount).toBe(migrations.length);
+    expect(db.transactionExecuted).toHaveLength(
+      migrations.reduce((count, migration) => count + migration.sql.length + 1, 0),
+    );
   });
 
   it('does not reapply already recorded migrations', async () => {

@@ -1,11 +1,13 @@
 import type {
   SqlDatabase,
+  SqlExecutor,
   SqlParams,
   SqlRow,
 } from '../SqlDatabase';
 
 export class FakeSqlDatabase implements SqlDatabase {
   readonly executed: Array<{sql: string; params?: SqlParams}> = [];
+  readonly transactionExecuted: Array<{sql: string; params?: SqlParams}> = [];
   transactionCount = 0;
   private readonly versions = new Set<number>();
   private readonly queryResults: SqlRow[][] = [];
@@ -21,7 +23,10 @@ export class FakeSqlDatabase implements SqlDatabase {
     }
   }
 
-  async query<T extends SqlRow = SqlRow>(sql: string): Promise<T[]> {
+  async query<T extends SqlRow = SqlRow>(
+    sql: string,
+    _params?: SqlParams,
+  ): Promise<T[]> {
     if (sql.includes('SELECT version FROM schema_migrations')) {
       return [...this.versions]
         .sort((a, b) => a - b)
@@ -35,9 +40,17 @@ export class FakeSqlDatabase implements SqlDatabase {
     this.queryResults.push(rows.map(row => ({...row})));
   }
 
-  async transaction<T>(work: () => Promise<T>): Promise<T> {
+  async transaction<T>(work: (transaction: SqlExecutor) => Promise<T>): Promise<T> {
     this.transactionCount += 1;
-    return work();
+    const transaction: SqlExecutor = {
+      execute: (sql, params) => {
+        this.transactionExecuted.push({sql, params});
+        return this.execute(sql, params);
+      },
+      query: <Row extends SqlRow = SqlRow>(sql: string, params?: SqlParams) =>
+        this.query<Row>(sql, params),
+    };
+    return work(transaction);
   }
 
   appliedVersions(): number[] {

@@ -1,5 +1,6 @@
 import type {
   SqlDatabase,
+  SqlExecutor,
   SqlParams,
   SqlRow,
 } from './SqlDatabase';
@@ -12,42 +13,58 @@ type NativeScalar =
   | ArrayBuffer
   | ArrayBufferView;
 
-type NativeQueryResult = {
-  rows?: Array<Record<string, NativeScalar>>;
-};
+type NativeQueryResult = {rows?: Array<Record<string, NativeScalar>>};
 
-export type OpSqliteClient = {
+export type OpSqliteExecutor = {
   execute(
     sql: string,
     params?: NativeScalar[],
   ): Promise<NativeQueryResult>;
-  transaction(work: () => Promise<void>): Promise<void>;
 };
 
-export class OpSqliteDatabase implements SqlDatabase {
-  constructor(private readonly client: OpSqliteClient) {}
+export type OpSqliteClient = OpSqliteExecutor & {
+  transaction(
+    work: (transaction: OpSqliteExecutor) => Promise<void>,
+  ): Promise<void>;
+};
 
-  async execute(sql: string, params: SqlParams = []): Promise<void> {
-    await this.client.execute(sql, [...params] as NativeScalar[]);
-  }
-
-  async query<T extends SqlRow = SqlRow>(
-    sql: string,
-    params: SqlParams = [],
-  ): Promise<T[]> {
-    const result = await this.client.execute(
+const createSqlExecutor = (native: OpSqliteExecutor): SqlExecutor => ({
+  execute: async (sql, params) => {
+    await native.execute(sql, [...(params ?? [])] as NativeScalar[]);
+  },
+  query: async <Row extends SqlRow = SqlRow>(sql: string, params?: SqlParams) => {
+    const result = await native.execute(
       sql,
-      [...params] as NativeScalar[],
+      [...(params ?? [])] as NativeScalar[],
     );
-    return (result.rows ?? []) as T[];
+    return (result.rows ?? []) as Row[];
+  },
+});
+
+export class OpSqliteDatabase implements SqlDatabase {
+  private readonly executor: SqlExecutor;
+
+  constructor(private readonly client: OpSqliteClient) {
+    this.executor = createSqlExecutor(client);
   }
 
-  async transaction<T>(work: () => Promise<T>): Promise<T> {
+  execute(sql: string, params?: SqlParams): Promise<void> {
+    return this.executor.execute(sql, params);
+  }
+
+  query<Row extends SqlRow = SqlRow>(
+    sql: string,
+    params?: SqlParams,
+  ): Promise<Row[]> {
+    return this.executor.query<Row>(sql, params);
+  }
+
+  async transaction<T>(work: (transaction: SqlExecutor) => Promise<T>): Promise<T> {
     let completed = false;
     let result!: T;
 
-    await this.client.transaction(async () => {
-      result = await work();
+    await this.client.transaction(async nativeTransaction => {
+      result = await work(createSqlExecutor(nativeTransaction));
       completed = true;
     });
 

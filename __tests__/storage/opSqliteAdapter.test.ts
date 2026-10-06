@@ -1,4 +1,5 @@
 import {OpSqliteDatabase} from '../../app/storage/sqlite';
+import type {OpSqliteExecutor} from '../../app/storage/sqlite/OpSqliteDatabase';
 
 type NativeResult = {
   rowsAffected: number;
@@ -9,15 +10,21 @@ class FakeNativeDatabase {
   calls: Array<{sql: string; params?: unknown[]}> = [];
   rows: NativeResult['rows'] = [];
   transactionCount = 0;
+  transactionCalls: Array<{sql: string; params?: unknown[]}> = [];
 
   async execute(sql: string, params?: unknown[]): Promise<NativeResult> {
     this.calls.push({sql, params});
     return {rowsAffected: 0, rows: this.rows};
   }
 
-  async transaction(work: () => Promise<void>): Promise<void> {
+  async transaction(work: (transaction: OpSqliteExecutor) => Promise<void>): Promise<void> {
     this.transactionCount += 1;
-    await work();
+    await work({
+      execute: async (sql, params) => {
+        this.transactionCalls.push({sql, params});
+        return {rowsAffected: 0, rows: []};
+      },
+    });
   }
 }
 
@@ -47,13 +54,18 @@ describe('OP-SQLite adapter', () => {
     const db = new OpSqliteDatabase(native);
     let ran = false;
 
-    const result = await db.transaction(async () => {
+    const result = await db.transaction(async transaction => {
       ran = true;
+      await transaction.execute('UPDATE listening_progress SET position_sec = ?', [84]);
       return 'ok';
     });
 
     expect(result).toBe('ok');
     expect(ran).toBe(true);
     expect(native.transactionCount).toBe(1);
+    expect(native.transactionCalls).toEqual([
+      {sql: 'UPDATE listening_progress SET position_sec = ?', params: [84]},
+    ]);
+    expect(native.calls).toHaveLength(0);
   });
 });
