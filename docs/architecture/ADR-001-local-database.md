@@ -35,3 +35,12 @@ Well maintained, but oto is a bare React Native application and does not otherwi
 - https://op-engineering.github.io/op-sqlite/docs/installation/
 - https://github.com/OP-Engineering/op-sqlite
 - https://sqlite.margelo.com/docs
+
+
+## Implementation status
+
+PE-01b integrates `@op-engineering/op-sqlite` 18.2.5 behind `SqlDatabase`.
+The native package is isolated in `openOtoDatabase.ts`; repositories and
+services continue to depend only on oto-owned interfaces. Database startup
+enables foreign keys and runs the ordered migration ledger before repositories
+are composed.

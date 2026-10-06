@@ -10,3 +10,5 @@ export type {SqlMigration} from './migrations';
 export {FakeSqlDatabase} from './testing/FakeSqlDatabase';
 export {SqliteLibraryRepository} from './SqliteLibraryRepository';
 export {SqliteProgressRepository} from './SqliteProgressRepository';
+export {OpSqliteDatabase} from './OpSqliteDatabase';
+export type {OpSqliteClient} from './OpSqliteDatabase';

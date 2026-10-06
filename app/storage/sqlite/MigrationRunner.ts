@@ -33,11 +33,11 @@ export class MigrationRunner {
         continue;
       }
 
-      await this.db.transaction(async () => {
+      await this.db.transaction(async transaction => {
         for (const sql of migration.sql) {
-          await this.db.execute(sql);
+          await transaction.execute(sql);
         }
-        await this.db.execute(
+        await transaction.execute(
           'INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)',
           [migration.version, migration.name, new Date().toISOString()],
         );
