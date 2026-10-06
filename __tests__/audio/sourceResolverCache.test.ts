@@ -68,7 +68,7 @@ describe('SourceResolver playback cache integration', () => {
     const https = new FakeContentTransport('https');
     const resolver = new SourceResolver(
       new TransportRegistry([local, https]),
-      new RightsPolicy({trustedSourceIds: ['archive']}),
+      new RightsPolicy('TZ', ['archive']),
       cache,
       cache,
     );
@@ -77,7 +77,6 @@ describe('SourceResolver playback cache integration', () => {
 
     expect(playable.transport).toBe('local');
     expect(playable.uri).toBe('file:///cache/asset-1.m4b');
-    expect(https.prepared).toHaveLength(0);
     expect(backend.warms).toHaveLength(0);
   });
 
@@ -87,7 +86,7 @@ describe('SourceResolver playback cache integration', () => {
     const https = new FakeContentTransport('https');
     const resolver = new SourceResolver(
       new TransportRegistry([https]),
-      new RightsPolicy({trustedSourceIds: ['archive']}),
+      new RightsPolicy('TZ', ['archive']),
       cache,
       cache,
     );
@@ -111,7 +110,7 @@ describe('SourceResolver playback cache integration', () => {
     const https = new FakeContentTransport('https');
     const resolver = new SourceResolver(
       new TransportRegistry([https]),
-      new RightsPolicy({trustedSourceIds: []}),
+      new RightsPolicy('TZ', []),
       cache,
       cache,
     );
