@@ -13,7 +13,7 @@ describe('background playback service wiring', () => {
   });
 
   it('handles remote transport controls in the playback service', () => {
-    const service = read('app/audio/rntp/PlaybackService.ts');
+    const service = read('app/adapters/audio/PlaybackService.ts');
 
     for (const event of [
       'Event.RemotePlay',
