@@ -1,6 +1,6 @@
-import {IdentityMatcher} from '../../../../server/catalogue/services/IdentityMatcher';
-import {MetadataMerger} from '../../../../server/catalogue/services/MetadataMerger';
-import type {ProviderBookRecord} from '../../../../server/catalogue/providers';
+import {IdentityMatcher} from '../../../server/catalogue/services/IdentityMatcher';
+import {MetadataMerger} from '../../../server/catalogue/services/MetadataMerger';
+import type {ProviderBookRecord} from '../../../server/catalogue/providers';
 
 const at = '2026-10-05T00:00:00Z';
 

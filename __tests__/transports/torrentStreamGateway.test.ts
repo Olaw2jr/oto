@@ -1,8 +1,8 @@
 import {
   LocalhostRangeGateway,
   TorrentStreamTransport,
-} from '../../../app/transports/torrent';
-import {FakeTorrentEngine} from '../../../app/transports/torrent/FakeTorrentEngine';
+} from '../../app/transports/torrent';
+import {FakeTorrentEngine} from '../../app/transports/torrent/FakeTorrentEngine';
 
 describe('torrent localhost streaming gateway', () => {
   it('exposes the selected torrent file as a loopback HTTP source', async () => {

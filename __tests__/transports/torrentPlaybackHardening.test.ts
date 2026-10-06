@@ -6,7 +6,7 @@ import {
   TorrentPiecePlanner,
   TorrentSessionPool,
   TorrentStreamTransport,
-} from '../../../app/transports/torrent';
+} from '../../app/transports/torrent';
 
 describe('torrent playback hardening', () => {
   const source = {

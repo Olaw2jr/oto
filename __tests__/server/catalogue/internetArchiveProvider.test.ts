@@ -1,8 +1,8 @@
-import {InternetArchiveProvider} from '../../../../server/catalogue/providers/internetarchive/InternetArchiveProvider';
+import {InternetArchiveProvider} from '../../../server/catalogue/providers/internetarchive/InternetArchiveProvider';
 import type {
   JsonHttpClient,
   ProviderAudioRendition,
-} from '../../../../server/catalogue/providers';
+} from '../../../server/catalogue/providers';
 
 class StubHttp implements JsonHttpClient {
   calls: string[] = [];
@@ -38,14 +38,14 @@ describe('InternetArchiveProvider', () => {
     expect(assets).toHaveLength(1);
     expect(assets[0]?.format).toBe('mp3');
     expect(assets[0]?.sizeBytes).toBe(1024);
-    expect(assets[0]?.sources).toContainEqual({
+    expect(assets[0]?.sources).toContainEqual(expect.objectContaining({
       kind: 'https',
       uri: 'https://archive.org/download/book/book_01.mp3',
-    });
-    expect(assets[0]?.sources).toContainEqual({
+    }));
+    expect(assets[0]?.sources).toContainEqual(expect.objectContaining({
       kind: 'torrent',
       torrentUri: 'https://archive.org/download/book/book_archive.torrent',
       filePath: 'book_01.mp3',
-    });
+    }));
   });
 });

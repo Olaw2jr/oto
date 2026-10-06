@@ -1,4 +1,4 @@
-import {FakeTorrentEngine} from '../../../app/transports/torrent/FakeTorrentEngine';
+import {FakeTorrentEngine} from '../../app/transports/torrent/FakeTorrentEngine';
 
 describe('torrent engine boundary', () => {
   it('opens a source, selects its file and records playback priority without a native client', async () => {

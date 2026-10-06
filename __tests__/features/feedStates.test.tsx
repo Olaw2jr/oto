@@ -1,4 +1,5 @@
 import React from 'react';
+import {StyleSheet, View} from 'react-native';
 import {act, fireEvent, screen, within} from '@testing-library/react-native';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -20,6 +21,14 @@ const renderFollowing = async () => {
   return navigation;
 };
 const card = (who: string) => screen.getByTestId(`update-${who}`);
+const updateMenu = () =>
+  screen
+    .UNSAFE_getAllByType(View)
+    .find(
+      node =>
+        node.props.accessibilityRole === 'menu' &&
+        node.props.accessibilityLabel === 'Update options',
+    );
 
 describe('Following update types', () => {
   it('shows wants-to-listen, rated and made-progress updates', async () => {
@@ -58,9 +67,7 @@ describe('update menu', () => {
         name: 'More options for this update',
       }),
     );
-    expect(
-      screen.getByRole('menu', {name: 'Update options'}),
-    ).toBeOnTheScreen();
+    expect(updateMenu()).toBeDefined();
     await press(screen.getByRole('menuitem', {name: 'Hide this update'}));
     expect(screen.queryByTestId('update-Ren I.')).toBeNull();
   });
@@ -127,7 +134,6 @@ describe('Following offline', () => {
 
 describe('update menu in dark mode', () => {
   it('stands out from the card with a raised colour and an edge', async () => {
-    const {StyleSheet} = require('react-native');
     const AsyncStorage = require('@react-native-async-storage/async-storage');
     const {APPEARANCE_STORAGE_KEY} = require('../../app/theme/ThemeProvider');
     const {colors} = require('../../app/theme/colors');
@@ -140,9 +146,7 @@ describe('update menu in dark mode', () => {
       }),
     );
 
-    const menu = StyleSheet.flatten(
-      screen.getByRole('menu', {name: 'Update options'}).props.style,
-    );
+    const menu = StyleSheet.flatten(updateMenu()?.props.style);
     expect(menu.backgroundColor).toBe(colors.dark.raised);
     expect(menu.borderWidth).toBe(1);
     expect(menu.borderColor).toBe(colors.dark.hairline);

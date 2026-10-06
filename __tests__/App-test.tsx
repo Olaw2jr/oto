@@ -8,10 +8,10 @@ import {SESSION_STORAGE_KEY} from '../app/state/session';
 import {renderAsync} from './test-utils';
 
 const mockUseColorScheme = jest.fn();
-jest.mock('react-native', () => {
-  const actual = jest.requireActual('react-native');
-  return {...actual, useColorScheme: () => mockUseColorScheme()};
-});
+jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({
+  __esModule: true,
+  default: () => mockUseColorScheme(),
+}));
 
 const statusBars = () => screen.UNSAFE_getAllByType(StatusBar);
 

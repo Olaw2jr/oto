@@ -1,5 +1,5 @@
-import {HttpsTransport, LocalFileTransport} from '../../../app/transports';
-import type {DownloadHandle} from '../../../app/transports';
+import {HttpsTransport, LocalFileTransport} from '../../app/transports';
+import type {DownloadHandle} from '../../app/transports';
 
 const handle: DownloadHandle = {
   id: 'download-1',
