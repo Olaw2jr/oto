@@ -12,11 +12,11 @@ describe('RN Track Player v4 integration', () => {
   });
 
   it('isolates the native package behind a lazy factory and driver', () => {
-    const driver = read('app/audio/rntp/NativeRntpDriver.ts');
+    const driver = read('app/adapters/audio/NativeRntpDriver.ts');
     const factory = read('app/audio/rntp/createNativeRntpAudioEngine.ts');
 
     expect(driver).toContain("from 'react-native-track-player'");
-    expect(factory).toContain("import('./NativeRntpDriver')");
+    expect(factory).toContain("'../../adapters/audio/NativeRntpDriver'");
     expect(factory).not.toContain(
       "import TrackPlayer from 'react-native-track-player'",
     );

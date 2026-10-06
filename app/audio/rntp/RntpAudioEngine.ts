@@ -153,14 +153,15 @@ export class RntpAudioEngine implements AudioEngine {
 
   subscribe(listener: PlaybackListener): () => void {
     let active = true;
-    const publish = () => {
-      void this.getSnapshot()
-        .then(snapshot => {
-          if (active) {
-            listener(snapshot);
-          }
-        })
-        .catch(() => {});
+    const publish = async () => {
+      try {
+        const snapshot = await this.getSnapshot();
+        if (active) {
+          listener(snapshot);
+        }
+      } catch {
+        // Native snapshots can be temporarily unavailable during service startup.
+      }
     };
     const subscriptions = EVENTS.map(event =>
       this.driver.addEventListener(event, publish),

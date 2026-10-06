@@ -1,6 +1,7 @@
 import type {AudioTrack} from '../../app/audio';
 import {RntpAudioEngine} from '../../app/audio/rntp/RntpAudioEngine';
 import {FakeRntpDriver} from '../../app/audio/rntp/testing/FakeRntpDriver';
+import {waitFor} from '@testing-library/react-native';
 
 const tracks: AudioTrack[] = [
   {
@@ -98,14 +99,13 @@ describe('RntpAudioEngine', () => {
     driver.position = 33;
     driver.emit('playback-progress-updated');
 
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(listener).toHaveBeenCalledWith(
-      expect.objectContaining({
-        trackId: tracks[0].id,
-        positionSec: 33,
-      }),
+    await waitFor(() =>
+      expect(listener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trackId: tracks[0].id,
+          positionSec: 33,
+        }),
+      ),
     );
 
     unsubscribe();
