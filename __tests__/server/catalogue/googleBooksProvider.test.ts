@@ -1,5 +1,5 @@
-import {GoogleBooksProvider} from '../../../../server/catalogue/providers/googlebooks/GoogleBooksProvider';
-import type {JsonHttpClient} from '../../../../server/catalogue/providers';
+import {GoogleBooksProvider} from '../../../server/catalogue/providers/googlebooks/GoogleBooksProvider';
+import type {JsonHttpClient} from '../../../server/catalogue/providers';
 
 class StubHttp implements JsonHttpClient {
   calls: string[] = [];

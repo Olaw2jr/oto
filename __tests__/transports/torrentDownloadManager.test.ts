@@ -2,7 +2,7 @@ import {
   FakeTorrentEngine,
   InMemoryTorrentResumeStore,
   TorrentDownloadManager,
-} from '../../../app/transports/torrent';
+} from '../../app/transports/torrent';
 
 describe('TorrentDownloadManager', () => {
   it('restores resume data, selects the requested file and checkpoints state', async () => {

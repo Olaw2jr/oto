@@ -1,8 +1,8 @@
 import {
   FakeContentTransport,
   TransportRegistry,
-} from '../../../app/transports';
-import type {MediaSource} from '../../../app/domain';
+} from '../../app/transports';
+import type {MediaSource} from '../../app/domain';
 
 describe('content transport boundary', () => {
   it('selects a replaceable transport by media source', async () => {

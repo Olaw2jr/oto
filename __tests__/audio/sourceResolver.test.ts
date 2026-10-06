@@ -1,10 +1,10 @@
-import {SourceResolver} from '../../../app/audio/SourceResolver';
-import type {MediaAsset, RightsInfo} from '../../../app/domain';
-import {RightsPolicy} from '../../../app/domain/rights';
+import {SourceResolver} from '../../app/audio/SourceResolver';
+import type {MediaAsset, RightsInfo} from '../../app/domain';
+import {RightsPolicy} from '../../app/domain/rights';
 import {
   FakeContentTransport,
   TransportRegistry,
-} from '../../../app/transports';
+} from '../../app/transports';
 
 const rights: RightsInfo = {
   status: 'public-domain',

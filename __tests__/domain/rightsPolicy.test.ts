@@ -1,7 +1,7 @@
-import {RightsPolicy} from '../../../app/domain/rights';
-import {PolicyEnforcedAssetProvider} from '../../../server/catalogue/services/PolicyEnforcedAssetProvider';
-import {FakeAssetProvider} from '../../../server/catalogue/providers/fakes';
-import type {ProviderAssetManifest, ProviderAudioRendition} from '../../../server/catalogue/providers';
+import {RightsPolicy} from '../../app/domain/rights';
+import {PolicyEnforcedAssetProvider} from '../../server/catalogue/services/PolicyEnforcedAssetProvider';
+import {FakeAssetProvider} from '../../server/catalogue/providers/fakes';
+import type {ProviderAssetManifest, ProviderAudioRendition} from '../../server/catalogue/providers';
 
 const rendition: ProviderAudioRendition = {
   ref: {providerId: 'librivox', externalId: 'book-1'},

@@ -2,13 +2,13 @@ import {
   FakeAssetProvider,
   FakeAudioCatalogueProvider,
   FakeMetadataProvider,
-} from '../../../../server/catalogue/providers/fakes';
+} from '../../../server/catalogue/providers/fakes';
 import type {
   ExternalBookRef,
   ProviderAssetManifest,
   ProviderAudioRendition,
   ProviderBookRecord,
-} from '../../../../server/catalogue/providers/contracts';
+} from '../../../server/catalogue/providers/contracts';
 
 describe('catalogue provider contracts', () => {
   const ref: ExternalBookRef = {providerId: 'test', externalId: 'book-1'};

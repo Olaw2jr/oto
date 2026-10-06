@@ -1,5 +1,5 @@
-import {LibriVoxProvider} from '../../../../server/catalogue/providers/librivox/LibriVoxProvider';
-import type {JsonHttpClient} from '../../../../server/catalogue/providers';
+import {LibriVoxProvider} from '../../../server/catalogue/providers/librivox/LibriVoxProvider';
+import type {JsonHttpClient} from '../../../server/catalogue/providers';
 
 class StubHttp implements JsonHttpClient {
   calls: Array<{url: string; headers?: Record<string, string>}> = [];

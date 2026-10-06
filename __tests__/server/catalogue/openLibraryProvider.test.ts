@@ -1,5 +1,5 @@
-import {OpenLibraryProvider} from '../../../../server/catalogue/providers/openlibrary/OpenLibraryProvider';
-import type {JsonHttpClient} from '../../../../server/catalogue/providers';
+import {OpenLibraryProvider} from '../../../server/catalogue/providers/openlibrary/OpenLibraryProvider';
+import type {JsonHttpClient} from '../../../server/catalogue/providers';
 
 class StubHttp implements JsonHttpClient {
   calls: Array<{url: string; headers?: Record<string, string>}> = [];

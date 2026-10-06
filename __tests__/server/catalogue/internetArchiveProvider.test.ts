@@ -1,8 +1,8 @@
-import {InternetArchiveProvider} from '../../../../server/catalogue/providers/internetarchive/InternetArchiveProvider';
+import {InternetArchiveProvider} from '../../../server/catalogue/providers/internetarchive/InternetArchiveProvider';
 import type {
   JsonHttpClient,
   ProviderAudioRendition,
-} from '../../../../server/catalogue/providers';
+} from '../../../server/catalogue/providers';
 
 class StubHttp implements JsonHttpClient {
   calls: string[] = [];
