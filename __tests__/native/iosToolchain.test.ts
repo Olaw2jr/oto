@@ -42,6 +42,8 @@ describe('React Native 0.87 iOS baseline', () => {
     expect(exists('ios/Eyy/PrivacyInfo.xcprivacy')).toBe(true);
     const privacy = read('ios/Eyy/PrivacyInfo.xcprivacy');
     expect(privacy).toContain('NSPrivacyAccessedAPITypes');
+    const project = read('ios/Eyy.xcodeproj/project.pbxproj');
+    expect(project).not.toContain('\\n\\t\\tA100');
     const plist = read('ios/Eyy/Info.plist');
     expect(plist).toContain('<key>NSAllowsLocalNetworking</key>');
     expect(plist).toMatch(/<key>UIRequiredDeviceCapabilities<\/key>[\s\S]*<string>arm64<\/string>/);
