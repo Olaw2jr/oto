@@ -4,6 +4,7 @@ import type {
   RntpPlaybackState,
   RntpSubscription,
   RntpTrack,
+  RntpUpdateOptions,
 } from '../RntpDriver';
 
 export class FakeRntpDriver implements RntpDriver {
@@ -14,6 +15,7 @@ export class FakeRntpDriver implements RntpDriver {
   buffered = 0;
   rate = 1;
   state: RntpPlaybackState = 'none';
+  options: RntpUpdateOptions | null = null;
 
   private readonly listeners = new Map<
     RntpEventName,
@@ -94,6 +96,14 @@ export class FakeRntpDriver implements RntpDriver {
 
   async getActiveTrackIndex(): Promise<number | undefined> {
     return this.activeIndex;
+  }
+
+  async updateOptions(options: RntpUpdateOptions): Promise<void> {
+    this.options = {
+      ...options,
+      capabilities: [...options.capabilities],
+      compactCapabilities: [...options.compactCapabilities],
+    };
   }
 
   addEventListener(

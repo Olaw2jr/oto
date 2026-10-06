@@ -32,6 +32,23 @@ export type RntpProgress = {
   buffered: number;
 };
 
+export type RntpCapability =
+  | 'play'
+  | 'pause'
+  | 'seek-to'
+  | 'jump-backward'
+  | 'jump-forward'
+  | 'skip-next'
+  | 'skip-previous';
+
+export type RntpUpdateOptions = {
+  capabilities: RntpCapability[];
+  compactCapabilities: RntpCapability[];
+  backwardJumpInterval: number;
+  forwardJumpInterval: number;
+  progressUpdateEventInterval: number;
+};
+
 export type RntpSubscription = {
   remove(): void;
 };
@@ -50,6 +67,7 @@ export interface RntpDriver {
   getProgress(): Promise<RntpProgress>;
   getPlaybackState(): Promise<RntpPlaybackState>;
   getActiveTrackIndex(): Promise<number | undefined>;
+  updateOptions(options: RntpUpdateOptions): Promise<void>;
   addEventListener(
     event: RntpEventName,
     listener: () => void,

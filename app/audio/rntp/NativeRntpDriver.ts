@@ -1,4 +1,5 @@
 import TrackPlayer, {
+  Capability,
   Event,
   type Track,
 } from 'react-native-track-player';
@@ -9,7 +10,18 @@ import type {
   RntpPlaybackState,
   RntpSubscription,
   RntpTrack,
+  RntpUpdateOptions,
 } from './RntpDriver';
+
+const CAPABILITIES = {
+  play: Capability.Play,
+  pause: Capability.Pause,
+  'seek-to': Capability.SeekTo,
+  'jump-backward': Capability.JumpBackward,
+  'jump-forward': Capability.JumpForward,
+  'skip-next': Capability.SkipToNext,
+  'skip-previous': Capability.SkipToPrevious,
+} as const;
 
 const EVENTS: Record<RntpEventName, Event> = {
   'playback-state': Event.PlaybackState,
@@ -72,6 +84,22 @@ export class NativeRntpDriver implements RntpDriver {
 
   getActiveTrackIndex(): Promise<number | undefined> {
     return TrackPlayer.getActiveTrackIndex();
+  }
+
+  async updateOptions(options: RntpUpdateOptions): Promise<void> {
+    const capabilities = options.capabilities.map(
+      capability => CAPABILITIES[capability],
+    );
+    await TrackPlayer.updateOptions({
+      capabilities,
+      notificationCapabilities: capabilities,
+      compactCapabilities: options.compactCapabilities.map(
+        capability => CAPABILITIES[capability],
+      ),
+      backwardJumpInterval: options.backwardJumpInterval,
+      forwardJumpInterval: options.forwardJumpInterval,
+      progressUpdateEventInterval: options.progressUpdateEventInterval,
+    });
   }
 
   addEventListener(

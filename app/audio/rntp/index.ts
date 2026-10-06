@@ -7,3 +7,5 @@ export type {
   RntpTrack,
 } from './RntpDriver';
 export {RntpAudioEngine} from './RntpAudioEngine';
+export {configureBackgroundPlayback} from './configureBackgroundPlayback';
+export type {BackgroundPlaybackIntervals} from './configureBackgroundPlayback';
