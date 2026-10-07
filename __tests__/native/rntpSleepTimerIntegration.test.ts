@@ -7,7 +7,7 @@ const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
 describe('RNTP sleep timer service integration', () => {
   it('evaluates persisted timers from background playback events', () => {
-    const service = read('app/audio/rntp/PlaybackService.ts');
+    const service = read('app/adapters/audio/PlaybackService.ts');
     expect(service).toContain('Event.PlaybackProgressUpdated');
     expect(service).toContain('Event.PlaybackActiveTrackChanged');
     expect(service).toContain('PlaybackServiceSleepTimer');

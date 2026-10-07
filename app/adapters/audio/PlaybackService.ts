@@ -11,7 +11,7 @@ const sleepTimer = new PlaybackServiceSleepTimer(
 );
 
 const ignore = (work: Promise<void>) => {
-  void work.catch(() => {});
+  return work.catch(() => {});
 };
 
 const ignoreQueueBoundary = async (work: () => Promise<void>) => {
