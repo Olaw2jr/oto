@@ -35,4 +35,16 @@ describe('Android Media3 backend', () => {
     expect(cache).toContain('CacheDataSource.Factory');
     expect(cache).toContain('CacheWriter');
   });
+
+  it('uses the same chapter key for preload and playback cache reads', () => {
+    const module = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3Module.kt',
+    );
+    const cache = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3Cache.kt',
+    );
+
+    expect(module).toContain('.setCustomCacheKey(mediaId)');
+    expect(cache).toContain('.setKey(cacheKey)');
+  });
 });

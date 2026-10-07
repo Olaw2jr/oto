@@ -87,6 +87,7 @@ class OtoMedia3Module(
   }
 
   private fun mediaItem(data: ReadableMap): MediaItem {
+    val mediaId = data.getString("id") ?: ""
     val extras =
       Bundle().apply {
         putString("bookId", data.getString("bookId"))
@@ -100,8 +101,9 @@ class OtoMedia3Module(
         .build()
     val builder =
       MediaItem.Builder()
-        .setMediaId(data.getString("id") ?: "")
+        .setMediaId(mediaId)
         .setUri(data.getString("url"))
+        .setCustomCacheKey(mediaId)
         .setMediaMetadata(metadata)
 
     if (data.hasKey("contentType") && !data.isNull("contentType")) {
