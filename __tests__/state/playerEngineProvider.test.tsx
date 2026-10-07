@@ -7,6 +7,7 @@ import {seedRenditionId} from '../../app/adapters/library';
 import {PlayerController} from '../../app/player';
 import {LibraryProvider} from '../../app/state/library';
 import {PlayerProvider, usePlayer} from '../../app/state/player';
+import {SettingsProvider} from '../../app/state/settings';
 
 describe('PlayerProvider AudioEngine path', () => {
   it('derives playback state, position and rate from PlayerController snapshots', async () => {
@@ -29,9 +30,11 @@ describe('PlayerProvider AudioEngine path', () => {
     ], {positionSec: 30});
 
     const wrapper = ({children}: {children: React.ReactNode}) => (
-      <LibraryProvider>
-        <PlayerProvider controller={controller}>{children}</PlayerProvider>
-      </LibraryProvider>
+      <SettingsProvider>
+        <LibraryProvider>
+          <PlayerProvider controller={controller}>{children}</PlayerProvider>
+        </LibraryProvider>
+      </SettingsProvider>
     );
     const {result} = renderHook(() => usePlayer(), {wrapper});
 
