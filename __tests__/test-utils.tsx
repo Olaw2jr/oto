@@ -91,7 +91,7 @@ const createTestPlayerController = async (): Promise<PlayerController> => {
   });
 };
 
-const createTestContainer = () =>
+export const createTestContainer = () =>
   createApplicationContainer({
     createPlayerController: createTestPlayerController,
   });
