@@ -6,6 +6,7 @@ import type {
   PlaybackSnapshot,
   PlaybackState,
 } from '../types';
+import {configureBackgroundPlayback} from './configureBackgroundPlayback';
 import type {
   RntpDriver,
   RntpPlaybackState,
@@ -62,6 +63,7 @@ export class RntpAudioEngine implements AudioEngine {
       return;
     }
     await this.driver.setupPlayer();
+    await configureBackgroundPlayback(this.driver);
     this.initialized = true;
   }
 
