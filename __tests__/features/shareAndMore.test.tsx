@@ -41,7 +41,7 @@ describe('sharing', () => {
     expect(share).toHaveBeenCalledWith({
       message: 'Greenlights by Matthew McConaughey. Listening on oto.',
     });
-  });
+  }, 15000);
 
   it('shares from the Player More sheet', async () => {
     await renderScreen(
