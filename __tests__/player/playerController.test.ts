@@ -1,0 +1,98 @@
+import type {AudioTrack} from '../../app/audio';
+import {FakeAudioEngine} from '../../app/audio';
+import {PlayerController} from '../../app/player/PlayerController';
+
+const tracks: AudioTrack[] = [
+  {
+    id: 'book-1:chapter-1',
+    bookId: 'book-1',
+    renditionId: 'rendition-1',
+    chapterId: 'chapter-1',
+    title: 'Chapter 1',
+    durationSec: 120,
+    source: {kind: 'remote', uri: 'https://example.test/chapter-1.mp3'},
+  },
+  {
+    id: 'book-1:chapter-2',
+    bookId: 'book-1',
+    renditionId: 'rendition-1',
+    chapterId: 'chapter-2',
+    title: 'Chapter 2',
+    durationSec: 180,
+    source: {kind: 'remote', uri: 'https://example.test/chapter-2.mp3'},
+  },
+];
+
+describe('PlayerController', () => {
+  it('maps chapter-local engine snapshots into rendition-global position', async () => {
+    const engine = new FakeAudioEngine();
+    const controller = new PlayerController(engine);
+
+    await controller.load(tracks, {positionSec: 135});
+    await engine.play();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      bookId: 'book-1',
+      renditionId: 'rendition-1',
+      trackId: 'book-1:chapter-2',
+      positionSec: 135,
+      durationSec: 300,
+      state: 'playing',
+    });
+  });
+
+  it('seeks and skips across chapter boundaries using global positions', async () => {
+    const engine = new FakeAudioEngine();
+    const controller = new PlayerController(engine);
+
+    await controller.load(tracks, {positionSec: 110});
+    await controller.skipBy(25);
+
+    expect(await engine.getSnapshot()).toMatchObject({
+      trackId: 'book-1:chapter-2',
+      positionSec: 15,
+    });
+    expect(controller.getSnapshot().positionSec).toBe(135);
+
+    await controller.seekTo(30);
+    expect(await engine.getSnapshot()).toMatchObject({
+      trackId: 'book-1:chapter-1',
+      positionSec: 30,
+    });
+  });
+
+  it('delegates playback state, rate and controls to AudioEngine', async () => {
+    const engine = new FakeAudioEngine();
+    const controller = new PlayerController(engine);
+
+    await controller.load(tracks);
+    await controller.play();
+    await controller.setRate(1.5);
+    await controller.configureControls({backwardSec: 10, forwardSec: 45});
+    await controller.pause();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      state: 'paused',
+      rate: 1.5,
+    });
+    expect(engine.controlConfiguration).toEqual({
+      backwardSec: 10,
+      forwardSec: 45,
+    });
+  });
+
+  it('rejects mixed queues and tracks without finite positive durations', async () => {
+    const controller = new PlayerController(new FakeAudioEngine());
+
+    await expect(
+      controller.load([
+        tracks[0],
+        {...tracks[1], bookId: 'book-2'},
+      ]),
+    ).rejects.toThrow('same book and rendition');
+
+    await expect(
+      controller.load([{...tracks[0], durationSec: undefined}]),
+    ).rejects.toThrow('positive duration');
+  });
+});
