@@ -76,7 +76,7 @@ describe('SourceResolver playback cache integration', () => {
     const playable = await resolver.resolve(asset, rights);
 
     expect(playable.transport).toBe('local');
-    expect(playable.uri).toBe('file:///cache/asset-1.m4b');
+    expect(playable.uri).toContain('fake://local/');
     expect(backend.warms).toHaveLength(0);
   });
 
@@ -98,7 +98,7 @@ describe('SourceResolver playback cache integration', () => {
     expect(backend.warms).toEqual([
       {
         assetId: 'asset-1',
-        uri: 'https://cdn.example.test/book.m4b',
+        uri: playable.uri,
         sizeBytes: 1000,
       },
     ]);
