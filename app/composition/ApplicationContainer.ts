@@ -50,6 +50,13 @@ export const createApplicationContainer = (): ApplicationContainer => {
   const libraryGraph = createSeedLibraryGraph();
 
   const createEngine = async (): Promise<AudioEngine> => {
+    const {Platform} = await import('react-native');
+    if (Platform.OS === 'android') {
+      const {createNativeMedia3AudioEngine} = await import(
+        '../adapters/audio/media3/createNativeMedia3AudioEngine'
+      );
+      return createNativeMedia3AudioEngine();
+    }
     const {createNativeRntpAudioEngine} = await import(
       '../audio/rntp/createNativeRntpAudioEngine'
     );
@@ -67,7 +74,20 @@ export const createApplicationContainer = (): ApplicationContainer => {
         library,
         progress,
       });
-      return new ChapterPlaybackSession(await createEngine(), service);
+      const engine = await createEngine();
+      const {Platform} = await import('react-native');
+      const {ChapterPreloadCoordinator} = await import('../audio/preload');
+      const backend =
+        Platform.OS === 'android'
+          ? new (
+              await import('../adapters/audio/media3')
+            ).Media3PreloadBackend()
+          : new (await import('../audio/preload')).QueueAwarePreloadBackend();
+      return new ChapterPlaybackSession(
+        engine,
+        service,
+        new ChapterPreloadCoordinator(backend),
+      );
     };
 
   return {
