@@ -10,15 +10,15 @@ import React, {
 
 import {CatalogueBook, getBook} from '../data/catalogue';
 import {CURRENT_BOOK} from '../data/social';
-import type {PlayerController} from '../player';
+import type {
+  PlayerController,
+  PlayerSleepTimer,
+} from '../player';
 import {useLibrary} from './library';
 
 export const RATES = [1, 1.25, 1.5, 2, 0.75];
 
-export type SleepTimer =
-  | {kind: 'minutes'; minutes: number}
-  | {kind: 'chapter'}
-  | null;
+export type SleepTimer = PlayerSleepTimer;
 
 type PlayerValue = {
   book: CatalogueBook;
@@ -45,8 +45,6 @@ const EnginePlayerProvider = ({
 }) => {
   const library = useLibrary();
   const [snapshot, setSnapshot] = useState(() => controller.getSnapshot());
-  const [sleepTimer, setSleepTimerState] = useState<SleepTimer>(null);
-  const [chapterEnd, setChapterEnd] = useState<number | null>(null);
 
   useEffect(
     () => controller.subscribe(next => setSnapshot(next)),
@@ -97,45 +95,9 @@ const EnginePlayerProvider = ({
   }, [controller, rate, run]);
 
   const setSleepTimer = useCallback(
-    (timer: SleepTimer) => {
-      setSleepTimerState(timer);
-      if (timer?.kind === 'chapter') {
-        const chapterLength = book.durationSec / book.chapters;
-        setChapterEnd(
-          Math.min(
-            book.durationSec,
-            (Math.floor(position / chapterLength) + 1) * chapterLength,
-          ),
-        );
-      } else {
-        setChapterEnd(null);
-      }
-    },
-    [book.durationSec, book.chapters, position],
+    (timer: SleepTimer) => run(() => controller.setSleepTimer(timer)),
+    [controller, run],
   );
-
-  useEffect(() => {
-    if (sleepTimer?.kind !== 'minutes') {
-      return;
-    }
-    const timer = setTimeout(() => {
-      run(() => controller.pause());
-      setSleepTimerState(null);
-    }, sleepTimer.minutes * 60 * 1000);
-    return () => clearTimeout(timer);
-  }, [controller, run, sleepTimer]);
-
-  useEffect(() => {
-    if (
-      sleepTimer?.kind === 'chapter' &&
-      chapterEnd !== null &&
-      position >= chapterEnd
-    ) {
-      run(() => controller.pause());
-      setSleepTimerState(null);
-      setChapterEnd(null);
-    }
-  }, [chapterEnd, controller, position, run, sleepTimer]);
 
   const value = useMemo<PlayerValue>(
     () => ({
@@ -148,7 +110,7 @@ const EnginePlayerProvider = ({
       skip,
       seekTo,
       cycleRate,
-      sleepTimer,
+      sleepTimer: snapshot.sleepTimer,
       setSleepTimer,
     }),
     [
@@ -161,7 +123,7 @@ const EnginePlayerProvider = ({
       skip,
       seekTo,
       cycleRate,
-      sleepTimer,
+      snapshot.sleepTimer,
       setSleepTimer,
     ],
   );
