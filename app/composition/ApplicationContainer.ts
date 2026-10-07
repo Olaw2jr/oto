@@ -2,24 +2,36 @@ import {
   createSeedLibraryGraph,
   type LibraryProviderAdapter,
 } from '../adapters/library';
+import {
+  ChapterPlaybackSession,
+  LivePlaybackSession,
+  SourceResolver,
+  type AudioEngine,
+} from '../audio';
+import {RightsPolicy} from '../domain/rights';
+import {
+  PlaybackQueueResolver,
+  PlayerController,
+  type PlaybackAssetRepository,
+  type PlayerSleepTimerController,
+} from '../player';
 import type {
   CatalogueRepository,
   LibraryRepository,
   ProgressRepository,
   RenditionRepository,
 } from '../repositories';
-import {
-  ChapterPlaybackSession,
-  LivePlaybackSession,
-  type AudioEngine,
-  type SleepTimerController,
-} from '../audio';
 import {LibraryService} from '../services/LibraryService';
 import {
   SqliteLibraryRepository,
   SqliteProgressRepository,
   type SqlDatabase,
 } from '../storage/sqlite';
+import {
+  HttpsTransport,
+  LocalFileTransport,
+  TransportRegistry,
+} from '../transports';
 
 export type ApplicationContainer = {
   repositories: {
@@ -35,12 +47,22 @@ export type ApplicationContainer = {
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
+    createPlayerController(): Promise<PlayerController>;
     createLiveSession(): Promise<LivePlaybackSession>;
-    createSleepTimer(): Promise<SleepTimerController>;
+    createSleepTimer(): Promise<PlayerSleepTimerController>;
   };
   storage: {
     openDatabase(): Promise<SqlDatabase>;
   };
+};
+
+export type ApplicationContainerOptions = {
+  playbackAssets?: PlaybackAssetRepository;
+  createPlayerController?: () => Promise<PlayerController>;
+};
+
+const EMPTY_PLAYBACK_ASSETS: PlaybackAssetRepository = {
+  listForRendition: async () => [],
 };
 
 const openDatabase = async (): Promise<SqlDatabase> => {
@@ -48,8 +70,12 @@ const openDatabase = async (): Promise<SqlDatabase> => {
   return openOtoDatabase();
 };
 
-export const createApplicationContainer = (): ApplicationContainer => {
+export const createApplicationContainer = (
+  options: ApplicationContainerOptions = {},
+): ApplicationContainer => {
   const libraryGraph = createSeedLibraryGraph();
+  const playbackAssets =
+    options.playbackAssets ?? EMPTY_PLAYBACK_ASSETS;
 
   const createEngine = async (): Promise<AudioEngine> => {
     const {Platform} = await import('react-native');
@@ -65,31 +91,91 @@ export const createApplicationContainer = (): ApplicationContainer => {
     return createNativeRntpAudioEngine();
   };
 
+  const createPreloader = async () => {
+    const {Platform} = await import('react-native');
+    const {ChapterPreloadCoordinator} = await import('../audio/preload');
+    const backend =
+      Platform.OS === 'android'
+        ? new (
+            await import('../adapters/audio/media3')
+          ).Media3PreloadBackend()
+        : new (await import('../audio/preload')).QueueAwarePreloadBackend();
+    return new ChapterPreloadCoordinator(backend);
+  };
+
+  const createPersistentLibraryService = async () => {
+    const database = await openDatabase();
+    const library = new SqliteLibraryRepository(database);
+    const progress = new SqliteProgressRepository(database);
+    return new LibraryService({
+      catalogue: libraryGraph.catalogue,
+      renditions: libraryGraph.renditions,
+      library,
+      progress,
+    });
+  };
+
   const createPersistentSession =
     async (): Promise<ChapterPlaybackSession> => {
-      const database = await openDatabase();
-      const library = new SqliteLibraryRepository(database);
-      const progress = new SqliteProgressRepository(database);
-      const service = new LibraryService({
-        catalogue: libraryGraph.catalogue,
-        renditions: libraryGraph.renditions,
-        library,
-        progress,
-      });
+      const service = await createPersistentLibraryService();
       const engine = await createEngine();
-      const {Platform} = await import('react-native');
-      const {ChapterPreloadCoordinator} = await import('../audio/preload');
-      const backend =
-        Platform.OS === 'android'
-          ? new (
-              await import('../adapters/audio/media3')
-            ).Media3PreloadBackend()
-          : new (await import('../audio/preload')).QueueAwarePreloadBackend();
       return new ChapterPlaybackSession(
         engine,
         service,
-        new ChapterPreloadCoordinator(backend),
+        await createPreloader(),
       );
+    };
+
+  const createSleepTimer =
+    async (): Promise<PlayerSleepTimerController> => {
+      const {Platform} = await import('react-native');
+      if (Platform.OS === 'android') {
+        const {Media3SleepTimerController} = await import(
+          '../adapters/audio/media3'
+        );
+        return new Media3SleepTimerController();
+      }
+      const {createNativeSleepTimerController} = await import(
+        '../adapters/audio/createNativeSleepTimerController'
+      );
+      return createNativeSleepTimerController();
+    };
+
+  const createPlayerController =
+    async (): Promise<PlayerController> => {
+      const service = await createPersistentLibraryService();
+      const engine = await createEngine();
+      const session = new ChapterPlaybackSession(
+        engine,
+        service,
+        await createPreloader(),
+      );
+      const sources = new SourceResolver(
+        new TransportRegistry([
+          new LocalFileTransport(),
+          new HttpsTransport({
+            start: async () => {
+              throw new Error(
+                'Direct HTTP downloads are not configured by the player',
+              );
+            },
+          }),
+        ]),
+        new RightsPolicy('TZ', ['internetarchive']),
+        {locate: async () => null},
+      );
+      const queueResolver = new PlaybackQueueResolver(
+        libraryGraph.catalogue,
+        libraryGraph.renditions,
+        playbackAssets,
+        sources,
+      );
+
+      return new PlayerController(engine, {
+        session,
+        queueResolver,
+        sleepTimer: await createSleepTimer(),
+      });
     };
 
   return {
@@ -106,14 +192,11 @@ export const createApplicationContainer = (): ApplicationContainer => {
     audio: {
       createEngine,
       createPersistentSession,
+      createPlayerController:
+        options.createPlayerController ?? createPlayerController,
       createLiveSession: async () =>
         new LivePlaybackSession(await createEngine()),
-      createSleepTimer: async () => {
-        const {createNativeSleepTimerController} = await import(
-          '../adapters/audio/createNativeSleepTimerController'
-        );
-        return createNativeSleepTimerController();
-      },
+      createSleepTimer,
     },
     storage: {
       openDatabase,
