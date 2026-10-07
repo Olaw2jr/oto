@@ -62,7 +62,9 @@ export const cleanSummary = (text: string) =>
 // chapter 14 of Where the Crawdads Sing at 28%).
 const chapterCounts: Record<string, number> = {'where-the-crawdads-sing': 48};
 
-export const catalogue: CatalogueBook[] = books.map(book => {
+export const PUBLIC_DOMAIN_SAMPLE_ID = 'adventures-of-sherlock-holmes-public-domain';
+
+const sourceCatalogue: CatalogueBook[] = books.map(book => {
   const id = slug(book.title);
   const durationSec = parseDuration(book.runtime);
   // Uncurated books get a modest rating so curated ones lead Top rated.
@@ -93,6 +95,32 @@ export const catalogue: CatalogueBook[] = books.map(book => {
     ratingsCount,
   };
 });
+
+const publicDomainSample: CatalogueBook = {
+  id: PUBLIC_DOMAIN_SAMPLE_ID,
+  title: 'The Adventures of Sherlock Holmes',
+  author: 'Arthur Conan Doyle',
+  narrator: 'Ruth Golding',
+  genre: 'Detective Fiction',
+  genres: ['Detective Fiction', 'Short Stories'],
+  summary:
+    'Twelve Sherlock Holmes stories by Arthur Conan Doyle, presented here as a public-domain LibriVox recording for real playback validation.',
+  released: '07-15-10',
+  releasedYear: 2010,
+  language: 'English',
+  cover: {
+    uri: 'https://archive.org/services/img/adventures_sherlock_holmes_rg_librivox',
+  },
+  durationSec: 48567,
+  chapters: 1,
+  rating: 4.8,
+  ratingsCount: 0,
+};
+
+export const catalogue: CatalogueBook[] = [
+  ...sourceCatalogue,
+  publicDomainSample,
+];
 
 export const getBook = (id: string) => {
   const book = catalogue.find(b => b.id === id);
