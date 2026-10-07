@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   SleepTimerState,
   SleepTimerStore,
-} from './types';
+} from '../../audio/sleep/types';
 
 const isState = (value: unknown): value is SleepTimerState => {
   if (!value || typeof value !== 'object') {

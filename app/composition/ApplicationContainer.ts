@@ -86,7 +86,7 @@ export const createApplicationContainer = (): ApplicationContainer => {
       createPersistentSession,
       createSleepTimer: async () => {
         const {createNativeSleepTimerController} = await import(
-          '../audio/sleep/createNativeSleepTimerController'
+          '../adapters/audio/createNativeSleepTimerController'
         );
         return createNativeSleepTimerController();
       },

@@ -1,9 +1,7 @@
 import TrackPlayer, {Event} from 'react-native-track-player';
 
-import {
-  AsyncStorageSleepTimerStore,
-  PlaybackServiceSleepTimer,
-} from '../../audio/sleep';
+import {PlaybackServiceSleepTimer} from '../../audio/sleep';
+import {AsyncStorageSleepTimerStore} from './AsyncStorageSleepTimerStore';
 
 const sleepTimer = new PlaybackServiceSleepTimer(
   new AsyncStorageSleepTimerStore('oto.audio.sleepTimer'),

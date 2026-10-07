@@ -1,4 +1,3 @@
-export {AsyncStorageSleepTimerStore} from './AsyncStorageSleepTimerStore';
 export {InMemorySleepTimerStore} from './InMemorySleepTimerStore';
 export {
   PlaybackServiceSleepTimer,

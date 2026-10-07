@@ -1,7 +1,7 @@
 import TrackPlayer from 'react-native-track-player';
 
+import {SleepTimerController} from '../../audio/sleep/SleepTimerController';
 import {AsyncStorageSleepTimerStore} from './AsyncStorageSleepTimerStore';
-import {SleepTimerController} from './SleepTimerController';
 
 export class NativeSleepTimerController extends SleepTimerController {
   async setEndOfCurrentChapter(): Promise<void> {
