@@ -1,4 +1,7 @@
 import {
+  PublicDomainPlaybackAssetRepository,
+} from '../adapters/catalogue';
+import {
   createSeedLibraryGraph,
   type LibraryProviderAdapter,
 } from '../adapters/library';
@@ -61,10 +64,6 @@ export type ApplicationContainerOptions = {
   createPlayerController?: () => Promise<PlayerController>;
 };
 
-const EMPTY_PLAYBACK_ASSETS: PlaybackAssetRepository = {
-  listForRendition: async () => [],
-};
-
 const openDatabase = async (): Promise<SqlDatabase> => {
   const {openOtoDatabase} = await import('../storage/sqlite/openOtoDatabase');
   return openOtoDatabase();
@@ -75,7 +74,8 @@ export const createApplicationContainer = (
 ): ApplicationContainer => {
   const libraryGraph = createSeedLibraryGraph();
   const playbackAssets =
-    options.playbackAssets ?? EMPTY_PLAYBACK_ASSETS;
+    options.playbackAssets ??
+    new PublicDomainPlaybackAssetRepository();
 
   const createEngine = async (): Promise<AudioEngine> => {
     const {Platform} = await import('react-native');
