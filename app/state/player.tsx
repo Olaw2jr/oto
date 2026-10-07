@@ -5,6 +5,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -12,9 +13,11 @@ import {CatalogueBook, getBook} from '../data/catalogue';
 import {CURRENT_BOOK} from '../data/social';
 import type {
   PlayerController,
+  PlayerControllerSnapshot,
   PlayerSleepTimer,
 } from '../player';
 import {useLibrary} from './library';
+import {useSettings} from './settings';
 
 export const RATES = [1, 1.25, 1.5, 2, 0.75];
 
@@ -36,75 +39,193 @@ type PlayerValue = {
 
 const PlayerContext = createContext<PlayerValue | null>(null);
 
-const EnginePlayerProvider = ({
+const EMPTY_SNAPSHOT: PlayerControllerSnapshot = {
+  state: 'idle',
+  positionSec: 0,
+  durationSec: 0,
+  rate: 1,
+  sleepTimer: null,
+};
+
+const RealPlayerProvider = ({
   children,
-  controller,
+  providedController,
+  createController,
 }: {
   children: ReactNode;
-  controller: PlayerController;
+  providedController?: PlayerController;
+  createController?: () => Promise<PlayerController>;
 }) => {
   const library = useLibrary();
-  const [snapshot, setSnapshot] = useState(() => controller.getSnapshot());
-
-  useEffect(
-    () => controller.subscribe(next => setSnapshot(next)),
-    [controller],
+  const {skip: skipIntervals} = useSettings();
+  const controllerRef = useRef<PlayerController | null>(
+    providedController ?? null,
+  );
+  const controllerPromiseRef = useRef<Promise<PlayerController> | null>(null);
+  const ownsControllerRef = useRef(false);
+  const [controller, setController] = useState<PlayerController | null>(
+    providedController ?? null,
+  );
+  const [snapshot, setSnapshot] = useState<PlayerControllerSnapshot>(
+    () => providedController?.getSnapshot() ?? EMPTY_SNAPSHOT,
+  );
+  const [selectedBookId, setSelectedBookId] = useState(
+    snapshot.bookId ?? CURRENT_BOOK,
   );
 
-  const bookId = snapshot.bookId ?? CURRENT_BOOK;
-  const book = getBook(bookId);
-  const position = snapshot.positionSec;
-  const playing = snapshot.state === 'playing';
-  const rate = snapshot.rate;
+  useEffect(() => {
+    if (!controller) {
+      return;
+    }
+    setSnapshot(controller.getSnapshot());
+    return controller.subscribe(next => {
+      setSnapshot(next);
+      if (next.bookId) {
+        setSelectedBookId(next.bookId);
+      }
+    });
+  }, [controller]);
+
+  useEffect(
+    () => () => {
+      if (ownsControllerRef.current) {
+        void controllerRef.current?.dispose().catch(() => {});
+      }
+    },
+    [],
+  );
+
+  const ensureController = useCallback(async (): Promise<PlayerController> => {
+    if (controllerRef.current) {
+      return controllerRef.current;
+    }
+    if (!createController) {
+      throw new Error('PlayerProvider has no controller factory');
+    }
+    if (!controllerPromiseRef.current) {
+      controllerPromiseRef.current = createController()
+        .then(created => {
+          controllerRef.current = created;
+          ownsControllerRef.current = true;
+          setController(created);
+          setSnapshot(created.getSnapshot());
+          return created;
+        })
+        .catch(error => {
+          controllerPromiseRef.current = null;
+          throw error;
+        });
+    }
+    return controllerPromiseRef.current;
+  }, [createController]);
+
+  const prepare = useCallback(
+    async (bookId: string): Promise<PlayerController> => {
+      const active = await ensureController();
+      if (active.getSnapshot().bookId !== bookId) {
+        await active.loadBook(bookId);
+      }
+      await active.configureControls({
+        backwardSec: skipIntervals.back,
+        forwardSec: skipIntervals.forward,
+      });
+      return active;
+    },
+    [ensureController, skipIntervals.back, skipIntervals.forward],
+  );
+
+  useEffect(() => {
+    if (!controller) {
+      return;
+    }
+    void controller
+      .configureControls({
+        backwardSec: skipIntervals.back,
+        forwardSec: skipIntervals.forward,
+      })
+      .catch(() => {});
+  }, [controller, skipIntervals.back, skipIntervals.forward]);
 
   const run = useCallback((operation: () => Promise<void>) => {
-    void operation().catch(() => {});
+    void operation().catch(error => {
+      console.warn('Player operation failed', error);
+    });
   }, []);
 
   const play = useCallback(
     (id: string) => {
-      if (id !== bookId) {
-        return;
-      }
+      setSelectedBookId(id);
       if (library.status(id) !== 'listening') {
         library.setStatus(id, 'listening');
       }
-      run(() => controller.play());
+      run(async () => {
+        const active = await prepare(id);
+        await active.play();
+      });
     },
-    [bookId, controller, library, run],
+    [library, prepare, run],
   );
 
   const toggle = useCallback(
-    () => run(() => controller.toggle()),
-    [controller, run],
+    () =>
+      run(async () => {
+        const active = await prepare(selectedBookId);
+        await active.toggle();
+      }),
+    [prepare, run, selectedBookId],
   );
 
   const skip = useCallback(
-    (seconds: number) => run(() => controller.skipBy(seconds)),
-    [controller, run],
+    (seconds: number) =>
+      run(async () => {
+        const active = await prepare(selectedBookId);
+        await active.skipBy(seconds);
+      }),
+    [prepare, run, selectedBookId],
   );
 
   const seekTo = useCallback(
-    (seconds: number) => run(() => controller.seekTo(seconds)),
-    [controller, run],
+    (seconds: number) =>
+      run(async () => {
+        const active = await prepare(selectedBookId);
+        await active.seekTo(seconds);
+      }),
+    [prepare, run, selectedBookId],
   );
 
-  const cycleRate = useCallback(() => {
-    const next = RATES[(RATES.indexOf(rate) + 1) % RATES.length];
-    run(() => controller.setRate(next));
-  }, [controller, rate, run]);
+  const cycleRate = useCallback(
+    () =>
+      run(async () => {
+        const active = await prepare(selectedBookId);
+        const currentRate = active.getSnapshot().rate;
+        const next =
+          RATES[(RATES.indexOf(currentRate) + 1) % RATES.length];
+        await active.setRate(next);
+      }),
+    [prepare, run, selectedBookId],
+  );
 
   const setSleepTimer = useCallback(
-    (timer: SleepTimer) => run(() => controller.setSleepTimer(timer)),
-    [controller, run],
+    (timer: SleepTimer) =>
+      run(async () => {
+        const active = await prepare(selectedBookId);
+        await active.setSleepTimer(timer);
+      }),
+    [prepare, run, selectedBookId],
   );
+
+  const activeBookId = snapshot.bookId ?? selectedBookId;
+  const book = getBook(activeBookId);
+  const position = snapshot.bookId
+    ? snapshot.positionSec
+    : library.positionSec(activeBookId);
 
   const value = useMemo<PlayerValue>(
     () => ({
       book,
       position,
-      playing,
-      rate,
+      playing: snapshot.state === 'playing',
+      rate: snapshot.rate,
       play,
       toggle,
       skip,
@@ -116,14 +237,14 @@ const EnginePlayerProvider = ({
     [
       book,
       position,
-      playing,
-      rate,
+      snapshot.state,
+      snapshot.rate,
+      snapshot.sleepTimer,
       play,
       toggle,
       skip,
       seekTo,
       cycleRate,
-      snapshot.sleepTimer,
       setSleepTimer,
     ],
   );
@@ -133,8 +254,8 @@ const EnginePlayerProvider = ({
   );
 };
 
-// Temporary compatibility path. P82-08 removes this once all production
-// composition, source resolution and sleep-timer slices are in place.
+// Temporary compatibility path for direct legacy-provider tests.
+// P82-08 removes this path after the real composition is fully validated.
 const MockPlayerProvider = ({children}: {children: ReactNode}) => {
   const library = useLibrary();
   const [bookId, setBookId] = useState(CURRENT_BOOK);
@@ -253,14 +374,18 @@ const MockPlayerProvider = ({children}: {children: ReactNode}) => {
 export const PlayerProvider = ({
   children,
   controller,
+  createController,
 }: {
   children: ReactNode;
   controller?: PlayerController;
+  createController?: () => Promise<PlayerController>;
 }) =>
-  controller ? (
-    <EnginePlayerProvider controller={controller}>
+  controller || createController ? (
+    <RealPlayerProvider
+      providedController={controller}
+      createController={createController}>
       {children}
-    </EnginePlayerProvider>
+    </RealPlayerProvider>
   ) : (
     <MockPlayerProvider>{children}</MockPlayerProvider>
   );
