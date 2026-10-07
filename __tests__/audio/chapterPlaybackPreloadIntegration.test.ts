@@ -11,6 +11,6 @@ describe('ChapterPlaybackSession preloading', () => {
   it('updates the preload coordinator as the active chapter changes', () => {
     expect(source).toContain('ChapterPreloadCoordinator');
     expect(source).toContain('preloader.update');
-    expect(source).toContain('preloader.dispose');
+    expect(source).toContain('preloader?.dispose');
   });
 });
