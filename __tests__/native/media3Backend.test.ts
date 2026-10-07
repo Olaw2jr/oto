@@ -47,4 +47,23 @@ describe('Android Media3 backend', () => {
     expect(module).toContain('.setCustomCacheKey(mediaId)');
     expect(cache).toContain('.setKey(cacheKey)');
   });
+
+  it('evaluates persisted sleep timers inside the Media3 service', () => {
+    const service = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3PlaybackService.kt',
+    );
+    const timer = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3SleepTimer.kt',
+    );
+    const module = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3Module.kt',
+    );
+
+    expect(timer).toContain('getSharedPreferences');
+    expect(timer).toContain('player.pause()');
+    expect(service).toContain('sleepTimer.onActiveTrackChanged');
+    expect(service).toContain('sleepTimer::onProgress');
+    expect(module).toContain('setSleepTimerMinutes');
+    expect(module).toContain('setSleepTimerEndOfChapter');
+  });
 });
