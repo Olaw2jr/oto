@@ -10,3 +10,4 @@ export type {
 export {FakeAudioEngine} from './testing/FakeAudioEngine';
 export * from './SourceResolver';
 export * from './rntp';
+export * from './session';
