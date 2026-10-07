@@ -1,7 +1,7 @@
 import type {
   PhysicalPlaybackCache,
   PlaybackCacheEntry,
-} from '../cache';
+} from '../../../audio/cache';
 import {
   nativeMedia3Bridge,
   type Media3Bridge,

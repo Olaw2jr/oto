@@ -1,5 +1,5 @@
-import {Media3Driver} from '../../app/audio/media3/Media3Driver';
-import type {Media3Bridge} from '../../app/audio/media3/NativeMedia3Bridge';
+import {Media3Driver} from '../../app/adapters/audio/media3/Media3Driver';
+import type {Media3Bridge} from '../../app/adapters/audio/media3/NativeMedia3Bridge';
 
 class FakeBridge implements Media3Bridge {
   calls: Array<{name: string; args: unknown[]}> = [];

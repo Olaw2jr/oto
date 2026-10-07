@@ -53,7 +53,7 @@ export const createApplicationContainer = (): ApplicationContainer => {
     const {Platform} = await import('react-native');
     if (Platform.OS === 'android') {
       const {createNativeMedia3AudioEngine} = await import(
-        '../audio/media3/createNativeMedia3AudioEngine'
+        '../adapters/audio/media3/createNativeMedia3AudioEngine'
       );
       return createNativeMedia3AudioEngine();
     }
@@ -79,7 +79,9 @@ export const createApplicationContainer = (): ApplicationContainer => {
       const {ChapterPreloadCoordinator} = await import('../audio/preload');
       const backend =
         Platform.OS === 'android'
-          ? new (await import('../audio/media3')).Media3PreloadBackend()
+          ? new (
+              await import('../adapters/audio/media3')
+            ).Media3PreloadBackend()
           : new (await import('../audio/preload')).QueueAwarePreloadBackend();
       return new ChapterPlaybackSession(
         engine,

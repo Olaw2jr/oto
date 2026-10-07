@@ -16,4 +16,3 @@ export * from './controls';
 export * from './sleep';
 export * from './preload';
 export * from './cache';
-export * from './media3';

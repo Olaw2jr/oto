@@ -1,8 +1,8 @@
 import type {
   AudioPreloadBackend,
   PreloadHandle,
-} from '../preload';
-import type {AudioTrack} from '../types';
+} from '../../../audio/preload';
+import type {AudioTrack} from '../../../audio/types';
 import {
   nativeMedia3Bridge,
   type Media3Bridge,

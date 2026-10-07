@@ -1,5 +1,5 @@
-import type {AudioEngine} from '../AudioEngine';
-import {RntpAudioEngine} from '../rntp/RntpAudioEngine';
+import type {AudioEngine} from '../../../audio/AudioEngine';
+import {RntpAudioEngine} from '../../../audio/rntp/RntpAudioEngine';
 import {Media3Driver} from './Media3Driver';
 
 export const createNativeMedia3AudioEngine =

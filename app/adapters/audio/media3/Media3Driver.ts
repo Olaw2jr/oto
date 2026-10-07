@@ -5,7 +5,7 @@ import type {
   RntpSubscription,
   RntpTrack,
   RntpUpdateOptions,
-} from '../rntp/RntpDriver';
+} from '../../../audio/rntp/RntpDriver';
 import {
   nativeMedia3Bridge,
   subscribeToNativeMedia3,
