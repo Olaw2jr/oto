@@ -15,3 +15,4 @@ export * from './session';
 export * from './controls';
 export * from './sleep';
 export * from './preload';
+export * from './cache';
