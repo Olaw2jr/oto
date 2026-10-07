@@ -1,5 +1,6 @@
 import type {LibraryService} from '../../services/LibraryService';
 import type {AudioEngine} from '../AudioEngine';
+import {ChapterPreloadCoordinator} from '../preload';
 import type {AudioTrack, PlaybackSnapshot} from '../types';
 
 type ActiveSession = {
@@ -62,10 +63,14 @@ export class ChapterPlaybackSession {
   private checkpointQueue: Promise<void> = Promise.resolve();
   private checkpointError: unknown;
   private hasCheckpointError = false;
+  private preloadQueue: Promise<void> = Promise.resolve();
+  private preloadError: unknown;
+  private hasPreloadError = false;
 
   constructor(
     private readonly engine: AudioEngine,
     private readonly library: LibraryService,
+    private readonly preloader?: ChapterPreloadCoordinator,
   ) {}
 
   async load(
@@ -112,9 +117,14 @@ export class ChapterPlaybackSession {
       positionSec: start.positionSec,
     });
 
-    this.unsubscribe = this.engine.subscribe(snapshot =>
-      this.queueCheckpoint(snapshot),
-    );
+    if (this.preloader) {
+      await this.preloader.update(tracks, tracks[start.index].id);
+    }
+
+    this.unsubscribe = this.engine.subscribe(snapshot => {
+      this.queueCheckpoint(snapshot);
+      this.queuePreload(snapshot);
+    });
   }
 
   private queueCheckpoint(snapshot: PlaybackSnapshot): void {
@@ -155,12 +165,33 @@ export class ChapterPlaybackSession {
       });
   }
 
+  private queuePreload(snapshot: PlaybackSnapshot): void {
+    const active = this.active;
+    const preloader = this.preloader;
+    if (!active || !preloader || !snapshot.trackId) {
+      return;
+    }
+
+    this.preloadQueue = this.preloadQueue
+      .then(() => preloader.update(active.tracks, snapshot.trackId!))
+      .catch(error => {
+        this.preloadError = error;
+        this.hasPreloadError = true;
+      });
+  }
+
   async flush(): Promise<void> {
-    await this.checkpointQueue;
+    await Promise.all([this.checkpointQueue, this.preloadQueue]);
     if (this.hasCheckpointError) {
       const error = this.checkpointError;
       this.checkpointError = undefined;
       this.hasCheckpointError = false;
+      throw error;
+    }
+    if (this.hasPreloadError) {
+      const error = this.preloadError;
+      this.preloadError = undefined;
+      this.hasPreloadError = false;
       throw error;
     }
   }
@@ -168,7 +199,14 @@ export class ChapterPlaybackSession {
   async dispose(): Promise<void> {
     this.unsubscribe?.();
     this.unsubscribe = null;
-    this.active = null;
-    await this.flush();
+    try {
+      await this.flush();
+    } finally {
+      try {
+        await this.preloader?.dispose();
+      } finally {
+        this.active = null;
+      }
+    }
   }
 }
