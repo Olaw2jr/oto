@@ -7,7 +7,7 @@ const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
 describe('native HLS/live support', () => {
   it('maps HLS into RNTP v4 on iOS', () => {
-    const driver = read('app/audio/rntp/NativeRntpDriver.ts');
+    const driver = read('app/adapters/audio/NativeRntpDriver.ts');
     expect(driver).toContain('TrackType.HLS');
     expect(driver).toContain('isLiveStream');
   });
