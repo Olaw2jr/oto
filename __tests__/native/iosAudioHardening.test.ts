@@ -7,14 +7,14 @@ const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
 describe('iOS AVPlayer / Now Playing hardening', () => {
   it('uses the playback category and spoken-audio mode', () => {
-    const driver = read('app/audio/rntp/NativeRntpDriver.ts');
+    const driver = read('app/adapters/audio/NativeRntpDriver.ts');
     expect(driver).toContain('IOSCategory.Playback');
     expect(driver).toContain('IOSCategoryMode.SpokenAudio');
     expect(driver).toContain('autoHandleInterruptions: true');
   });
 
   it('uses the voice pitch algorithm for audiobook chapters', () => {
-    const driver = read('app/audio/rntp/NativeRntpDriver.ts');
+    const driver = read('app/adapters/audio/NativeRntpDriver.ts');
     expect(driver).toContain('PitchAlgorithm.Voice');
   });
 
