@@ -8,7 +8,7 @@ import type {
   CatalogueRepository,
   RenditionRepository,
 } from '../../repositories';
-import {catalogue, getBook} from '../../data/catalogue';
+import {\n  catalogue,\n  getBook,\n  PUBLIC_DOMAIN_SAMPLE_ID,\n} from '../../data/catalogue';
 
 const VERIFIED_AT = '1970-01-01T00:00:00.000Z';
 
@@ -49,11 +49,18 @@ const toRendition = (bookId: BookId): AudioRendition => {
             : chapterDuration,
       };
     }),
-    rights: {
-      status: 'unknown',
-      source: 'seed-catalogue',
-      verifiedAt: VERIFIED_AT,
-    },
+    rights:
+      book.id === PUBLIC_DOMAIN_SAMPLE_ID
+        ? {
+            status: 'public-domain',
+            source: 'librivox',
+            verifiedAt: VERIFIED_AT,
+          }
+        : {
+            status: 'unknown',
+            source: 'seed-catalogue',
+            verifiedAt: VERIFIED_AT,
+          },
   };
 };
 
