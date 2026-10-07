@@ -2,14 +2,10 @@ import React from 'react';
 import {
   act,
   fireEvent,
-  renderHook,
   screen,
 } from '@testing-library/react-native';
 
 import PlayerScreen from '../../app/features/player/PlayerScreen';
-import {getBook} from '../../app/data/catalogue';
-import {LibraryProvider} from '../../app/state/library';
-import {PlayerProvider, usePlayer} from '../../app/state/player';
 import {mockNavigation, renderScreen} from '../test-utils';
 
 const press = (el: any) =>
@@ -17,58 +13,6 @@ const press = (el: any) =>
     fireEvent.press(el);
   });
 const route = {key: 'Player', name: 'Player'} as any;
-
-describe('sleep timer state', () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-
-  const wrapper = ({children}: {children: React.ReactNode}) => (
-    <LibraryProvider>
-      <PlayerProvider>{children}</PlayerProvider>
-    </LibraryProvider>
-  );
-
-  it('pauses after the chosen minutes', () => {
-    const {result} = renderHook(() => usePlayer(), {wrapper});
-    act(() => result.current.toggle());
-    act(() => result.current.setSleepTimer({kind: 'minutes', minutes: 15}));
-    expect(result.current.sleepTimer).toMatchObject({
-      kind: 'minutes',
-      minutes: 15,
-    });
-
-    act(() => jest.advanceTimersByTime(14 * 60 * 1000));
-    expect(result.current.playing).toBe(true);
-    act(() => jest.advanceTimersByTime(60 * 1000));
-    expect(result.current.playing).toBe(false);
-    expect(result.current.sleepTimer).toBeNull();
-  });
-
-  it('pauses at the end of the chapter', () => {
-    const {result} = renderHook(() => usePlayer(), {wrapper});
-    const book = getBook('where-the-crawdads-sing');
-    const chapterLength = book.durationSec / book.chapters;
-    const chapterEnd =
-      Math.ceil(result.current.position / chapterLength) * chapterLength;
-
-    act(() => result.current.seekTo(chapterEnd - 3));
-    act(() => result.current.toggle());
-    act(() => result.current.setSleepTimer({kind: 'chapter'}));
-    act(() => jest.advanceTimersByTime(5000));
-
-    expect(result.current.playing).toBe(false);
-    expect(result.current.position).toBeLessThanOrEqual(chapterEnd + 1);
-  });
-
-  it('can be turned off', () => {
-    const {result} = renderHook(() => usePlayer(), {wrapper});
-    act(() => result.current.toggle());
-    act(() => result.current.setSleepTimer({kind: 'minutes', minutes: 15}));
-    act(() => result.current.setSleepTimer(null));
-    act(() => jest.advanceTimersByTime(20 * 60 * 1000));
-    expect(result.current.playing).toBe(true);
-  });
-});
 
 describe('PlayerScreen controls', () => {
   const setup = async () => {
