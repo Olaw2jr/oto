@@ -10,6 +10,7 @@ import React, {
 
 import {CatalogueBook, getBook} from '../data/catalogue';
 import {CURRENT_BOOK} from '../data/social';
+import type {PlayerController} from '../player';
 import {useLibrary} from './library';
 
 export const RATES = [1, 1.25, 1.5, 2, 0.75];
@@ -29,22 +30,155 @@ type PlayerValue = {
   skip: (seconds: number) => void;
   seekTo: (seconds: number) => void;
   cycleRate: () => void;
-  // Pauses playback after some minutes or at the end of the chapter.
   sleepTimer: SleepTimer;
   setSleepTimer: (timer: SleepTimer) => void;
 };
 
 const PlayerContext = createContext<PlayerValue | null>(null);
 
-// A mock player: there is no audio yet, so the clock just advances while
-// "playing" and writes the position back to the library.
-export const PlayerProvider = ({children}: {children: ReactNode}) => {
+const EnginePlayerProvider = ({
+  children,
+  controller,
+}: {
+  children: ReactNode;
+  controller: PlayerController;
+}) => {
+  const library = useLibrary();
+  const [snapshot, setSnapshot] = useState(() => controller.getSnapshot());
+  const [sleepTimer, setSleepTimerState] = useState<SleepTimer>(null);
+  const [chapterEnd, setChapterEnd] = useState<number | null>(null);
+
+  useEffect(
+    () => controller.subscribe(next => setSnapshot(next)),
+    [controller],
+  );
+
+  const bookId = snapshot.bookId ?? CURRENT_BOOK;
+  const book = getBook(bookId);
+  const position = snapshot.positionSec;
+  const playing = snapshot.state === 'playing';
+  const rate = snapshot.rate;
+
+  const run = useCallback((operation: () => Promise<void>) => {
+    void operation().catch(() => {});
+  }, []);
+
+  const play = useCallback(
+    (id: string) => {
+      if (id !== bookId) {
+        return;
+      }
+      if (library.status(id) !== 'listening') {
+        library.setStatus(id, 'listening');
+      }
+      run(() => controller.play());
+    },
+    [bookId, controller, library, run],
+  );
+
+  const toggle = useCallback(
+    () => run(() => controller.toggle()),
+    [controller, run],
+  );
+
+  const skip = useCallback(
+    (seconds: number) => run(() => controller.skipBy(seconds)),
+    [controller, run],
+  );
+
+  const seekTo = useCallback(
+    (seconds: number) => run(() => controller.seekTo(seconds)),
+    [controller, run],
+  );
+
+  const cycleRate = useCallback(() => {
+    const next = RATES[(RATES.indexOf(rate) + 1) % RATES.length];
+    run(() => controller.setRate(next));
+  }, [controller, rate, run]);
+
+  const setSleepTimer = useCallback(
+    (timer: SleepTimer) => {
+      setSleepTimerState(timer);
+      if (timer?.kind === 'chapter') {
+        const chapterLength = book.durationSec / book.chapters;
+        setChapterEnd(
+          Math.min(
+            book.durationSec,
+            (Math.floor(position / chapterLength) + 1) * chapterLength,
+          ),
+        );
+      } else {
+        setChapterEnd(null);
+      }
+    },
+    [book.durationSec, book.chapters, position],
+  );
+
+  useEffect(() => {
+    if (sleepTimer?.kind !== 'minutes') {
+      return;
+    }
+    const timer = setTimeout(() => {
+      run(() => controller.pause());
+      setSleepTimerState(null);
+    }, sleepTimer.minutes * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [controller, run, sleepTimer]);
+
+  useEffect(() => {
+    if (
+      sleepTimer?.kind === 'chapter' &&
+      chapterEnd !== null &&
+      position >= chapterEnd
+    ) {
+      run(() => controller.pause());
+      setSleepTimerState(null);
+      setChapterEnd(null);
+    }
+  }, [chapterEnd, controller, position, run, sleepTimer]);
+
+  const value = useMemo<PlayerValue>(
+    () => ({
+      book,
+      position,
+      playing,
+      rate,
+      play,
+      toggle,
+      skip,
+      seekTo,
+      cycleRate,
+      sleepTimer,
+      setSleepTimer,
+    }),
+    [
+      book,
+      position,
+      playing,
+      rate,
+      play,
+      toggle,
+      skip,
+      seekTo,
+      cycleRate,
+      sleepTimer,
+      setSleepTimer,
+    ],
+  );
+
+  return (
+    <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
+  );
+};
+
+// Temporary compatibility path. P82-08 removes this once all production
+// composition, source resolution and sleep-timer slices are in place.
+const MockPlayerProvider = ({children}: {children: ReactNode}) => {
   const library = useLibrary();
   const [bookId, setBookId] = useState(CURRENT_BOOK);
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
   const [sleepTimer, setSleepTimerState] = useState<SleepTimer>(null);
-  // Where the current chapter ends when the timer is "end of chapter".
   const [chapterEnd, setChapterEnd] = useState<number | null>(null);
   const book = getBook(bookId);
   const position = library.positionSec(bookId);
@@ -86,7 +220,6 @@ export const PlayerProvider = ({children}: {children: ReactNode}) => {
     [book.durationSec, book.chapters, position],
   );
 
-  // Minutes: pause when the time is up.
   useEffect(() => {
     if (sleepTimer?.kind !== 'minutes') {
       return;
@@ -98,7 +231,6 @@ export const PlayerProvider = ({children}: {children: ReactNode}) => {
     return () => clearTimeout(timer);
   }, [sleepTimer]);
 
-  // End of chapter: pause once playback reaches it.
   useEffect(() => {
     if (
       sleepTimer?.kind === 'chapter' &&
@@ -155,6 +287,21 @@ export const PlayerProvider = ({children}: {children: ReactNode}) => {
     <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
   );
 };
+
+export const PlayerProvider = ({
+  children,
+  controller,
+}: {
+  children: ReactNode;
+  controller?: PlayerController;
+}) =>
+  controller ? (
+    <EnginePlayerProvider controller={controller}>
+      {children}
+    </EnginePlayerProvider>
+  ) : (
+    <MockPlayerProvider>{children}</MockPlayerProvider>
+  );
 
 export const usePlayer = () => {
   const value = useContext(PlayerContext);
