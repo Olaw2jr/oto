@@ -1,7 +1,11 @@
 import TrackPlayer, {Event} from 'react-native-track-player';
 
-const ignoreQueueBoundary = (work: () => Promise<void>) => {
-  void work().catch(() => {});
+const ignoreQueueBoundary = async (work: () => Promise<void>) => {
+  try {
+    await work();
+  } catch {
+    // A remote skip at either queue boundary is expected to be a no-op.
+  }
 };
 
 export const PlaybackService = async (): Promise<void> => {
