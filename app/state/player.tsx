@@ -47,13 +47,13 @@ const EMPTY_SNAPSHOT: PlayerControllerSnapshot = {
   sleepTimer: null,
 };
 
-const RealPlayerProvider = ({
+export const PlayerProvider = ({
   children,
-  providedController,
+  controller: providedController,
   createController,
 }: {
   children: ReactNode;
-  providedController?: PlayerController;
+  controller?: PlayerController;
   createController?: () => Promise<PlayerController>;
 }) => {
   const library = useLibrary();
@@ -155,11 +155,11 @@ const RealPlayerProvider = ({
   const play = useCallback(
     (id: string) => {
       setSelectedBookId(id);
-      if (library.status(id) !== 'listening') {
-        library.setStatus(id, 'listening');
-      }
       run(async () => {
         const active = await prepare(id);
+        if (library.status(id) !== 'listening') {
+          library.setStatus(id, 'listening');
+        }
         await active.play();
       });
     },
@@ -253,142 +253,6 @@ const RealPlayerProvider = ({
     <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
   );
 };
-
-// Temporary compatibility path for direct legacy-provider tests.
-// P82-08 removes this path after the real composition is fully validated.
-const MockPlayerProvider = ({children}: {children: ReactNode}) => {
-  const library = useLibrary();
-  const [bookId, setBookId] = useState(CURRENT_BOOK);
-  const [playing, setPlaying] = useState(false);
-  const [rate, setRate] = useState(1);
-  const [sleepTimer, setSleepTimerState] = useState<SleepTimer>(null);
-  const [chapterEnd, setChapterEnd] = useState<number | null>(null);
-  const book = getBook(bookId);
-  const position = library.positionSec(bookId);
-
-  const {setPosition, advance} = library;
-
-  const seekTo = useCallback(
-    (seconds: number) =>
-      setPosition(bookId, Math.min(book.durationSec, Math.max(0, seconds))),
-    [setPosition, bookId, book.durationSec],
-  );
-
-  useEffect(() => {
-    if (!playing) {
-      return;
-    }
-    const timer = setInterval(
-      () => advance(bookId, rate, chapterEnd ?? undefined),
-      1000,
-    );
-    return () => clearInterval(timer);
-  }, [playing, rate, bookId, advance, chapterEnd]);
-
-  const setSleepTimer = useCallback(
-    (timer: SleepTimer) => {
-      setSleepTimerState(timer);
-      if (timer?.kind === 'chapter') {
-        const chapterLength = book.durationSec / book.chapters;
-        setChapterEnd(
-          Math.min(
-            book.durationSec,
-            (Math.floor(position / chapterLength) + 1) * chapterLength,
-          ),
-        );
-      } else {
-        setChapterEnd(null);
-      }
-    },
-    [book.durationSec, book.chapters, position],
-  );
-
-  useEffect(() => {
-    if (sleepTimer?.kind !== 'minutes') {
-      return;
-    }
-    const timer = setTimeout(() => {
-      setPlaying(false);
-      setSleepTimerState(null);
-    }, sleepTimer.minutes * 60 * 1000);
-    return () => clearTimeout(timer);
-  }, [sleepTimer]);
-
-  useEffect(() => {
-    if (
-      sleepTimer?.kind === 'chapter' &&
-      chapterEnd !== null &&
-      position >= chapterEnd
-    ) {
-      setPlaying(false);
-      setSleepTimerState(null);
-      setChapterEnd(null);
-    }
-  }, [sleepTimer, chapterEnd, position]);
-
-  const play = useCallback(
-    (id: string) => {
-      if (library.status(id) !== 'listening') {
-        library.setStatus(id, 'listening');
-      }
-      setBookId(id);
-      setPlaying(true);
-    },
-    [library],
-  );
-
-  const value = useMemo<PlayerValue>(
-    () => ({
-      book,
-      position,
-      playing,
-      rate,
-      play,
-      toggle: () => setPlaying(p => !p),
-      skip: seconds => advance(bookId, seconds),
-      seekTo,
-      cycleRate: () =>
-        setRate(r => RATES[(RATES.indexOf(r) + 1) % RATES.length]),
-      sleepTimer,
-      setSleepTimer,
-    }),
-    [
-      book,
-      bookId,
-      position,
-      playing,
-      rate,
-      play,
-      seekTo,
-      advance,
-      sleepTimer,
-      setSleepTimer,
-    ],
-  );
-
-  return (
-    <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
-  );
-};
-
-export const PlayerProvider = ({
-  children,
-  controller,
-  createController,
-}: {
-  children: ReactNode;
-  controller?: PlayerController;
-  createController?: () => Promise<PlayerController>;
-}) =>
-  controller || createController ? (
-    <RealPlayerProvider
-      providedController={controller}
-      createController={createController}>
-      {children}
-    </RealPlayerProvider>
-  ) : (
-    <MockPlayerProvider>{children}</MockPlayerProvider>
-  );
 
 export const usePlayer = () => {
   const value = useContext(PlayerContext);
