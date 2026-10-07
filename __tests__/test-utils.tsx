@@ -6,6 +6,10 @@ import {
   FakeAudioEngine,
   SourceResolver,
 } from '../app/audio';
+import {
+  InMemorySleepTimerStore,
+  SleepTimerController,
+} from '../app/audio/sleep';
 import {RightsPolicy} from '../app/domain/rights';
 import {
   PlaybackQueueResolver,
@@ -79,7 +83,12 @@ const createTestPlayerController = async (): Promise<PlayerController> => {
       {locate: async () => null},
     ),
   );
-  return new PlayerController(new FakeAudioEngine(), {queueResolver});
+  return new PlayerController(new FakeAudioEngine(), {
+    queueResolver,
+    sleepTimer: new SleepTimerController(
+      new InMemorySleepTimerStore(),
+    ),
+  });
 };
 
 const createTestContainer = () =>
