@@ -1,10 +1,15 @@
 import type {AudioEngine} from '../audio/AudioEngine';
+import {ChapterPlaybackSession} from '../audio/session/ChapterPlaybackSession';
 import type {
   AudioTrack,
   PlaybackControlConfiguration,
   PlaybackSnapshot,
   PlaybackState,
 } from '../audio/types';
+import type {
+  PlaybackQueueResolver,
+  ResolvedPlaybackQueue,
+} from './PlaybackQueueResolver';
 
 export type PlayerControllerSnapshot = {
   state: PlaybackState;
@@ -18,6 +23,11 @@ export type PlayerControllerSnapshot = {
 
 export type PlayerLoadOptions = {
   positionSec?: number;
+};
+
+export type PlayerControllerDependencies = {
+  session?: ChapterPlaybackSession;
+  queueResolver?: PlaybackQueueResolver;
 };
 
 type Listener = (snapshot: PlayerControllerSnapshot) => void;
@@ -102,6 +112,7 @@ const locate = (
 
 export class PlayerController {
   private queue: QueueState | null = null;
+  private resolvedQueue: ResolvedPlaybackQueue | null = null;
   private snapshot: PlayerControllerSnapshot = {
     state: 'idle',
     positionSec: 0,
@@ -111,7 +122,10 @@ export class PlayerController {
   private readonly listeners = new Set<Listener>();
   private unsubscribeEngine: (() => void) | null = null;
 
-  constructor(private readonly engine: AudioEngine) {}
+  constructor(
+    private readonly engine: AudioEngine,
+    private readonly dependencies: PlayerControllerDependencies = {},
+  ) {}
 
   async load(
     tracks: AudioTrack[],
@@ -119,6 +133,8 @@ export class PlayerController {
   ): Promise<void> {
     const queue = buildQueue(tracks);
     const start = locate(queue, options.positionSec ?? 0);
+    await this.resolvedQueue?.dispose();
+    this.resolvedQueue = null;
     this.queue = queue;
 
     this.ensureEngineSubscription();
@@ -127,6 +143,40 @@ export class PlayerController {
       positionSec: start.positionSec,
     });
     this.updateFromEngine(await this.engine.getSnapshot());
+  }
+
+  async loadBook(bookId: string): Promise<void> {
+    const resolver = this.dependencies.queueResolver;
+    if (!resolver) {
+      throw new Error('Player controller has no playback queue resolver');
+    }
+
+    const resolved = await resolver.resolve(bookId);
+    const nextQueue = buildQueue(resolved.tracks);
+    const previousQueue = this.queue;
+    const previousResolved = this.resolvedQueue;
+
+    this.queue = nextQueue;
+    this.ensureEngineSubscription();
+
+    try {
+      if (this.dependencies.session) {
+        await this.dependencies.session.load(
+          resolved.bookId,
+          resolved.renditionId,
+          resolved.tracks,
+        );
+      } else {
+        await this.engine.load(resolved.tracks);
+      }
+      this.resolvedQueue = resolved;
+      this.updateFromEngine(await this.engine.getSnapshot());
+      await previousResolved?.dispose();
+    } catch (error) {
+      this.queue = previousQueue;
+      await resolved.dispose();
+      throw error;
+    }
   }
 
   async play(): Promise<void> {
@@ -184,14 +234,20 @@ export class PlayerController {
   async dispose(): Promise<void> {
     this.unsubscribeEngine?.();
     this.unsubscribeEngine = null;
-    this.queue = null;
-    this.snapshot = {
-      state: 'idle',
-      positionSec: 0,
-      durationSec: 0,
-      rate: 1,
-    };
-    this.emit();
+    try {
+      await this.dependencies.session?.dispose();
+    } finally {
+      await this.resolvedQueue?.dispose();
+      this.resolvedQueue = null;
+      this.queue = null;
+      this.snapshot = {
+        state: 'idle',
+        positionSec: 0,
+        durationSec: 0,
+        rate: 1,
+      };
+      this.emit();
+    }
   }
 
   private ensureEngineSubscription(): void {
