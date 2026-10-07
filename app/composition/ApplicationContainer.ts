@@ -8,7 +8,11 @@ import type {
   ProgressRepository,
   RenditionRepository,
 } from '../repositories';
-import {ChapterPlaybackSession, type AudioEngine} from '../audio';
+import {
+  ChapterPlaybackSession,
+  type AudioEngine,
+  type SleepTimerController,
+} from '../audio';
 import {LibraryService} from '../services/LibraryService';
 import {
   SqliteLibraryRepository,
@@ -30,6 +34,7 @@ export type ApplicationContainer = {
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
+    createSleepTimer(): Promise<SleepTimerController>;
   };
   storage: {
     openDatabase(): Promise<SqlDatabase>;
@@ -79,6 +84,12 @@ export const createApplicationContainer = (): ApplicationContainer => {
     audio: {
       createEngine,
       createPersistentSession,
+      createSleepTimer: async () => {
+        const {createNativeSleepTimerController} = await import(
+          '../adapters/audio/createNativeSleepTimerController'
+        );
+        return createNativeSleepTimerController();
+      },
     },
     storage: {
       openDatabase,

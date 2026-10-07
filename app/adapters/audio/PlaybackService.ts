@@ -1,5 +1,17 @@
 import TrackPlayer, {Event} from 'react-native-track-player';
 
+import {PlaybackServiceSleepTimer} from '../../audio/sleep';
+import {AsyncStorageSleepTimerStore} from './AsyncStorageSleepTimerStore';
+
+const sleepTimer = new PlaybackServiceSleepTimer(
+  new AsyncStorageSleepTimerStore('oto.audio.sleepTimer'),
+  () => TrackPlayer.pause(),
+);
+
+const ignore = (work: Promise<void>) => {
+  return work.catch(() => {});
+};
+
 const ignoreQueueBoundary = async (work: () => Promise<void>) => {
   try {
     await work();
@@ -27,5 +39,22 @@ export const PlaybackService = async (): Promise<void> => {
   );
   TrackPlayer.addEventListener(Event.RemotePrevious, () =>
     ignoreQueueBoundary(() => TrackPlayer.skipToPrevious()),
+  );
+
+  TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, () =>
+    ignore(sleepTimer.onProgress()),
+  );
+  TrackPlayer.addEventListener(
+    Event.PlaybackActiveTrackChanged,
+    event =>
+      ignore(
+        sleepTimer.onActiveTrackChanged(
+          event.lastIndex,
+          event.index,
+        ),
+      ),
+  );
+  TrackPlayer.addEventListener(Event.PlaybackQueueEnded, event =>
+    ignore(sleepTimer.onQueueEnded(event.track)),
   );
 };
