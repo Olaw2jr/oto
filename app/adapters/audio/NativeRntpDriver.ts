@@ -1,6 +1,9 @@
 import TrackPlayer, {
   Capability,
   Event,
+  IOSCategory,
+  IOSCategoryMode,
+  PitchAlgorithm,
   type Track,
 } from 'react-native-track-player';
 
@@ -35,6 +38,8 @@ export class NativeRntpDriver implements RntpDriver {
     await TrackPlayer.setupPlayer({
       autoHandleInterruptions: true,
       autoUpdateMetadata: true,
+      iosCategory: IOSCategory.Playback,
+      iosCategoryMode: IOSCategoryMode.SpokenAudio,
     });
   }
 
@@ -43,7 +48,12 @@ export class NativeRntpDriver implements RntpDriver {
   }
 
   async setQueue(tracks: RntpTrack[]): Promise<void> {
-    await TrackPlayer.setQueue(tracks as Track[]);
+    await TrackPlayer.setQueue(
+      tracks.map(track => ({
+        ...track,
+        pitchAlgorithm: PitchAlgorithm.Voice,
+      })) as Track[],
+    );
   }
 
   async skip(index: number, positionSec = 0): Promise<void> {

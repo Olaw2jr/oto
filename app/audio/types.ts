@@ -12,6 +12,10 @@ export type AudioTrack = {
   renditionId: RenditionId;
   chapterId: string;
   title: string;
+  artist?: string;
+  album?: string;
+  artwork?: string;
+  description?: string;
   durationSec?: number;
   source: AudioSource;
 };
