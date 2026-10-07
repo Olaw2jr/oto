@@ -52,6 +52,8 @@ const toNativeTrack = (track: AudioTrack): RntpTrack => ({
   description: track.description,
   duration: track.durationSec,
   contentType: track.source.mimeType,
+  streamType: track.source.streamType,
+  isLiveStream: track.isLive,
   bookId: track.bookId,
   renditionId: track.renditionId,
   chapterId: track.chapterId,
