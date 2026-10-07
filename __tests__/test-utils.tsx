@@ -1,16 +1,11 @@
 import React, {ReactElement} from 'react';
 import {act, render} from '@testing-library/react-native';
 
-import {
-  createSeedLibraryGraph,
-  seedRenditionId,
-} from '../app/adapters/library';
+import {createSeedLibraryGraph} from '../app/adapters/library';
 import {
   FakeAudioEngine,
   SourceResolver,
 } from '../app/audio';
-import {getBook} from '../app/data/catalogue';
-import {CURRENT_BOOK} from '../app/data/social';
 import {RightsPolicy} from '../app/domain/rights';
 import {
   PlaybackQueueResolver,
