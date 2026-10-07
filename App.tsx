@@ -2,6 +2,9 @@ import React from 'react';
 import {StatusBar} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 
+import {
+  type ApplicationContainer,
+} from './app/composition';
 import RootNavigator from './app/navigator/RootNavigator';
 import {AppProviders} from './app/state/AppProviders';
 import {navigationTheme} from './app/theme/navigationTheme';
@@ -22,8 +25,8 @@ const ThemedApp = () => {
   );
 };
 
-const App = () => (
-  <AppProviders>
+const App = ({container}: {container?: ApplicationContainer}) => (
+  <AppProviders container={container}>
     <ThemedApp />
   </AppProviders>
 );
