@@ -114,7 +114,7 @@ const setup = (initialPosition = 0) => {
   const engine = new FakeAudioEngine();
   const session = new ChapterPlaybackSession(engine, service);
 
-  return {engine, session, progress};
+  return {engine, session, progress, service};
 };
 
 describe('ChapterPlaybackSession', () => {
@@ -158,6 +158,22 @@ describe('ChapterPlaybackSession', () => {
     await expect(progress.get(book.id, rendition.id)).resolves.toMatchObject({
       positionSec: 30,
     });
+  });
+
+  it('continues checkpointing after a persistence write fails', async () => {
+    const {engine, session, service} = setup();
+    const write = jest
+      .spyOn(service, 'setPosition')
+      .mockRejectedValueOnce(new Error('temporary write failure'))
+      .mockResolvedValue(undefined);
+
+    await session.load(book.id, rendition.id, tracks);
+    await engine.seekTo(10);
+    await expect(session.flush()).rejects.toThrow('temporary write failure');
+
+    await engine.seekTo(20);
+    await expect(session.flush()).resolves.toBeUndefined();
+    expect(write).toHaveBeenCalledTimes(2);
   });
 
   it('rejects a queue containing another rendition', async () => {

@@ -60,6 +60,8 @@ export class ChapterPlaybackSession {
   private active: ActiveSession | null = null;
   private unsubscribe: (() => void) | null = null;
   private checkpointQueue: Promise<void> = Promise.resolve();
+  private checkpointError: unknown;
+  private hasCheckpointError = false;
 
   constructor(
     private readonly engine: AudioEngine,
@@ -138,24 +140,35 @@ export class ChapterPlaybackSession {
       active.offsets[index] + chapterPosition,
     );
 
-    this.checkpointQueue = this.checkpointQueue.then(() =>
-      this.library.setPosition(
+    this.checkpointQueue = this.checkpointQueue
+      .then(() =>
+        this.library.setPosition(
         active.bookId,
         active.renditionId,
         globalPosition,
         track.chapterId,
-      ),
-    );
+        ),
+      )
+      .catch(error => {
+        this.checkpointError = error;
+        this.hasCheckpointError = true;
+      });
   }
 
   async flush(): Promise<void> {
     await this.checkpointQueue;
+    if (this.hasCheckpointError) {
+      const error = this.checkpointError;
+      this.checkpointError = undefined;
+      this.hasCheckpointError = false;
+      throw error;
+    }
   }
 
   async dispose(): Promise<void> {
     this.unsubscribe?.();
     this.unsubscribe = null;
-    await this.flush();
     this.active = null;
+    await this.flush();
   }
 }
