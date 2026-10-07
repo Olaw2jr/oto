@@ -8,7 +8,11 @@ import type {
   CatalogueRepository,
   RenditionRepository,
 } from '../../repositories';
-import {\n  catalogue,\n  getBook,\n  PUBLIC_DOMAIN_SAMPLE_ID,\n} from '../../data/catalogue';
+import {
+  catalogue,
+  getBook,
+  PUBLIC_DOMAIN_SAMPLE_ID,
+} from '../../data/catalogue';
 
 const VERIFIED_AT = '1970-01-01T00:00:00.000Z';
 
