@@ -11,6 +11,7 @@ import React, {
 
 import {CatalogueBook, getBook} from '../data/catalogue';
 import {CURRENT_BOOK} from '../data/social';
+import {PlaybackUnavailableError} from '../player/PlaybackQueueResolver';
 import type {
   PlayerController,
   PlayerControllerSnapshot,
@@ -35,7 +36,15 @@ type PlayerValue = {
   cycleRate: () => void;
   sleepTimer: SleepTimer;
   setSleepTimer: (timer: SleepTimer) => void;
+  // Why the last player action failed, in words for the listener.
+  error: string | null;
+  dismissError: () => void;
 };
+
+export const UNAVAILABLE_MESSAGE =
+  "This book isn't available to listen to yet.";
+export const FAILED_MESSAGE =
+  "Couldn't start playback. Check your connection and try again.";
 
 const PlayerContext = createContext<PlayerValue | null>(null);
 
@@ -157,10 +166,21 @@ export const PlayerProvider = ({
     void controller.setRate(speed).catch(() => {});
   }, [controller, speed]);
 
+  const [error, setError] = useState<string | null>(null);
+  const dismissError = useCallback(() => setError(null), []);
+
   const run = useCallback((operation: () => Promise<void>) => {
-    void operation().catch(error => {
-      console.warn('Player operation failed', error);
-    });
+    void operation().then(
+      () => setError(null),
+      failure => {
+        console.warn('Player operation failed', failure);
+        setError(
+          failure instanceof PlaybackUnavailableError
+            ? UNAVAILABLE_MESSAGE
+            : FAILED_MESSAGE,
+        );
+      },
+    );
   }, []);
 
   const play = useCallback(
@@ -245,6 +265,8 @@ export const PlayerProvider = ({
       cycleRate,
       sleepTimer: snapshot.sleepTimer,
       setSleepTimer,
+      error,
+      dismissError,
     }),
     [
       book,
@@ -258,6 +280,8 @@ export const PlayerProvider = ({
       seekTo,
       cycleRate,
       setSleepTimer,
+      error,
+      dismissError,
     ],
   );
 
