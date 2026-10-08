@@ -5,7 +5,7 @@ import {act, renderHook, waitFor} from '@testing-library/react-native';
 import {FakeAudioEngine} from '../../app/audio';
 import {getBook} from '../../app/data/catalogue';
 import {seedRenditionId} from '../../app/adapters/library';
-import {PlayerController} from '../../app/player';
+import {PlayerController, PlaybackUnavailableError} from '../../app/player';
 import {LibraryProvider} from '../../app/state/library';
 import {PlayerProvider, usePlayer} from '../../app/state/player';
 import {
@@ -121,5 +121,50 @@ describe('PlayerProvider playback speed', () => {
     await act(async () => {});
     expect(result.current.rate).toBe(1);
     expect((await engine.getSnapshot()).rate).toBe(1);
+  });
+});
+
+describe('PlayerProvider playback errors', () => {
+  const wrapperFor =
+    (createController: () => Promise<PlayerController>) =>
+    ({children}: {children: React.ReactNode}) => (
+      <SettingsProvider>
+        <LibraryProvider>
+          <PlayerProvider createController={createController}>
+            {children}
+          </PlayerProvider>
+        </LibraryProvider>
+      </SettingsProvider>
+    );
+
+  beforeEach(() => jest.spyOn(console, 'warn').mockImplementation(() => {}));
+  afterEach(() => jest.restoreAllMocks());
+
+  it('says when a book has no audio you can play', async () => {
+    const {result} = renderHook(() => usePlayer(), {
+      wrapper: wrapperFor(() =>
+        Promise.reject(new PlaybackUnavailableError('no rendition')),
+      ),
+    });
+    act(() => result.current.play('project-hail-mary'));
+    await waitFor(() =>
+      expect(result.current.error).toBe(
+        "This book isn't available to listen to yet.",
+      ),
+    );
+  });
+
+  it('suggests checking the connection for other failures', async () => {
+    const {result} = renderHook(() => usePlayer(), {
+      wrapper: wrapperFor(() => Promise.reject(new Error('socket closed'))),
+    });
+    act(() => result.current.toggle());
+    await waitFor(() =>
+      expect(result.current.error).toBe(
+        "Couldn't start playback. Check your connection and try again.",
+      ),
+    );
+    act(() => result.current.dismissError());
+    expect(result.current.error).toBeNull();
   });
 });

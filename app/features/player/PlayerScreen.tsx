@@ -23,6 +23,7 @@ import {
   Screen,
   Sheet,
   SheetRow,
+  TextLink,
   Txt,
 } from '../../ui';
 
@@ -127,6 +128,21 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
           onPress={() => setSheet('more')}
         />
       </View>
+
+      {player.error ? (
+        <View
+          accessibilityRole="alert"
+          style={[styles.error, {backgroundColor: colors.segment}]}>
+          <Txt variant="caption" color="ink" style={styles.errorText}>
+            {player.error}
+          </Txt>
+          <TextLink
+            label="Dismiss"
+            role="button"
+            onPress={player.dismissError}
+          />
+        </View>
+      ) : null}
 
       <View style={styles.cover}>
         <BookCover
@@ -402,6 +418,15 @@ const styles = StyleSheet.create({
     marginHorizontal: -10,
   },
   with: {alignItems: 'center'},
+  error: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingLeft: 16,
+    paddingRight: 8,
+    marginTop: 8,
+  },
+  errorText: {flex: 1, paddingVertical: 12},
   cover: {alignItems: 'center', marginTop: 10},
   titleRow: {flexDirection: 'row', alignItems: 'center', marginTop: 20},
   titleText: {flex: 1, marginRight: 12},

@@ -11,6 +11,15 @@ import type {
   RenditionRepository,
 } from '../repositories';
 
+// The book has no rights-cleared audio oto can play, as opposed to a
+// playback failure that might succeed on retry.
+export class PlaybackUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PlaybackUnavailableError';
+  }
+}
+
 export type PlaybackAssetBinding = {
   chapterId: string;
   asset: MediaAsset;
@@ -96,7 +105,7 @@ export class PlaybackQueueResolver {
         candidate.rights.status !== 'unknown',
     );
     if (!rendition) {
-      throw new Error(
+      throw new PlaybackUnavailableError(
         `No authorized audio rendition is available for book ${bookId}`,
       );
     }
@@ -117,7 +126,7 @@ export class PlaybackQueueResolver {
         const chapter = rendition.chapters[index];
         const asset = byChapter.get(chapter.id);
         if (!asset) {
-          throw new Error(
+          throw new PlaybackUnavailableError(
             `Missing media asset for chapter ${chapter.id}`,
           );
         }
