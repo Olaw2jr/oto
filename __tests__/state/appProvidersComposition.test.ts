@@ -9,7 +9,7 @@ const source = fs.readFileSync(
 
 describe('AppProviders composition', () => {
   it('creates the dependency graph at the application boundary', () => {
-    expect(source).toContain('createApplicationContainer');
+    expect(source).toContain('createPersistentApplicationContainer');
     expect(source).toContain('container.library');
     expect(source).toContain('LibraryProvider');
     expect(source).toContain('container.audio.createPlayerController');

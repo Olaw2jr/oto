@@ -3,6 +3,11 @@ import {
 } from '../adapters/catalogue';
 import {
   createSeedLibraryGraph,
+  ServiceLibraryProviderAdapter,
+  ObservableLibraryRepository,
+  ObservableProgressRepository,
+  seedRenditionId,
+  type SeedLibraryGraph,
   type LibraryProviderAdapter,
 } from '../adapters/library';
 import {
@@ -24,10 +29,13 @@ import type {
   ProgressRepository,
   RenditionRepository,
 } from '../repositories';
+import {getBook} from '../data/catalogue';
 import {LibraryService} from '../services/LibraryService';
 import {
   SqliteLibraryRepository,
   SqliteProgressRepository,
+  MigrationRunner,
+  migrations,
   type SqlDatabase,
 } from '../storage/sqlite';
 import {
@@ -62,6 +70,8 @@ export type ApplicationContainer = {
 export type ApplicationContainerOptions = {
   playbackAssets?: PlaybackAssetRepository;
   createPlayerController?: () => Promise<PlayerController>;
+  libraryGraph?: SeedLibraryGraph;
+  databaseFactory?: () => Promise<SqlDatabase>;
 };
 
 const openDatabase = async (): Promise<SqlDatabase> => {
@@ -72,10 +82,13 @@ const openDatabase = async (): Promise<SqlDatabase> => {
 export const createApplicationContainer = (
   options: ApplicationContainerOptions = {},
 ): ApplicationContainer => {
-  const libraryGraph = createSeedLibraryGraph();
+  const libraryGraph = options.libraryGraph ?? createSeedLibraryGraph();
   const playbackAssets =
     options.playbackAssets ??
     new PublicDomainPlaybackAssetRepository();
+  const databaseFactory = options.databaseFactory ?? openDatabase;
+  let database: Promise<SqlDatabase> | undefined;
+  const sharedDatabase = () => (database ??= databaseFactory());
 
   const createEngine = async (): Promise<AudioEngine> => {
     const {Platform} = await import('react-native');
@@ -104,9 +117,9 @@ export const createApplicationContainer = (
   };
 
   const createPersistentLibraryService = async () => {
-    const database = await openDatabase();
-    const library = new SqliteLibraryRepository(database);
-    const progress = new SqliteProgressRepository(database);
+    const db = await sharedDatabase();
+    const library = new SqliteLibraryRepository(db);
+    const progress = new SqliteProgressRepository(db);
     return new LibraryService({
       catalogue: libraryGraph.catalogue,
       renditions: libraryGraph.renditions,
@@ -199,7 +212,71 @@ export const createApplicationContainer = (
       createSleepTimer,
     },
     storage: {
-      openDatabase,
+      openDatabase: sharedDatabase,
     },
   };
+};
+
+// Hydrate before mounting consumers. SQLite is authoritative; demo seed data is
+// only used by explicitly injected test/prototype containers.
+export const createPersistentApplicationContainer = async (
+  databaseFactory: () => Promise<SqlDatabase> = openDatabase,
+): Promise<ApplicationContainer> => {
+  const database = await databaseFactory();
+  await new MigrationRunner(database, migrations).migrate();
+  const seed = createSeedLibraryGraph();
+  const storedLibrary = new SqliteLibraryRepository(database);
+  const storedProgress = new SqliteProgressRepository(database);
+  const library = new ObservableLibraryRepository(await storedLibrary.list());
+  const progress = new ObservableProgressRepository();
+  for (const entry of library.listSync()) {
+    const saved = await storedProgress.get(
+      entry.bookId,
+      seedRenditionId(entry.bookId),
+    );
+    if (saved) {
+      progress.setOptimistic(saved);
+    }
+  }
+  const durableLibrary: LibraryRepository = {
+    get: id => storedLibrary.get(id),
+    list: () => storedLibrary.list(),
+    save: async entry => {
+      await storedLibrary.save(entry);
+      library.setOptimistic(entry);
+    },
+    remove: async id => {
+      await storedLibrary.remove(id);
+      await library.remove(id);
+    },
+  };
+  const durableProgress: ProgressRepository = {
+    get: (bookId, renditionId) => storedProgress.get(bookId, renditionId),
+    save: async entry => {
+      await storedProgress.save(entry);
+      progress.setOptimistic(entry);
+    },
+  };
+  const service = new LibraryService({
+    catalogue: seed.catalogue,
+    renditions: seed.renditions,
+    library: durableLibrary,
+    progress: durableProgress,
+  });
+  const adapter = new ServiceLibraryProviderAdapter(
+    service,
+    library,
+    progress,
+    seedRenditionId,
+    id => getBook(id).durationSec,
+  );
+  const container = createApplicationContainer(
+    {
+      libraryGraph: {...seed, library, progress, service, adapter},
+      databaseFactory: async () => database,
+    },
+  );
+  container.repositories.library = durableLibrary;
+  container.repositories.progress = durableProgress;
+  return container;
 };

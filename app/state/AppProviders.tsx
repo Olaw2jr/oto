@@ -1,8 +1,9 @@
-import React, {ReactNode, useState} from 'react';
+import React, {ReactNode, useEffect, useState} from 'react';
+import {ActivityIndicator, Button, Text, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import {
-  createApplicationContainer,
+  createPersistentApplicationContainer,
   type ApplicationContainer,
 } from '../composition';
 import {ThemeProvider} from '../theme/ThemeProvider';
@@ -20,9 +21,51 @@ export const AppProviders = ({
   children: ReactNode;
   container?: ApplicationContainer;
 }) => {
-  const [container] = useState(
-    () => providedContainer ?? createApplicationContainer(),
-  );
+  const [container, setContainer] = useState(providedContainer);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (providedContainer) {
+      return;
+    }
+    let active = true;
+    setError(false);
+    createPersistentApplicationContainer().then(
+      value => {
+        if (active) {
+          setContainer(value);
+        }
+      },
+      () => {
+        if (active) {
+          setError(true);
+        }
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [providedContainer, attempt]);
+
+  if (!container) {
+    return (
+      <View accessibilityRole="summary">
+        {error ? (
+          <>
+            <Text>
+              Could not open your library. Your saved data has been kept.
+            </Text>
+            <Button
+              title="Retry"
+              onPress={() => setAttempt(value => value + 1)}
+            />
+          </>
+        ) : (
+          <ActivityIndicator accessibilityLabel="Opening library" />
+        )}
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider>
