@@ -53,13 +53,16 @@ const YouScreen = ({navigation}: TabScreenProps<'You'>) => {
   const settings = useSettings();
   const [goalOpen, setGoalOpen] = useState(false);
   const year = new Date().getFullYear();
-  // Seeded books for this year, plus any you finish beyond the seed.
+  // The profile's yearly count includes the demo library's finished books;
+  // count what your library holds now instead, so every finish counts even
+  // when the library starts empty.
   const seededFinished = Object.values(librarySeed).filter(
     e => e.status === 'finished',
   ).length;
   const finishedThisYear =
-    profileStats.finishedThisYear +
-    Math.max(0, library.byStatus('finished').length - seededFinished);
+    profileStats.finishedThisYear -
+    seededFinished +
+    library.byStatus('finished').length;
   const daysListened = listeningDays.slice(0, -1).filter(Boolean).length;
 
   if (loading) {
