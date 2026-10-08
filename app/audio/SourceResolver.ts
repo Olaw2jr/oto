@@ -48,7 +48,15 @@ export class SourceResolver {
 
     let lastError: unknown;
     for (const source of candidates) {
-      if (!this.rightsPolicy.evaluate(rights, source).allowed) {
+      const decision = this.rightsPolicy.evaluate(rights, source);
+      if (!decision.allowed) {
+        if (source.kind === 'torrent') {
+          console.warn(
+            'Playback source rejected by rights policy',
+            source.kind,
+            decision.reason,
+          );
+        }
         continue;
       }
       try {
@@ -61,6 +69,11 @@ export class SourceResolver {
         return playable;
       } catch (error) {
         lastError = error;
+        console.warn(
+          'Playback source preparation failed',
+          source.kind,
+          error,
+        );
       }
     }
 
