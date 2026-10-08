@@ -74,36 +74,59 @@ class JlibtorrentEngine(private val context: Context) {
   }
 
   private fun readHttpsTorrent(uri: String): ByteArray {
-    val parsed = URI(uri)
-    require(parsed.scheme == "https") {
+    var current = URI(uri)
+    require(current.scheme.equals("https", ignoreCase = true)) {
       "Torrent descriptor must use HTTPS"
     }
-    val connection =
-      parsed.toURL().openConnection() as HttpsURLConnection
-    connection.connectTimeout = 10_000
-    connection.readTimeout = 20_000
-    connection.instanceFollowRedirects = false
-    connection.setRequestProperty(
-      "User-Agent",
-      "oto/0.0.1 authorized-torrent-runtime",
-    )
-    try {
-      connection.inputStream.use { input ->
-        val limit = 2 * 1024 * 1024
-        val buffer = ByteArray(16 * 1024)
-        val output = java.io.ByteArrayOutputStream()
-        while (true) {
-          val count = input.read(buffer)
-          if (count < 0) break
-          output.write(buffer, 0, count)
-          require(output.size() <= limit) {
-            "Torrent descriptor exceeds 2 MiB"
+    var redirects = 0
+    while (true) {
+      val connection =
+        current.toURL().openConnection() as HttpsURLConnection
+      connection.connectTimeout = 10_000
+      connection.readTimeout = 20_000
+      connection.instanceFollowRedirects = false
+      connection.setRequestProperty(
+        "User-Agent",
+        "oto/0.0.1 authorized-torrent-runtime",
+      )
+      try {
+        val status = connection.responseCode
+        if (status in 300..399) {
+          require(redirects < 5) {
+            "Too many redirects while fetching torrent metadata"
           }
+          val location = connection.getHeaderField("Location")
+            ?: throw IllegalArgumentException(
+              "Torrent metadata redirect has no Location",
+            )
+          val next = current.resolve(location)
+          require(next.scheme.equals("https", ignoreCase = true)) {
+            "Torrent metadata redirect must remain HTTPS"
+          }
+          current = next
+          redirects += 1
+          continue
         }
-        return output.toByteArray()
+        require(status in 200..299) {
+          "Torrent metadata request failed: HTTP $status"
+        }
+        connection.inputStream.use { input ->
+          val limit = 2 * 1024 * 1024
+          val buffer = ByteArray(16 * 1024)
+          val output = java.io.ByteArrayOutputStream()
+          while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            output.write(buffer, 0, count)
+            require(output.size() <= limit) {
+              "Torrent descriptor exceeds 2 MiB"
+            }
+          }
+          return output.toByteArray()
+        }
+      } finally {
+        connection.disconnect()
       }
-    } finally {
-      connection.disconnect()
     }
   }
 

@@ -89,6 +89,14 @@ export class PublicDomainPlaybackAssetRepository
           : {}),
         sources: [
           {
+            kind: 'torrent',
+            torrentUri:
+              `https://archive.org/download/${PUBLIC_DOMAIN_ARCHIVE_ID}/` +
+              `${PUBLIC_DOMAIN_ARCHIVE_ID}_archive.torrent`,
+            filePath: file.name,
+            trustedSourceId: 'internetarchive',
+          },
+          {
             kind: 'https',
             uri:
               `https://archive.org/download/${PUBLIC_DOMAIN_ARCHIVE_ID}/` +

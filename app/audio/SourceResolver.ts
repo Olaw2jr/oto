@@ -13,14 +13,7 @@ export interface DownloadedAssetLocator {
 }
 
 const order = (source: MediaSource): number => {
-  switch (source.kind) {
-    case 'local':
-      return 0;
-    case 'https':
-      return 1;
-    case 'torrent':
-      return 2;
-  }
+  return source.kind === 'local' ? 0 : 1;
 };
 
 export interface PlaybackCacheWarmHint {

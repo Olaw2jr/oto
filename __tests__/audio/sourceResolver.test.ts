@@ -47,7 +47,7 @@ describe('SourceResolver', () => {
     expect(playable.transport).toBe('local');
   });
 
-  it('prefers trusted HTTPS over torrent when no local copy exists', async () => {
+  it('preserves provider source order after checking for local copies', async () => {
     const resolver = new SourceResolver(
       new TransportRegistry([
         new FakeContentTransport('https'),
@@ -57,7 +57,10 @@ describe('SourceResolver', () => {
       {locate: async () => null},
     );
 
-    const playable = await resolver.resolve(asset, rights);
+    const playable = await resolver.resolve(
+      {...asset, sources: [...asset.sources].reverse()},
+      rights,
+    );
 
     expect(playable.transport).toBe('https');
   });

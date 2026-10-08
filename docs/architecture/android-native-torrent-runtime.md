@@ -14,6 +14,7 @@ The native engine:
 - starts one libtorrent session per app process;
 - accepts HTTPS torrent descriptors, magnet URIs, or an info hash that is
   converted to a magnet URI;
+- follows at most five metadata redirects and rejects HTTPS-to-HTTP downgrades;
 - limits fetched torrent metadata to 2 MiB;
 - restores opaque fast-resume data supplied by the application layer;
 - starts torrents with every file disabled until the selected file is retained;
@@ -58,6 +59,9 @@ On Android, `ApplicationContainer` adds the streaming transport to the productio
 `createAndroidTorrentRuntime()` creates one `TorrentSessionPool` shared by
 `TorrentStreamTransport` and `TorrentDownloadManager`. Streaming and
 downloads of the same descriptor therefore share the native torrent handle.
+Remote source order comes from the authorized asset record after local files
+are checked. The Sherlock Holmes validation asset lists its Internet Archive
+torrent before its HTTPS fallback, so playback can exercise the native route.
 
 Download resume data is stored through the existing `TorrentResumeStore`
 contract. The Android factory uses AsyncStorage so a paused download can restore
