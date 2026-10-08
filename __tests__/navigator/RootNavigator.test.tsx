@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import App from '../../App';
 import {SESSION_STORAGE_KEY} from '../../app/state/session';
-import {renderAsync} from '../test-utils';
+import {createTestContainer, renderAsync} from '../test-utils';
 
 const signedIn = () =>
   AsyncStorage.setItem(
@@ -17,14 +17,14 @@ beforeEach(() => AsyncStorage.clear());
 
 describe('RootNavigator', () => {
   it('opens on the splash screen for a new install', async () => {
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
     expect(
       screen.getByText('A quiet place to listen, together.'),
     ).toBeOnTheScreen();
   });
 
   it('takes a new listener from splash through onboarding to the tabs', async () => {
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
     await act(async () => {
       fireEvent.press(
         screen.getByRole('button', {name: 'Continue to onboarding'}),
@@ -43,7 +43,7 @@ describe('RootNavigator', () => {
 
   it('shows five tabs with Home selected for a signed-in listener', async () => {
     await signedIn();
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
 
     const names = ['Home', 'Discover', 'Following', 'Clubs', 'You'];
     for (const name of names) {
@@ -56,7 +56,7 @@ describe('RootNavigator', () => {
 
   it('switches tabs', async () => {
     await signedIn();
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
 
     await act(async () => {
       fireEvent.press(screen.getByRole('tab', {name: 'Following'}));
@@ -71,7 +71,7 @@ describe('RootNavigator', () => {
 
   it('opens the player from Home and returns', async () => {
     await signedIn();
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
 
     await act(async () => {
       fireEvent.press(
@@ -88,7 +88,7 @@ describe('RootNavigator', () => {
 
   it('shows the mini player on other tabs and opens a book from Discover', async () => {
     await signedIn();
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
     expect(screen.queryByRole('button', {name: /^Open player:/})).toBeNull();
 
     await act(async () => {
@@ -112,7 +112,7 @@ describe('RootNavigator', () => {
 
   it('posts a status update that shows up in Following', async () => {
     await signedIn();
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
 
     await act(async () => {
       fireEvent.press(screen.getByRole('tab', {name: 'Following'}));
@@ -134,7 +134,7 @@ describe('RootNavigator', () => {
 
   it('opens your club from the Clubs tab', async () => {
     await signedIn();
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
     await act(async () => {
       fireEvent.press(screen.getByRole('tab', {name: 'Clubs'}));
     });
@@ -143,7 +143,7 @@ describe('RootNavigator', () => {
 
   it('signs out from Settings back to Sign in', async () => {
     await signedIn();
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
 
     await act(async () => {
       fireEvent.press(screen.getByRole('tab', {name: 'You'}));
@@ -160,7 +160,7 @@ describe('RootNavigator', () => {
 
   it('switches to dark mode from Settings', async () => {
     await signedIn();
-    await renderAsync(<App />);
+    await renderAsync(<App container={createTestContainer()} />);
 
     await act(async () => {
       fireEvent.press(screen.getByRole('tab', {name: 'You'}));

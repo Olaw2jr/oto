@@ -24,7 +24,7 @@ import {
   TransportRegistry,
 } from '../app/transports';
 
-const createTestPlayerController = async (): Promise<PlayerController> => {
+export const createTestPlayerController = async (): Promise<PlayerController> => {
   const graph = createSeedLibraryGraph();
   const renditions = {
     get: async (id: string) => {
@@ -91,7 +91,7 @@ const createTestPlayerController = async (): Promise<PlayerController> => {
   });
 };
 
-const createTestContainer = () =>
+export const createTestContainer = () =>
   createApplicationContainer({
     createPlayerController: createTestPlayerController,
   });

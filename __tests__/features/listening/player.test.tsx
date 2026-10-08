@@ -27,17 +27,20 @@ describe('PlayerScreen', () => {
   it('plays, pauses and skips', async () => {
     await setup();
     const elapsed = () => screen.getByLabelText('Elapsed').props.children;
-    const start = elapsed();
 
     fireEvent.press(screen.getByRole('button', {name: 'Play'}));
-    expect(screen.getByRole('button', {name: 'Pause'})).toBeOnTheScreen();
+    await screen.findByRole('button', {name: 'Pause'});
     fireEvent.press(screen.getByRole('button', {name: 'Pause'}));
+    await screen.findByRole('button', {name: 'Play'});
+    const start = elapsed();
 
     fireEvent.press(screen.getByRole('button', {name: 'Forward 30 seconds'}));
+    await screen.findByText('0:30');
     expect(elapsed()).not.toBe(start);
     fireEvent.press(screen.getByRole('button', {name: 'Back 15 seconds'}));
+    await screen.findByText('0:15');
     fireEvent.press(screen.getByRole('button', {name: 'Back 15 seconds'}));
-    expect(elapsed()).toBe(start);
+    await screen.findByText('0:00');
   });
 
   it('cycles the playback speed', async () => {
@@ -46,7 +49,7 @@ describe('PlayerScreen', () => {
       screen.getByRole('button', {name: 'Playback speed 1 times'}),
     );
     expect(
-      screen.getByRole('button', {name: 'Playback speed 1.25 times'}),
+      await screen.findByRole('button', {name: 'Playback speed 1.25 times'}),
     ).toBeOnTheScreen();
     expect(screen.getByText('1.25×')).toBeOnTheScreen();
   });

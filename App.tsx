@@ -6,6 +6,7 @@ import RootNavigator from './app/navigator/RootNavigator';
 import {AppProviders} from './app/state/AppProviders';
 import {navigationTheme} from './app/theme/navigationTheme';
 import {useTheme} from './app/theme/ThemeProvider';
+import type {ApplicationContainer} from './app/composition';
 
 const ThemedApp = () => {
   const {colorScheme} = useTheme();
@@ -22,8 +23,8 @@ const ThemedApp = () => {
   );
 };
 
-const App = () => (
-  <AppProviders>
+const App = ({container}: {container?: ApplicationContainer}) => (
+  <AppProviders container={container}>
     <ThemedApp />
   </AppProviders>
 );

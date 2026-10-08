@@ -4,11 +4,17 @@ import {act, renderHook} from '@testing-library/react-native';
 import {getBook} from '../../app/data/catalogue';
 import {LibraryProvider, useLibrary} from '../../app/state/library';
 import {PlayerProvider, usePlayer} from '../../app/state/player';
+import {SettingsProvider} from '../../app/state/settings';
+import {createTestPlayerController} from '../test-utils';
 
 const wrapper = ({children}: {children: React.ReactNode}) => (
-  <LibraryProvider>
-    <PlayerProvider>{children}</PlayerProvider>
-  </LibraryProvider>
+  <SettingsProvider>
+    <LibraryProvider>
+      <PlayerProvider createController={createTestPlayerController}>
+        {children}
+      </PlayerProvider>
+    </LibraryProvider>
+  </SettingsProvider>
 );
 
 const crawdads = getBook('where-the-crawdads-sing');
@@ -34,9 +40,6 @@ describe('library', () => {
 });
 
 describe('player', () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-
   const setup = () =>
     renderHook(() => ({player: usePlayer(), library: useLibrary()}), {wrapper});
 
@@ -50,34 +53,36 @@ describe('player', () => {
     );
   });
 
-  it('advances while playing at the chosen speed', () => {
+  it('reflects engine play and rate snapshots without a mock clock', async () => {
     const {result} = setup();
     const start = result.current.player.position;
 
-    act(() => result.current.player.cycleRate()); // 1.25×
-    act(() => result.current.player.toggle());
-    act(() => jest.advanceTimersByTime(4000));
+    await act(async () => result.current.player.cycleRate());
+    await act(async () => result.current.player.toggle());
 
     expect(result.current.player.rate).toBe(1.25);
-    expect(result.current.player.position).toBeCloseTo(start + 5, 0);
+    expect(result.current.player.playing).toBe(true);
+    // The fake engine starts a newly resolved queue at zero; elapsed time
+    // only changes when the engine emits a progress snapshot.
+    expect(result.current.player.position).toBe(0);
+    expect(start).toBeGreaterThan(0);
   });
 
-  it('skips back 15 and forward 30 seconds within the book', () => {
+  it('seeks through the controller within the book', async () => {
     const {result} = setup();
-    const start = result.current.player.position;
 
-    act(() => result.current.player.skip(-15));
-    expect(result.current.player.position).toBeCloseTo(start - 15, 0);
-    act(() => result.current.player.skip(30));
-    expect(result.current.player.position).toBeCloseTo(start + 15, 0);
+    await act(async () => result.current.player.skip(15));
+    expect(result.current.player.position).toBeCloseTo(15, 0);
+    await act(async () => result.current.player.skip(30));
+    expect(result.current.player.position).toBeCloseTo(45, 0);
 
-    act(() => result.current.player.skip(-1e9));
+    await act(async () => result.current.player.skip(-1e9));
     expect(result.current.player.position).toBe(0);
   });
 
-  it('plays another book and marks it as listening', () => {
+  it('plays another book and marks it as listening', async () => {
     const {result} = setup();
-    act(() => result.current.player.play('project-hail-mary'));
+    await act(async () => result.current.player.play('project-hail-mary'));
 
     expect(result.current.player.book.id).toBe('project-hail-mary');
     expect(result.current.player.playing).toBe(true);
@@ -86,11 +91,11 @@ describe('player', () => {
     );
   });
 
-  it('cycles playback speed', () => {
+  it('cycles playback speed through the controller', async () => {
     const {result} = setup();
     const rates = [1.25, 1.5, 2, 0.75, 1];
     for (const rate of rates) {
-      act(() => result.current.player.cycleRate());
+      await act(async () => result.current.player.cycleRate());
       expect(result.current.player.rate).toBe(rate);
     }
   });
