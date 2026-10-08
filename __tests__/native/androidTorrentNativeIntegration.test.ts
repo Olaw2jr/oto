@@ -40,7 +40,7 @@ describe('Android native torrent runtime', () => {
       'android/app/src/main/java/tz/co/oto/torrent/LoopbackRangeServer.kt',
     );
 
-    expect(server).toContain('InetAddress.getLoopbackAddress()');
+    expect(server).toContain('InetAddress.getByName("127.0.0.1")');
     expect(server).toContain('SecureRandom');
     expect(server).toContain('Range');
     expect(server).toContain('206 Partial Content');

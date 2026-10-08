@@ -1,7 +1,6 @@
 package tz.co.oto.torrent
 
 import android.util.Base64
-import android.util.Log
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
@@ -60,10 +59,6 @@ class LoopbackRangeServer(
       )
     routes[routeId] = server
     server.start()
-    Log.i(
-      "OtoTorrent",
-      "Started loopback range route on port ${server.port} for file $fileIndex",
-    )
     return NativeRangeRoute(
       routeId = routeId,
       port = server.port,
@@ -87,7 +82,7 @@ class LoopbackRangeServer(
       ServerSocket(
         0,
         16,
-        InetAddress.getLoopbackAddress(),
+        InetAddress.getByName("127.0.0.1"),
       )
     private val clients = Executors.newCachedThreadPool()
     private val acceptor =
