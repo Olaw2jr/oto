@@ -11,6 +11,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
@@ -162,6 +163,8 @@ class OtoMedia3PlaybackService : MediaLibraryService() {
     super.onCreate()
     sleepTimer = OtoMedia3SleepTimer(this)
     val playbackPlayer = ExoPlayer.Builder(this)
+      .setSeekBackIncrementMs(15_000L)
+      .setSeekForwardIncrementMs(30_000L)
       .setMediaSourceFactory(
         DefaultMediaSourceFactory(
           OtoMedia3Cache.dataSourceFactory(this),
@@ -183,6 +186,20 @@ class OtoMedia3PlaybackService : MediaLibraryService() {
     playbackPlayer.addListener(sleepTimerListener)
     session =
       MediaLibrarySession.Builder(this, playbackPlayer, callback)
+        .setMediaButtonPreferences(
+          listOf(
+            CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
+              .setDisplayName("Back 15 seconds")
+              .setPlayerCommand(Player.COMMAND_SEEK_BACK)
+              .setSlots(CommandButton.SLOT_BACK)
+              .build(),
+            CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_30)
+              .setDisplayName("Forward 30 seconds")
+              .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
+              .setSlots(CommandButton.SLOT_FORWARD)
+              .build(),
+          ),
+        )
         .build()
     handler.post(sleepTimerTick)
   }

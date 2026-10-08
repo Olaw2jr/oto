@@ -27,6 +27,18 @@ describe('Android Media3 backend', () => {
     expect(manifest).toContain('FOREGROUND_SERVICE_MEDIA_PLAYBACK');
   });
 
+  it('advertises the configured rewind and forward controls to Android media UI', () => {
+    const service = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3PlaybackService.kt',
+    );
+
+    expect(service).toContain('.setSeekBackIncrementMs(15_000L)');
+    expect(service).toContain('.setSeekForwardIncrementMs(30_000L)');
+    expect(service).toContain('.setMediaButtonPreferences(');
+    expect(service).toContain('CommandButton.ICON_SKIP_FORWARD_30');
+    expect(service).toContain('Player.COMMAND_SEEK_FORWARD');
+  });
+
   it('uses one Media3 cache for playback and warming', () => {
     const cache = read(
       'android/app/src/main/java/tz/co/oto/media/OtoMedia3Cache.kt',

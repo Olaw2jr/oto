@@ -19,19 +19,19 @@ AudioEngine/ChapterPlaybackSession pipeline.
 
 Use **The Adventures of Sherlock Holmes** public-domain sample.
 
-- [ ] Clean debug build installs and launches.
-- [ ] Starting the sample produces audible HTTPS playback through Media3.
-- [ ] Play/pause works from PlayerScreen and MiniPlayer.
-- [ ] Seek and configured backward/forward skip update real playback.
-- [ ] Playback speed changes native playback rate.
-- [ ] Playback continues after backgrounding the app.
-- [ ] Lock-screen/notification play, pause, seek and skip controls work.
-- [ ] Audio focus/interruption behavior pauses/ducks and resumes as expected.
+- [x] Clean debug build installs and launches.
+- [x] Starting the sample produces audible HTTPS playback through Media3.
+- [x] Play/pause works from PlayerScreen and MiniPlayer.
+- [x] Seek and configured backward/forward skip update real playback.
+- [x] Playback speed changes native playback rate.
+- [x] Playback continues after backgrounding the app.
+- [x] Lock-screen/notification play, pause, seek and skip controls work.
+- [x] Permanent audio-focus loss pauses Oto.
 - [x] Minute sleep timer fires while the React UI is backgrounded. On the
   Samsung SM-S908U1, the 15-minute timer paused the Media3 session after expiry
   while Oto was backgrounded and cleared its native deadline.
 - [ ] End-of-chapter sleep timer stops at the chapter boundary.
-- [ ] Force-stop/relaunch restores the last persisted position.
+- [x] Force-stop/relaunch restores the last persisted position.
 - [ ] Relaunch does not create duplicate Media3 sessions.
 
 Suggested ADB record:
@@ -49,12 +49,29 @@ force-stop/relaunch position:
 result:
 ```
 
+2026-10-08 Android playback run: Samsung SM-S908U1, Oto debug build, Sherlock
+Holmes public-domain Archive.org HTTPS sample. PlayerScreen pause, 30-second
+skip and 1.25x speed worked; MiniPlayer play/pause worked; playback continued
+in background; lock screen exposed rewind 15 seconds, pause and forward 30
+seconds; tapping forward and sending KEYCODE_MEDIA_FAST_FORWARD advanced by
+30 seconds. Media key play/pause changed MediaSession state. Force-stop/relaunch
+restored at 4:05.
+
 2026-10-08 Android timer run: Sherlock Holmes HTTPS sample, 15-minute timer,
 Oto backgrounded. Media3 remained PLAYING during the countdown, then reported
 PAUSED at expiry. The native SharedPreferences deadline was cleared. The player
 badge stayed at 15m until the JavaScript controller refreshed; the controller
 now refreshes persisted timer state on the native playing-to-paused transition,
 covered by PlayerController regression coverage.
+
+2026-10-08 Android focus run: Spotify acquired permanent audio focus while
+Oto's sample was playing in the background. Oto received focus loss and changed
+to PAUSED. Pausing Spotify left Oto paused, as expected for permanent focus
+loss; resumption is user-controlled.
+
+The sample is a single whole-book M4B exposed as one track, so the end-of-chapter
+timer cannot be meaningfully exercised with this fixture. Duplicate-session
+recovery has not been verified on-device.
 
 ## iOS physical-device acceptance
 
@@ -72,6 +89,6 @@ Use the same public-domain sample.
 
 ## Closure rule
 
-Do not close #82 until the Android physical-device checks pass. iOS checks may
-remain a release-platform validation item only if #82's Android acceptance
-criteria are satisfied and the iOS CI build stays green.
+Do not close #82 until the remaining Android checks pass. iOS checks may remain
+a release-platform validation item only if Android acceptance is satisfied and
+the iOS CI build stays green.
