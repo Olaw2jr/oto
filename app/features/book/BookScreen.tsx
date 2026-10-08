@@ -3,14 +3,15 @@ import {Pressable, StyleSheet, View} from 'react-native';
 
 import {AuthorLinks} from '../../components/AuthorLinks';
 import {BookCover} from '../../components/BookCover';
-import {PersonLink} from '../../components/PersonLink';
 import {LoadingState} from '../../components/LoadingState';
+import {ReviewCard} from '../../components/ReviewCard';
 import {getBook} from '../../data/catalogue';
 import {formatDuration} from '../../data/format';
 import {firstName, getPerson} from '../../data/people';
-import {listeners, reviews, Status} from '../../data/social';
+import {listeners, Status} from '../../data/social';
 import {openPerson} from '../../navigator/openPerson';
 import {RootStackScreenProps} from '../../navigator/types';
+import {useBookReviews} from '../../state/reviews';
 import {useFirstLoad} from '../../state/firstLoad';
 import {useLibrary} from '../../state/library';
 import {usePlayer} from '../../state/player';
@@ -18,7 +19,6 @@ import {shareBook} from '../../utils/share';
 import {
   Avatar,
   Button,
-  Card,
   Icon,
   IconButton,
   Screen,
@@ -34,6 +34,9 @@ const statusOptions: {value: Status; label: string}[] = [
   {value: 'listening', label: 'Listening'},
   {value: 'finished', label: 'Finished'},
 ];
+
+// Reviews shown on the book before See all.
+const REVIEW_PREVIEW = 2;
 
 const listenersLine = (bookId: string) => {
   const entry = listeners[bookId];
@@ -63,7 +66,7 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
   const position = library.positionSec(book.id);
   const status = library.status(book.id);
   const following = listenersLine(book.id);
-  const bookReviews = reviews.filter(r => r.bookId === book.id);
+  const bookReviews = useBookReviews(book.id);
 
   const listen = () => {
     player.play(book.id);
@@ -183,46 +186,22 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
             <Txt variant="heading" style={styles.sectionHeading}>
               From people you follow
             </Txt>
-            <TextLink label="See all" onPress={() => {}} />
+            {bookReviews.length > REVIEW_PREVIEW ? (
+              <TextLink
+                label="See all"
+                accessibilityLabel={`See all ${bookReviews.length} reviews`}
+                onPress={() =>
+                  navigation.navigate('Reviews', {bookId: book.id})
+                }
+              />
+            ) : null}
           </View>
-          {bookReviews.map(review => (
-            <Card key={review.id} style={styles.review}>
-              <View style={styles.reviewHead}>
-                <PersonLink
-                  personId={review.by}
-                  onOpen={id => openPerson(navigation, id)}>
-                  <Avatar name={getPerson(review.by).name} size={32} />
-                </PersonLink>
-                <Txt
-                  variant="caption"
-                  color="ink"
-                  weight="semibold"
-                  style={styles.reviewer}>
-                  {getPerson(review.by).short}
-                </Txt>
-                <Icon name="starFilled" size={14} />
-                <Txt
-                  variant="caption"
-                  color="ink"
-                  weight="semibold"
-                  style={styles.score}>
-                  {review.rating.toFixed(1)}
-                </Txt>
-              </View>
-              <Txt variant="quote" style={styles.reviewBody}>
-                {review.body}
-              </Txt>
-              <View style={styles.reviewStats}>
-                <Icon name="heart" size={16} color="graphite" />
-                <Txt variant="small" style={styles.stat}>
-                  {String(review.likes)}
-                </Txt>
-                <Icon name="comment" size={16} color="graphite" />
-                <Txt variant="small" style={styles.stat}>
-                  {String(review.comments)}
-                </Txt>
-              </View>
-            </Card>
+          {bookReviews.slice(0, REVIEW_PREVIEW).map(review => (
+            <ReviewCard
+              key={review.id}
+              review={review}
+              onOpenPerson={id => openPerson(navigation, id)}
+            />
           ))}
         </>
       ) : null}
@@ -304,13 +283,6 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   sectionHeading: {fontSize: 19},
-  review: {marginTop: 6, paddingVertical: 14, paddingHorizontal: 16},
-  reviewHead: {flexDirection: 'row', alignItems: 'center'},
-  reviewer: {flex: 1, marginLeft: 10},
-  score: {marginLeft: 3},
-  reviewBody: {marginTop: 8},
-  reviewStats: {flexDirection: 'row', alignItems: 'center', marginTop: 8},
-  stat: {marginLeft: 6, marginRight: 18},
 });
 
 export default BookScreen;

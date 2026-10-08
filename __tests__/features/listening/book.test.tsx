@@ -70,6 +70,17 @@ describe('BookScreen', () => {
     ).toBeOnTheScreen();
   });
 
+  it('shows every review when there are only a few', async () => {
+    await setup();
+    expect(screen.getAllByLabelText(/ rated it \d/)).toHaveLength(1);
+    expect(screen.queryByRole('link', {name: /^See all/})).toBeNull();
+  });
+
+  it('includes ratings people you follow posted', async () => {
+    await setup('tuesdays-with-morrie');
+    expect(screen.getByLabelText('Zawadi O. rated it 4.5')).toBeOnTheScreen();
+  });
+
   it('goes back', async () => {
     const navigation = await setup();
     fireEvent.press(screen.getByRole('button', {name: 'Back'}));
