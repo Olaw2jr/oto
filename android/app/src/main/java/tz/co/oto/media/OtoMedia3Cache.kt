@@ -15,6 +15,10 @@ import java.io.File
 object OtoMedia3Cache {
   private const val CACHE_BYTES = 512L * 1024L * 1024L
   private const val AUDIO_BYTES_PER_SECOND = 32L * 1024L
+  // Torrent-backed loopback routes may wait for a verified piece before
+  // responding. Keep the HTTP read timeout longer than the native route's
+  // 30-second piece wait so Media3 does not cancel the request first.
+  private const val HTTP_READ_TIMEOUT_MS = 35_000
   @Volatile private var instance: SimpleCache? = null
 
   fun cache(context: Context): SimpleCache =
@@ -29,7 +33,10 @@ object OtoMedia3Cache {
   fun dataSourceFactory(context: Context): CacheDataSource.Factory =
     CacheDataSource.Factory()
       .setCache(cache(context))
-      .setUpstreamDataSourceFactory(DefaultHttpDataSource.Factory())
+      .setUpstreamDataSourceFactory(
+        DefaultHttpDataSource.Factory()
+          .setReadTimeoutMs(HTTP_READ_TIMEOUT_MS),
+      )
       .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
 
   fun warm(context: Context, uri: String, cacheKey: String, bufferSec: Double) {
