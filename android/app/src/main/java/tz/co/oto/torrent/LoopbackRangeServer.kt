@@ -19,6 +19,8 @@ data class NativeRangeRoute(
   val port: Int,
 )
 
+// Keep this model outside RouteServer because Kotlin forbids nested
+// declarations inside an inner class.
 private data class ByteRange(
   val start: Long,
   val end: Long,
