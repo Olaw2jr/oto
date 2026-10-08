@@ -1,0 +1,177 @@
+/// <reference types="node" />
+import {DatabaseSync} from 'node:sqlite';
+import {mkdtempSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createPersistentApplicationContainer} from '../../app/composition/ApplicationContainer';
+import {
+  MigrationRunner,
+  migrations,
+  OpSqliteDatabase,
+} from '../../app/storage/sqlite';
+import type {OpSqliteClient} from '../../app/storage/sqlite/OpSqliteDatabase';
+
+// Exercise the driver boundary with real SQLite, including file reopen and DDL
+// rollback, instead of reproducing SQLite behavior in a fake SQL parser.
+const open = (filename: string) => {
+  const native = new DatabaseSync(filename);
+  const execute: OpSqliteClient['execute'] = async (sql, params = []) => {
+    const statement = native.prepare(sql);
+    return {
+      rows: statement.all(...(params as (string | number | null)[])) as Record<
+        string,
+        string | number | null
+      >[],
+    };
+  };
+  const db = new OpSqliteDatabase({
+    execute,
+    transaction: async work => {
+      native.exec('BEGIN');
+      try {
+        await work({execute});
+        native.exec('COMMIT');
+      } catch (error) {
+        native.exec('ROLLBACK');
+        throw error;
+      }
+    },
+  });
+  return {db, close: () => native.close()};
+};
+
+describe('production persistence against SQLite', () => {
+  let directory: string;
+  beforeEach(() => {
+    directory = mkdtempSync(join(tmpdir(), 'oto-sqlite-'));
+  });
+  afterEach(() => {
+    rmSync(directory, {recursive: true, force: true});
+  });
+
+  it('restores status and progress after closing and reopening the database', async () => {
+    const filename = join(directory, 'oto.sqlite');
+    const first = open(filename);
+    const app = await createPersistentApplicationContainer(
+      async () => first.db,
+    );
+    app.library.setStatus('starry-messenger', 'want');
+    app.library.setPosition('starry-messenger', 123.5);
+    await app.library.flush();
+    first.close();
+    const second = open(filename);
+    try {
+      const restored = await createPersistentApplicationContainer(
+        async () => second.db,
+      );
+      expect(restored.library.status('starry-messenger')).toBe('listening');
+      expect(restored.library.positionSec('starry-messenger')).toBe(123.5);
+      expect(
+        await restored.services.library.getPosition(
+          'starry-messenger',
+          'starry-messenger:seed',
+        ),
+      ).toBe(123.5);
+      await restored.services.library.setPosition(
+        'starry-messenger',
+        'starry-messenger:seed',
+        456,
+      );
+      expect(restored.library.positionSec('starry-messenger')).toBe(456);
+      expect(await restored.storage.openDatabase()).toBe(second.db);
+    } finally {
+      second.close();
+    }
+  });
+
+  it('preserves legacy data and unrelated tables when upgrading and reopening', async () => {
+    const connection = open(join(directory, 'legacy.sqlite'));
+    try {
+      await new MigrationRunner(
+        connection.db,
+        migrations.slice(0, 1),
+      ).migrate();
+      await connection.db.execute(
+        "INSERT INTO library_entries VALUES ('starry-messenger', 'want', 42, 'old')",
+      );
+      await connection.db.execute(
+        "INSERT INTO listening_progress VALUES ('starry-messenger', 42, 900, 'old')",
+      );
+      await connection.db.execute(
+        "INSERT INTO ratings VALUES ('starry-messenger', 4, 'old')",
+      );
+      const app = await createPersistentApplicationContainer(
+        async () => connection.db,
+      );
+      expect(app.library.positionSec('starry-messenger')).toBe(42);
+      expect(app.library.status('starry-messenger')).toBe('want');
+      expect(await connection.db.query('SELECT rating FROM ratings')).toEqual([
+        {rating: 4},
+      ]);
+      expect(
+        await connection.db.query(
+          'SELECT rendition_id FROM listening_progress',
+        ),
+      ).toEqual([{rendition_id: 'legacy'}]);
+    } finally {
+      connection.close();
+    }
+  });
+
+  it('rolls back failed migrations, preserves existing data, and can retry', async () => {
+    const connection = open(join(directory, 'rollback.sqlite'));
+    try {
+      await new MigrationRunner(connection.db, migrations).migrate();
+      const bad = {
+        version: 3,
+        name: 'bad',
+        sql: [
+          'CREATE TABLE should_rollback (id TEXT)',
+          'INSERT INTO missing_table VALUES (1)',
+        ],
+      };
+      await expect(
+        new MigrationRunner(connection.db, [...migrations, bad]).migrate(),
+      ).rejects.toThrow();
+      expect(
+        await connection.db.query(
+          "SELECT name FROM sqlite_master WHERE name = 'should_rollback'",
+        ),
+      ).toEqual([]);
+      expect(
+        await connection.db.query('SELECT version FROM schema_migrations'),
+      ).toHaveLength(2);
+      await new MigrationRunner(connection.db, [
+        ...migrations,
+        {...bad, sql: bad.sql.slice(0, 1)},
+      ]).migrate();
+      expect(
+        await connection.db.query('SELECT version FROM schema_migrations'),
+      ).toHaveLength(3);
+    } finally {
+      connection.close();
+    }
+  });
+
+  it('surfaces a failed write without poisoning subsequent queued writes', async () => {
+    const connection = open(join(directory, 'errors.sqlite'));
+    try {
+      const app = await createPersistentApplicationContainer(
+        async () => connection.db,
+      );
+      const save = jest
+        .spyOn(app.services.library, 'setPosition')
+        .mockRejectedValueOnce(new Error('disk full'));
+      app.library.setPosition('starry-messenger', 10);
+      await expect(app.library.flush()).rejects.toThrow('disk full');
+      app.library.setPosition('starry-messenger', 20);
+      await app.library.flush();
+      expect(
+        await app.repositories.library.get('starry-messenger'),
+      ).toMatchObject({positionSec: 20});
+      save.mockRestore();
+    } finally {
+      connection.close();
+    }
+  });
+});

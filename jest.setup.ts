@@ -10,8 +10,9 @@ jest.mock('./app/data/latency', () => ({MOCK_LATENCY_MS: 0}));
 jest.mock('@react-native-community/netinfo', () =>
   require('@react-native-community/netinfo/jest/netinfo-mock.js'),
 );
-jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest').default,
+jest.mock(
+  '@react-native-async-storage/async-storage',
+  () => require('@react-native-async-storage/async-storage/jest').default,
 );
 
 // RN's jest mock returns undefined from these; make them resolve like the
@@ -26,4 +27,15 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   ] as const
 ).forEach(method => {
   (AccessibilityInfo[method] as jest.Mock).mockResolvedValue(false);
+});
+
+// Native persistence is covered with real SQLite integration tests. UI tests
+// explicitly substitute the isolated in-memory application graph.
+jest.mock('./app/composition', () => {
+  const actual = jest.requireActual('./app/composition');
+  return {
+    ...actual,
+    createPersistentApplicationContainer: async () =>
+      actual.createApplicationContainer(),
+  };
 });

@@ -1,8 +1,4 @@
-import type {
-  BookId,
-  LibraryStatus,
-  RenditionId,
-} from '../../domain';
+import type {BookId, LibraryStatus, RenditionId} from '../../domain';
 import {clampPosition} from '../../domain';
 import {getBook} from '../../data/catalogue';
 import {librarySeed} from '../../data/social';
@@ -35,6 +31,7 @@ export type LibraryProviderAdapter = {
 
 export class ServiceLibraryProviderAdapter implements LibraryProviderAdapter {
   private queue: Promise<void> = Promise.resolve();
+  private failure: unknown;
 
   constructor(
     private readonly service: LibraryService,
@@ -68,11 +65,12 @@ export class ServiceLibraryProviderAdapter implements LibraryProviderAdapter {
       .filter(entry => entry.status === status)
       .map(entry => entry.bookId);
 
-  renditionId = (bookId: BookId): RenditionId =>
-    this.renditionFor(bookId);
+  renditionId = (bookId: BookId): RenditionId => this.renditionFor(bookId);
 
   private enqueue(work: () => Promise<void>): void {
-    this.queue = this.queue.then(work);
+    this.queue = this.queue.then(work).catch(error => {
+      this.failure = error;
+    });
   }
 
   setStatus = (bookId: BookId, status: LibraryStatus): void => {
@@ -92,9 +90,7 @@ export class ServiceLibraryProviderAdapter implements LibraryProviderAdapter {
       durationSec,
     });
 
-    this.enqueue(() =>
-      this.service.setStatus(bookId, renditionId, status),
-    );
+    this.enqueue(() => this.service.setStatus(bookId, renditionId, status));
   };
 
   setPosition = (bookId: BookId, positionSec: number): void => {
@@ -119,11 +115,7 @@ export class ServiceLibraryProviderAdapter implements LibraryProviderAdapter {
     );
   };
 
-  advance = (
-    bookId: BookId,
-    deltaSec: number,
-    limitSec?: number,
-  ): void => {
+  advance = (bookId: BookId, deltaSec: number, limitSec?: number): void => {
     const upperBound = Math.min(
       this.durationFor(bookId),
       limitSec ?? Number.POSITIVE_INFINITY,
@@ -137,6 +129,11 @@ export class ServiceLibraryProviderAdapter implements LibraryProviderAdapter {
 
   flush = async (): Promise<void> => {
     await this.queue;
+    if (this.failure) {
+      const error = this.failure;
+      this.failure = undefined;
+      throw error;
+    }
   };
 }
 
@@ -153,16 +150,14 @@ export const createSeedLibraryGraph = (): SeedLibraryGraph => {
   const catalogue = new SeedCatalogueRepository();
   const renditions = new SeedRenditionRepository();
 
-  const libraryEntries = Object.entries(librarySeed).map(
-    ([bookId, seed]) => {
-      const durationSec = getBook(bookId).durationSec;
-      return {
-        bookId,
-        status: seed.status,
-        positionSec: (seed.position ?? 0) * durationSec,
-      };
-    },
-  );
+  const libraryEntries = Object.entries(librarySeed).map(([bookId, seed]) => {
+    const durationSec = getBook(bookId).durationSec;
+    return {
+      bookId,
+      status: seed.status,
+      positionSec: (seed.position ?? 0) * durationSec,
+    };
+  });
   const progressEntries = libraryEntries.map(entry => ({
     bookId: entry.bookId,
     renditionId: seedRenditionId(entry.bookId),
