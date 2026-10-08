@@ -70,7 +70,7 @@ export class SourceResolver {
       } catch (error) {
         lastError = error;
         console.warn(
-          'Playback source preparation failed',
+          'Playback source preparation failed; trying next authorized source',
           source.kind,
           error,
         );
