@@ -67,6 +67,10 @@ Download resume data is stored through the existing `TorrentResumeStore`
 contract. The Android factory uses AsyncStorage so a paused download can restore
 the opaque libtorrent resume payload after process restart.
 
+The authorized smoke asset uses the Internet Archive `_archive.torrent` descriptor
+and selects the exact LibriVox chapter path; its verified HTTPS file remains the
+fallback if the torrent source is unavailable.
+
 ## Deliberate exclusions
 
 This runtime does not add torrent search, indexing, discovery, or any mechanism
