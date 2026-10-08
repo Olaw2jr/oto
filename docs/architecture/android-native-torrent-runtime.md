@@ -52,13 +52,16 @@ moves piece priority as Media3 seeks.
 
 ## Shared session lifecycle
 
+On Android, `ApplicationContainer` adds the streaming transport to the production
+`SourceResolver` registry. This keeps torrent sources behind the same
+`RightsPolicy` and chapter asset-resolution path as HTTPS sources.
 `createAndroidTorrentRuntime()` creates one `TorrentSessionPool` shared by
 `TorrentStreamTransport` and `TorrentDownloadManager`. Streaming and
 downloads of the same descriptor therefore share the native torrent handle.
 
-Resume data is stored through the existing `TorrentResumeStore` contract.
-The Android factory uses AsyncStorage so pause/process restart can restore the
-opaque libtorrent resume payload.
+Download resume data is stored through the existing `TorrentResumeStore`
+contract. The Android factory uses AsyncStorage so a paused download can restore
+the opaque libtorrent resume payload after process restart.
 
 ## Deliberate exclusions
 
