@@ -1,4 +1,5 @@
 import React from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {act, renderHook, waitFor} from '@testing-library/react-native';
 
 import {FakeAudioEngine} from '../../app/audio';
@@ -7,7 +8,10 @@ import {seedRenditionId} from '../../app/adapters/library';
 import {PlayerController} from '../../app/player';
 import {LibraryProvider} from '../../app/state/library';
 import {PlayerProvider, usePlayer} from '../../app/state/player';
-import {SettingsProvider} from '../../app/state/settings';
+import {
+  SETTINGS_STORAGE_KEY,
+  SettingsProvider,
+} from '../../app/state/settings';
 
 describe('PlayerProvider AudioEngine path', () => {
   it('derives playback state, position and rate from PlayerController snapshots', async () => {
@@ -58,5 +62,64 @@ describe('PlayerProvider AudioEngine path', () => {
       positionSec: 10,
       rate: 1.25,
     });
+  });
+});
+
+describe('PlayerProvider playback speed', () => {
+  const book = getBook('where-the-crawdads-sing');
+
+  const setup = async () => {
+    const engine = new FakeAudioEngine();
+    const controller = new PlayerController(engine);
+    await controller.load([
+      {
+        id: `${book.id}:chapter-1`,
+        bookId: book.id,
+        renditionId: seedRenditionId(book.id),
+        chapterId: `${book.id}:chapter-1`,
+        title: 'Chapter 1',
+        durationSec: book.durationSec,
+        source: {kind: 'remote', uri: 'https://example.test/book.mp3'},
+      },
+    ]);
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <SettingsProvider>
+        <LibraryProvider>
+          <PlayerProvider controller={controller}>{children}</PlayerProvider>
+        </LibraryProvider>
+      </SettingsProvider>
+    );
+    const {result} = renderHook(() => usePlayer(), {wrapper});
+    return {engine, result};
+  };
+
+  beforeEach(() => AsyncStorage.clear());
+
+  it('saves the chosen speed with the other settings', async () => {
+    const {result} = await setup();
+    act(() => result.current.cycleRate());
+    await waitFor(async () =>
+      expect(
+        JSON.parse((await AsyncStorage.getItem(SETTINGS_STORAGE_KEY))!),
+      ).toMatchObject({speed: 1.25}),
+    );
+  });
+
+  it('applies the saved speed to the engine', async () => {
+    await AsyncStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({speed: 1.5}),
+    );
+    const {engine, result} = await setup();
+    await waitFor(() => expect(result.current.rate).toBe(1.5));
+    expect((await engine.getSnapshot()).rate).toBe(1.5);
+  });
+
+  it('ignores a stored speed it does not offer', async () => {
+    await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({speed: 9}));
+    const {engine, result} = await setup();
+    await act(async () => {});
+    expect(result.current.rate).toBe(1);
+    expect((await engine.getSnapshot()).rate).toBe(1);
   });
 });

@@ -17,9 +17,9 @@ import type {
   PlayerSleepTimer,
 } from '../player';
 import {useLibrary} from './library';
-import {useSettings} from './settings';
+import {SPEED_OPTIONS, useSettings} from './settings';
 
-export const RATES = [1, 1.25, 1.5, 2, 0.75];
+export const RATES = SPEED_OPTIONS;
 
 export type SleepTimer = PlayerSleepTimer;
 
@@ -57,7 +57,7 @@ export const PlayerProvider = ({
   createController?: () => Promise<PlayerController>;
 }) => {
   const library = useLibrary();
-  const {skip: skipIntervals} = useSettings();
+  const {skip: skipIntervals, speed, set: setSetting} = useSettings();
   const controllerRef = useRef<PlayerController | null>(
     providedController ?? null,
   );
@@ -129,9 +129,12 @@ export const PlayerProvider = ({
         backwardSec: skipIntervals.back,
         forwardSec: skipIntervals.forward,
       });
+      if (active.getSnapshot().rate !== speed) {
+        await active.setRate(speed);
+      }
       return active;
     },
-    [ensureController, skipIntervals.back, skipIntervals.forward],
+    [ensureController, skipIntervals.back, skipIntervals.forward, speed],
   );
 
   useEffect(() => {
@@ -145,6 +148,14 @@ export const PlayerProvider = ({
       })
       .catch(() => {});
   }, [controller, skipIntervals.back, skipIntervals.forward]);
+
+  // The saved speed outlives the session; apply it once a controller exists.
+  useEffect(() => {
+    if (!controller || controller.getSnapshot().rate === speed) {
+      return;
+    }
+    void controller.setRate(speed).catch(() => {});
+  }, [controller, speed]);
 
   const run = useCallback((operation: () => Promise<void>) => {
     void operation().catch(error => {
@@ -200,9 +211,10 @@ export const PlayerProvider = ({
         const currentRate = active.getSnapshot().rate;
         const next =
           RATES[(RATES.indexOf(currentRate) + 1) % RATES.length];
+        setSetting('speed', next);
         await active.setRate(next);
       }),
-    [prepare, run, selectedBookId],
+    [prepare, run, selectedBookId, setSetting],
   );
 
   const setSleepTimer = useCallback(
