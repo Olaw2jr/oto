@@ -34,7 +34,9 @@ describe('durable sleep timer', () => {
 
   it('pauses at the transition out of the armed chapter', async () => {
     const store = new InMemorySleepTimerStore();
-    const pause = jest.fn(async () => {});
+    const pause = jest.fn(async () => {
+      expect(await store.get()).toBeNull();
+    });
     const controller = new SleepTimerController(store);
     const service = new PlaybackServiceSleepTimer(store, pause);
 

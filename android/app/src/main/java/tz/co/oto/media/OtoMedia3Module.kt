@@ -35,6 +35,7 @@ class OtoMedia3Module(
   private var controllerFuture: ListenableFuture<MediaController>? = null
   private var controller: MediaController? = null
   private val cacheExecutor = Executors.newSingleThreadExecutor()
+  private val sleepTimer = OtoMedia3SleepTimer(reactContext)
 
   private val listener =
     object : Player.Listener {
@@ -243,6 +244,56 @@ class OtoMedia3Module(
     @Suppress("UNUSED_PARAMETER") options: ReadableMap,
     promise: Promise,
   ) = ensureController(promise) { promise.resolve(null) }
+
+  @ReactMethod
+  fun setSleepTimerMinutes(minutes: Double, promise: Promise) {
+    try {
+      sleepTimer.setMinutes(minutes)
+      promise.resolve(null)
+    } catch (error: Throwable) {
+      promise.reject("media3_sleep_timer_invalid", error)
+    }
+  }
+
+  @ReactMethod
+  fun setSleepTimerEndOfChapter(
+    trackIndex: Int,
+    promise: Promise,
+  ) {
+    try {
+      sleepTimer.setEndOfChapter(trackIndex)
+      promise.resolve(null)
+    } catch (error: Throwable) {
+      promise.reject("media3_sleep_timer_invalid", error)
+    }
+  }
+
+  @ReactMethod
+  fun clearSleepTimer(promise: Promise) {
+    sleepTimer.clear()
+    promise.resolve(null)
+  }
+
+  @ReactMethod
+  fun getSleepTimerState(promise: Promise) {
+    val state = sleepTimer.state()
+    if (state == null) {
+      promise.resolve(null)
+      return
+    }
+
+    promise.resolve(
+      Arguments.createMap().apply {
+        putString("kind", state.kind)
+        state.deadlineAtMs?.let {
+          putDouble("deadlineAtMs", it.toDouble())
+        }
+        state.trackIndex?.let {
+          putInt("trackIndex", it)
+        }
+      },
+    )
+  }
 
   @ReactMethod
   fun warmCache(

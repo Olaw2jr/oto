@@ -1,13 +1,17 @@
 package tz.co.oto.media
 
+import android.os.Handler
+import android.os.Looper
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
@@ -20,9 +24,45 @@ import com.google.common.util.concurrent.ListenableFuture
 class OtoMedia3PlaybackService : MediaLibraryService() {
   companion object {
     private const val ROOT_ID = "oto:root"
+    private const val SLEEP_TIMER_TICK_MS = 1_000L
   }
 
   private var session: MediaLibrarySession? = null
+  private var player: ExoPlayer? = null
+  private lateinit var sleepTimer: OtoMedia3SleepTimer
+  private var lastMediaItemIndex = C.INDEX_UNSET
+  private val handler = Handler(Looper.getMainLooper())
+
+  private val sleepTimerListener =
+    object : Player.Listener {
+      override fun onMediaItemTransition(
+        mediaItem: MediaItem?,
+        reason: Int,
+      ) {
+        val activePlayer = player ?: return
+        val index = activePlayer.currentMediaItemIndex
+        sleepTimer.onActiveTrackChanged(
+          lastMediaItemIndex,
+          index,
+          activePlayer,
+        )
+        lastMediaItemIndex = index
+      }
+
+      override fun onPlaybackStateChanged(playbackState: Int) {
+        if (playbackState == Player.STATE_ENDED) {
+          sleepTimer.onQueueEnded(lastMediaItemIndex)
+        }
+      }
+    }
+
+  private val sleepTimerTick =
+    object : Runnable {
+      override fun run() {
+        player?.let(sleepTimer::onProgress)
+        handler.postDelayed(this, SLEEP_TIMER_TICK_MS)
+      }
+    }
 
   private fun rootItem(): MediaItem =
     MediaItem.Builder()
@@ -121,7 +161,10 @@ class OtoMedia3PlaybackService : MediaLibraryService() {
 
   override fun onCreate() {
     super.onCreate()
-    val player = ExoPlayer.Builder(this)
+    sleepTimer = OtoMedia3SleepTimer(this)
+    val playbackPlayer = ExoPlayer.Builder(this)
+      .setSeekBackIncrementMs(15_000L)
+      .setSeekForwardIncrementMs(30_000L)
       .setMediaSourceFactory(
         DefaultMediaSourceFactory(
           OtoMedia3Cache.dataSourceFactory(this),
@@ -138,9 +181,27 @@ class OtoMedia3PlaybackService : MediaLibraryService() {
         )
         setHandleAudioBecomingNoisy(true)
       }
+    player = playbackPlayer
+    lastMediaItemIndex = playbackPlayer.currentMediaItemIndex
+    playbackPlayer.addListener(sleepTimerListener)
     session =
-      MediaLibrarySession.Builder(this, player, callback)
+      MediaLibrarySession.Builder(this, playbackPlayer, callback)
+        .setMediaButtonPreferences(
+          listOf(
+            CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
+              .setDisplayName("Back 15 seconds")
+              .setPlayerCommand(Player.COMMAND_SEEK_BACK)
+              .setSlots(CommandButton.SLOT_BACK)
+              .build(),
+            CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_30)
+              .setDisplayName("Forward 30 seconds")
+              .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
+              .setSlots(CommandButton.SLOT_FORWARD)
+              .build(),
+          ),
+        )
         .build()
+    handler.post(sleepTimerTick)
   }
 
   override fun onGetSession(
@@ -148,10 +209,13 @@ class OtoMedia3PlaybackService : MediaLibraryService() {
   ): MediaLibrarySession? = session
 
   override fun onDestroy() {
+    handler.removeCallbacks(sleepTimerTick)
+    player?.removeListener(sleepTimerListener)
     session?.run {
       player.release()
       release()
     }
+    player = null
     session = null
     super.onDestroy()
   }

@@ -33,7 +33,7 @@ describe('MiniPlayer', () => {
 
     fireEvent.press(screen.getByRole('button', {name: 'Play'}));
     expect(
-      screen.getByRole('button', {
+      await screen.findByRole('button', {
         name: 'Open player: Where the Crawdads Sing, playing',
       }),
     ).toBeOnTheScreen();

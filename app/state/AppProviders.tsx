@@ -30,7 +30,8 @@ export const AppProviders = ({
         <SessionProvider>
           <SettingsProvider>
             <LibraryProvider adapter={container.library}>
-              <PlayerProvider>
+              <PlayerProvider
+                createController={container.audio.createPlayerController}>
                 <SocialProvider>
                   <TasteProvider>{children}</TasteProvider>
                 </SocialProvider>

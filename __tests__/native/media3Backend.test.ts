@@ -27,6 +27,18 @@ describe('Android Media3 backend', () => {
     expect(manifest).toContain('FOREGROUND_SERVICE_MEDIA_PLAYBACK');
   });
 
+  it('advertises the configured rewind and forward controls to Android media UI', () => {
+    const service = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3PlaybackService.kt',
+    );
+
+    expect(service).toContain('.setSeekBackIncrementMs(15_000L)');
+    expect(service).toContain('.setSeekForwardIncrementMs(30_000L)');
+    expect(service).toContain('.setMediaButtonPreferences(');
+    expect(service).toContain('CommandButton.ICON_SKIP_FORWARD_30');
+    expect(service).toContain('Player.COMMAND_SEEK_FORWARD');
+  });
+
   it('uses one Media3 cache for playback and warming', () => {
     const cache = read(
       'android/app/src/main/java/tz/co/oto/media/OtoMedia3Cache.kt',
@@ -46,5 +58,24 @@ describe('Android Media3 backend', () => {
 
     expect(module).toContain('.setCustomCacheKey(mediaId)');
     expect(cache).toContain('.setKey(cacheKey)');
+  });
+
+  it('evaluates persisted sleep timers inside the Media3 service', () => {
+    const service = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3PlaybackService.kt',
+    );
+    const timer = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3SleepTimer.kt',
+    );
+    const module = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3Module.kt',
+    );
+
+    expect(timer).toContain('getSharedPreferences');
+    expect(timer).toContain('player.pause()');
+    expect(service).toContain('sleepTimer.onActiveTrackChanged');
+    expect(service).toContain('sleepTimer::onProgress');
+    expect(module).toContain('setSleepTimerMinutes');
+    expect(module).toContain('setSleepTimerEndOfChapter');
   });
 });

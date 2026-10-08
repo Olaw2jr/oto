@@ -2,12 +2,17 @@
  * @format
  */
 
-import {AppRegistry} from 'react-native';
+import {AppRegistry, Platform} from 'react-native';
 import App from './App';
-import TrackPlayer from 'react-native-track-player';
 
 import {name as appName} from './app.json';
-import {PlaybackService} from './app/adapters/audio/PlaybackService';
 
 AppRegistry.registerComponent(appName, () => App);
-TrackPlayer.registerPlaybackService(() => PlaybackService);
+
+// Android uses Media3. Loading RNTP's native module there fails during bridge
+// initialization, so only register the RNTP service on the iOS runtime.
+if (Platform.OS === 'ios') {
+  const TrackPlayer = require('react-native-track-player').default;
+  const {PlaybackService} = require('./app/adapters/audio/PlaybackService');
+  TrackPlayer.registerPlaybackService(() => PlaybackService);
+}

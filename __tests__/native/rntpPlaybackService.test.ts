@@ -8,6 +8,8 @@ const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 describe('background playback service wiring', () => {
   it('registers the playback service from the process entrypoint', () => {
     const entry = read('index.js');
+    expect(entry).toContain("if (Platform.OS === 'ios')");
+    expect(entry).not.toMatch(/^import TrackPlayer from ['"]react-native-track-player['"]/m);
     expect(entry).toContain('registerPlaybackService');
     expect(entry).toContain('PlaybackService');
   });

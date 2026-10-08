@@ -62,7 +62,36 @@ export const cleanSummary = (text: string) =>
 // chapter 14 of Where the Crawdads Sing at 28%).
 const chapterCounts: Record<string, number> = {'where-the-crawdads-sing': 48};
 
-export const catalogue: CatalogueBook[] = books.map(book => {
+export const PUBLIC_DOMAIN_SAMPLE_ID = 'adventures-of-sherlock-holmes-public-domain';
+
+export const PUBLIC_DOMAIN_SAMPLE_CHAPTERS = [
+  {title: 'A Scandal in Bohemia, Part 1', durationSec: 1670},
+  {title: 'A Scandal in Bohemia, Part 2', durationSec: 2350},
+  {title: 'The Red-Headed League, Part 1', durationSec: 2182},
+  {title: 'The Red-Headed League, Part 2', durationSec: 1930},
+  {title: 'A Case of Identity, Part 1', durationSec: 1595},
+  {title: 'A Case of Identity, Part 2', durationSec: 1688},
+  {title: 'The Boscombe Valley Mystery, Part 1', durationSec: 2435},
+  {title: 'The Boscombe Valley Mystery, Part 2', durationSec: 1992},
+  {title: 'The Five Orange Pips, Part 1', durationSec: 1864},
+  {title: 'The Five Orange Pips, Part 2', durationSec: 1474},
+  {title: 'The Man with the Twisted Lip, Part 1', durationSec: 2381},
+  {title: 'The Man with the Twisted Lip, Part 2', durationSec: 1977},
+  {title: 'The Adventure of the Blue Carbuncle, Part 1', durationSec: 1762},
+  {title: 'The Adventure of the Blue Carbuncle, Part 2', durationSec: 2070},
+  {title: 'The Adventure of the Speckled Band, Part 1', durationSec: 2163},
+  {title: 'The Adventure of the Speckled Band, Part 2', durationSec: 2402},
+  {title: "The Adventure of the Engineer's Thumb, Part 1", durationSec: 1879},
+  {title: "The Adventure of the Engineer's Thumb, Part 2", durationSec: 1764},
+  {title: 'The Adventure of the Noble Bachelor, Part 1', durationSec: 2116},
+  {title: 'The Adventure of the Noble Bachelor, Part 2', durationSec: 1853},
+  {title: 'The Adventure of the Beryl Coronet, Part 1', durationSec: 2097},
+  {title: 'The Adventure of the Beryl Coronet, Part 2', durationSec: 2401},
+  {title: 'The Adventure of the Copper Beeches, Part 1', durationSec: 1924},
+  {title: 'The Adventure of the Copper Beeches, Part 2', durationSec: 2598},
+] as const;
+
+const sourceCatalogue: CatalogueBook[] = books.map(book => {
   const id = slug(book.title);
   const durationSec = parseDuration(book.runtime);
   // Uncurated books get a modest rating so curated ones lead Top rated.
@@ -94,6 +123,32 @@ export const catalogue: CatalogueBook[] = books.map(book => {
   };
 });
 
+const publicDomainSample: CatalogueBook = {
+  id: PUBLIC_DOMAIN_SAMPLE_ID,
+  title: 'The Adventures of Sherlock Holmes',
+  author: 'Arthur Conan Doyle',
+  narrator: 'Ruth Golding',
+  genre: 'Detective Fiction',
+  genres: ['Detective Fiction', 'Short Stories'],
+  summary:
+    'Twelve Sherlock Holmes stories by Arthur Conan Doyle, presented here as a public-domain LibriVox recording for real playback validation.',
+  released: '07-15-10',
+  releasedYear: 2010,
+  language: 'English',
+  cover: {
+    uri: 'https://archive.org/services/img/adventures_sherlock_holmes_rg_librivox',
+  },
+  durationSec: 48567,
+  chapters: PUBLIC_DOMAIN_SAMPLE_CHAPTERS.length,
+  rating: 4.8,
+  ratingsCount: 0,
+};
+
+export const catalogue: CatalogueBook[] = [
+  ...sourceCatalogue,
+  publicDomainSample,
+];
+
 export const getBook = (id: string) => {
   const book = catalogue.find(b => b.id === id);
   if (!book) {
@@ -102,8 +157,19 @@ export const getBook = (id: string) => {
   return book;
 };
 
-export const chapterAt = (book: CatalogueBook, positionSec: number) =>
-  Math.min(
+export const chapterAt = (book: CatalogueBook, positionSec: number) => {
+  if (book.id === PUBLIC_DOMAIN_SAMPLE_ID) {
+    let endSec = 0;
+    for (let index = 0; index < PUBLIC_DOMAIN_SAMPLE_CHAPTERS.length; index += 1) {
+      endSec += PUBLIC_DOMAIN_SAMPLE_CHAPTERS[index].durationSec;
+      if (positionSec < endSec || index === PUBLIC_DOMAIN_SAMPLE_CHAPTERS.length - 1) {
+        return index + 1;
+      }
+    }
+  }
+
+  return Math.min(
     book.chapters,
     Math.floor((positionSec / book.durationSec) * book.chapters) + 1,
   );
+};

@@ -12,5 +12,7 @@ describe('AppProviders composition', () => {
     expect(source).toContain('createApplicationContainer');
     expect(source).toContain('container.library');
     expect(source).toContain('LibraryProvider');
+    expect(source).toContain('container.audio.createPlayerController');
+    expect(source).toContain('PlayerProvider');
   });
 });
