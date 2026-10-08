@@ -7,6 +7,7 @@ import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import tz.co.oto.media.OtoMedia3Package
+import tz.co.oto.torrent.OtoTorrentPackage
 
 class MainApplication : Application(), ReactApplication {
   override val reactHost: ReactHost by lazy {
@@ -15,6 +16,7 @@ class MainApplication : Application(), ReactApplication {
       packageList =
         PackageList(this).packages.apply {
           add(OtoMedia3Package())
+          add(OtoTorrentPackage())
         },
     )
   }

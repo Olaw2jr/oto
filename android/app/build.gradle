@@ -90,6 +90,7 @@ android {
 
 dependencies {
     def media3Version = "1.11.0"
+    def jlibtorrentVersion = "2.0.12.9"
 
     implementation("com.facebook.react:react-android")
     implementation("androidx.media3:media3-common:${media3Version}")
@@ -98,6 +99,12 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:${media3Version}")
     implementation("androidx.media3:media3-exoplayer-hls:${media3Version}")
     implementation("androidx.media3:media3-session:${media3Version}")
+
+    implementation("com.frostwire:jlibtorrent:${jlibtorrentVersion}")
+    implementation("com.frostwire:jlibtorrent-android-arm:${jlibtorrentVersion}")
+    implementation("com.frostwire:jlibtorrent-android-arm64:${jlibtorrentVersion}")
+    implementation("com.frostwire:jlibtorrent-android-x86:${jlibtorrentVersion}")
+    implementation("com.frostwire:jlibtorrent-android-x86_64:${jlibtorrentVersion}")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
