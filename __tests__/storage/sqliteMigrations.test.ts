@@ -54,7 +54,7 @@ describe('SQLite migrations', () => {
     const runner = new MigrationRunner(db, migrations);
     await runner.migrate();
 
-    expect(db.appliedVersions()).toEqual([1, 2]);
+    expect(db.appliedVersions()).toEqual(migrations.map(m => m.version));
   });
 
   it('rejects duplicate or unordered migration versions', () => {

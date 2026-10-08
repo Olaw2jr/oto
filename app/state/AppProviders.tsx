@@ -72,7 +72,9 @@ export const AppProviders = ({
       <ThemeProvider>
         <SessionProvider>
           <SettingsProvider>
-            <LibraryProvider adapter={container.library}>
+            <LibraryProvider
+              adapter={container.library}
+              collections={container.collections}>
               <PlayerProvider
                 createController={container.audio.createPlayerController}>
                 <SocialProvider>

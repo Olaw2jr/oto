@@ -81,4 +81,16 @@ export const migrations: SqlMigration[] = [
         ON listening_progress(book_id, rendition_id)`,
     ],
   },
+  {
+    version: 3,
+    name: 'bookmarks',
+    sql: [
+      `CREATE TABLE IF NOT EXISTS bookmarks (
+        book_id TEXT NOT NULL,
+        at_sec INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (book_id, at_sec)
+      )`,
+    ],
+  },
 ];

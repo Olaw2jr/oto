@@ -11,7 +11,14 @@ the SQLite repositories. Successful service writes invalidate the same snapshot
 used by React. Chapter playback uses that same service and database, so playback
 and library screens do not maintain competing stores. The provider adapter
 serializes UI writes; `flush()` reports write failures without poisoning later
-operations. Ratings, custom shelves and bookmarks remain outside this wiring.
+operations.
+
+Ratings, custom shelves and bookmarks live in `SqliteCollectionsRepository`
+(`ratings`, `shelves`/`shelf_books`, and the `bookmarks` table from migration 3).
+The container loads them before mounting and passes the snapshot and repository
+to `LibraryProvider`, which shows each change immediately and saves it in the
+background. The seed container keeps them in `InMemoryCollectionsRepository`
+with the demo shelves.
 
 `createApplicationContainer` remains an explicitly injectable seed graph for
 unit tests and prototypes. Importing composition does not load the native JSI
