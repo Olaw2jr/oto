@@ -81,6 +81,46 @@ describe('PlayerController', () => {
     });
   });
 
+  it('refreshes sleep-timer state when the native timer pauses playback', async () => {
+    const engine = new FakeAudioEngine();
+    let storedTimer: {
+      kind: 'deadline';
+      deadlineAtMs: number;
+    } | null = null;
+    const sleepTimer = {
+      setMinutes: async () => {
+        storedTimer = {kind: 'deadline', deadlineAtMs: 60_000};
+      },
+      setEndOfChapter: async () => undefined,
+      clear: async () => {
+        storedTimer = null;
+      },
+      getState: async () => storedTimer,
+    };
+    const controller = new PlayerController(engine, {
+      sleepTimer,
+      now: () => 0,
+    });
+
+    await controller.load(tracks);
+    await controller.play();
+    await controller.setSleepTimer({kind: 'minutes', minutes: 1});
+    expect(controller.getSnapshot().sleepTimer).toEqual({
+      kind: 'minutes',
+      minutes: 1,
+    });
+
+    // The native service clears its persisted timer before emitting the pause.
+    storedTimer = null;
+    await engine.pause();
+    await Promise.resolve();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      state: 'paused',
+      sleepTimer: null,
+    });
+  });
+
   it('rejects mixed queues and tracks without finite positive durations', async () => {
     const controller = new PlayerController(new FakeAudioEngine());
 

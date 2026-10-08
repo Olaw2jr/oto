@@ -336,6 +336,7 @@ export class PlayerController {
   }
 
   private updateFromEngine(native: PlaybackSnapshot): void {
+    const previousState = this.snapshot.state;
     const queue = this.queue;
     if (!queue) {
       this.snapshot = {
@@ -347,6 +348,7 @@ export class PlayerController {
         sleepTimer: this.snapshot.sleepTimer,
       };
       this.emit();
+      this.refreshSleepTimerAfterPause(previousState, native.state);
       return;
     }
 
@@ -372,6 +374,20 @@ export class PlayerController {
       sleepTimer: this.snapshot.sleepTimer,
     };
     this.emit();
+    this.refreshSleepTimerAfterPause(previousState, native.state);
+  }
+
+  private refreshSleepTimerAfterPause(
+    previousState: PlaybackState,
+    nextState: PlaybackState,
+  ): void {
+    if (
+      previousState === 'playing' &&
+      nextState === 'paused' &&
+      this.snapshot.sleepTimer
+    ) {
+      this.restoreSleepTimer().catch(() => undefined);
+    }
   }
 
   private requireQueue(): QueueState {

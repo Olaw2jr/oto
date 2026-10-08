@@ -27,7 +27,9 @@ Use **The Adventures of Sherlock Holmes** public-domain sample.
 - [ ] Playback continues after backgrounding the app.
 - [ ] Lock-screen/notification play, pause, seek and skip controls work.
 - [ ] Audio focus/interruption behavior pauses/ducks and resumes as expected.
-- [ ] Minute sleep timer fires while the React UI is backgrounded.
+- [x] Minute sleep timer fires while the React UI is backgrounded. On the
+  Samsung SM-S908U1, the 15-minute timer paused the Media3 session after expiry
+  while Oto was backgrounded and cleared its native deadline.
 - [ ] End-of-chapter sleep timer stops at the chapter boundary.
 - [ ] Force-stop/relaunch restores the last persisted position.
 - [ ] Relaunch does not create duplicate Media3 sessions.
@@ -46,6 +48,13 @@ remote controls:
 force-stop/relaunch position:
 result:
 ```
+
+2026-10-08 Android timer run: Sherlock Holmes HTTPS sample, 15-minute timer,
+Oto backgrounded. Media3 remained PLAYING during the countdown, then reported
+PAUSED at expiry. The native SharedPreferences deadline was cleared. The player
+badge stayed at 15m until the JavaScript controller refreshed; the controller
+now refreshes persisted timer state on the native playing-to-paused transition,
+covered by PlayerController regression coverage.
 
 ## iOS physical-device acceptance
 
