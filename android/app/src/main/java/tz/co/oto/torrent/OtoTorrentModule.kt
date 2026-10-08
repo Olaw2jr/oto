@@ -7,7 +7,6 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
-import android.util.Log
 import java.util.concurrent.Executors
 
 class OtoTorrentModule(
@@ -29,7 +28,6 @@ class OtoTorrentModule(
       try {
         promise.resolve(operation())
       } catch (error: Throwable) {
-        Log.e("OtoTorrent", "Native torrent operation failed", error)
         promise.reject(
           "oto_torrent_error",
           error.message,

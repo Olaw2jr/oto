@@ -336,12 +336,13 @@ class LoopbackRangeServer(
               buffer.size.toLong(),
             ).toInt()
           val end = offset + chunk - 1
-          engine.awaitRange(
+          val rangeReady = engine.awaitRange(
             sessionId,
             fileIndex,
             offset,
             end,
           )
+          if (!rangeReady) return
 
           val ready =
             input ?: RandomAccessFile(target, "r")

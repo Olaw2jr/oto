@@ -466,7 +466,7 @@ class JlibtorrentEngine(private val context: Context) {
     startByte: Long,
     endByte: Long,
     timeoutMs: Long = 30_000,
-  ) {
+  ): Boolean {
     prioritizeRange(
       sessionId,
       fileIndex,
@@ -490,8 +490,13 @@ class JlibtorrentEngine(private val context: Context) {
           break
         }
       }
-      if (complete) return
-      Thread.sleep(25)
+      if (complete) return true
+      try {
+        Thread.sleep(25)
+      } catch (interrupted: InterruptedException) {
+        Thread.currentThread().interrupt()
+        return false
+      }
     }
     throw IllegalStateException(
       "Timed out waiting for torrent byte range",

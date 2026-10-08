@@ -58,4 +58,17 @@ describe('Android native torrent runtime', () => {
     expect(engine).toContain('setPieceDeadline');
     expect(engine).toContain('Priority.SEVEN');
   });
+
+  it('treats range-worker interruption during route cleanup as cancellation', () => {
+    const engine = read(
+      'android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt',
+    );
+    const server = read(
+      'android/app/src/main/java/tz/co/oto/torrent/LoopbackRangeServer.kt',
+    );
+
+    expect(engine).toContain('catch (interrupted: InterruptedException)');
+    expect(engine).toContain('Thread.currentThread().interrupt()');
+    expect(server).toContain('if (!rangeReady) return');
+  });
 });
