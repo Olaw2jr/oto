@@ -9,19 +9,13 @@ import {
 } from '../../app/data/catalogue';
 
 describe('public-domain playback assets', () => {
-  it('resolves the Sherlock Holmes sample to the whole-book Archive M4B', async () => {
+  it('resolves the Sherlock Holmes sample to its 24 authorized chapter files', async () => {
     const client = {
       get: jest.fn(async () => ({
-        files: [
-          {
-            name: 'adventures_sherlock_holmes_rg_01_doyle_64kb.mp3',
-            size: '123',
-          },
-          {
-            name: 'adventures_sherlock_holmes_rg_librivox.m4b',
-            size: '386000000',
-          },
-        ],
+        files: Array.from({length: 24}, (_, index) => ({
+          name: `adventuresholmes_${String(index + 1).padStart(2, '0')}_doyle_64kb.mp3`,
+          size: String(1000 + index),
+        })),
       })),
     };
     const repository =
@@ -34,26 +28,28 @@ describe('public-domain playback assets', () => {
     expect(client.get).toHaveBeenCalledWith(
       PUBLIC_DOMAIN_ARCHIVE_ID,
     );
-    expect(bindings).toEqual([
-      {
-        chapterId: `${PUBLIC_DOMAIN_SAMPLE_ID}:chapter-1`,
-        asset: expect.objectContaining({
-          renditionId: seedRenditionId(PUBLIC_DOMAIN_SAMPLE_ID),
-          format: 'm4b',
-          sizeBytes: 386000000,
-          sources: [
-            {
-              kind: 'https',
-              uri:
-                'https://archive.org/download/' +
-                PUBLIC_DOMAIN_ARCHIVE_ID +
-                '/adventures_sherlock_holmes_rg_librivox.m4b',
-              trustedSourceId: 'internetarchive',
-            },
-          ],
-        }),
-      },
-    ]);
+    expect(bindings).toHaveLength(24);
+    expect(bindings[0]).toEqual({
+      chapterId: `${PUBLIC_DOMAIN_SAMPLE_ID}:chapter-1`,
+      asset: expect.objectContaining({
+        renditionId: seedRenditionId(PUBLIC_DOMAIN_SAMPLE_ID),
+        format: 'mp3',
+        sizeBytes: 1000,
+        sources: [
+          {
+            kind: 'https',
+            uri:
+              'https://archive.org/download/' +
+              PUBLIC_DOMAIN_ARCHIVE_ID +
+              '/adventuresholmes_01_doyle_64kb.mp3',
+            trustedSourceId: 'internetarchive',
+          },
+        ],
+      }),
+    });
+    expect(bindings[23]?.chapterId).toBe(
+      `${PUBLIC_DOMAIN_SAMPLE_ID}:chapter-24`,
+    );
   });
 
   it('does not make a network request for commercial seed renditions', async () => {
@@ -86,11 +82,33 @@ describe('public-domain playback assets', () => {
     });
   });
 
-  it('fails closed if the Archive item no longer exposes a whole-book M4B', async () => {
+  it('maps exact recording sections and durations into its rendition chapters', async () => {
+    const rendition = await new SeedRenditionRepository().get(
+      seedRenditionId(PUBLIC_DOMAIN_SAMPLE_ID),
+    );
+
+    expect(rendition?.chapters).toHaveLength(24);
+    expect(rendition?.chapters[0]).toMatchObject({
+      title: 'A Scandal in Bohemia, Part 1',
+      startSec: 0,
+      durationSec: 1670,
+    });
+    expect(rendition?.chapters[23]).toMatchObject({
+      title: 'The Adventure of the Copper Beeches, Part 2',
+      startSec: 45969,
+      durationSec: 2598,
+    });
+    expect(rendition?.chapters.reduce(
+      (total, chapter) => total + (chapter.durationSec ?? 0),
+      0,
+    )).toBe(48567);
+  });
+
+  it('fails closed if the Archive item is missing a chapter file', async () => {
     const repository =
       new PublicDomainPlaybackAssetRepository({
         get: async () => ({
-          files: [{name: 'chapter-01.mp3'}],
+          files: [{name: 'adventuresholmes_01_doyle_64kb.mp3'}],
         }),
       });
 
@@ -98,6 +116,8 @@ describe('public-domain playback assets', () => {
       repository.listForRendition(
         seedRenditionId(PUBLIC_DOMAIN_SAMPLE_ID),
       ),
-    ).rejects.toThrow('no whole-book M4B asset');
+    ).rejects.toThrow(
+      'missing chapter asset adventuresholmes_02_doyle_64kb.mp3',
+    );
   });
 });

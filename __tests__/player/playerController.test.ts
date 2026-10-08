@@ -121,6 +121,36 @@ describe('PlayerController', () => {
     });
   });
 
+  it('refreshes chapter timer state after a native track transition', async () => {
+    const engine = new FakeAudioEngine();
+    let storedTimer: {kind: 'chapter'; trackIndex: number} | null = null;
+    const sleepTimer = {
+      setMinutes: async () => undefined,
+      setEndOfChapter: async (trackIndex: number) => {
+        storedTimer = {kind: 'chapter', trackIndex};
+      },
+      clear: async () => {
+        storedTimer = null;
+      },
+      getState: async () => storedTimer,
+    };
+    const controller = new PlayerController(engine, {sleepTimer});
+
+    await controller.load(tracks);
+    await controller.setSleepTimer({kind: 'chapter'});
+    expect(controller.getSnapshot().sleepTimer).toEqual({kind: 'chapter'});
+
+    // The native service clears its persisted timer as the active track changes.
+    storedTimer = null;
+    await engine.skipToTrack(tracks[1].id);
+    await Promise.resolve();
+
+    expect(controller.getSnapshot()).toMatchObject({
+      trackId: tracks[1].id,
+      sleepTimer: null,
+    });
+  });
+
   it('rejects mixed queues and tracks without finite positive durations', async () => {
     const controller = new PlayerController(new FakeAudioEngine());
 

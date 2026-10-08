@@ -15,8 +15,8 @@ export class PlaybackServiceSleepTimer {
     }
     this.handling = true;
     try {
-      await this.pause();
       await this.store.clear();
+      await this.pause();
     } finally {
       this.handling = false;
     }

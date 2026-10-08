@@ -66,8 +66,8 @@ class OtoMedia3SleepTimer(
       current?.kind == KIND_DEADLINE &&
       (current.deadlineAtMs ?: Long.MAX_VALUE) <= now()
     ) {
-      player.pause()
       clear()
+      player.pause()
     }
   }
 
@@ -82,10 +82,10 @@ class OtoMedia3SleepTimer(
       current.trackIndex == lastIndex &&
       index != lastIndex
     ) {
+      clear()
       if (index != C.INDEX_UNSET) {
         player.pause()
       }
-      clear()
     }
   }
 

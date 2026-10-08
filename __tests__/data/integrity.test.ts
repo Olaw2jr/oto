@@ -1,4 +1,9 @@
-import {catalogue, chapterAt, getBook} from '../../app/data/catalogue';
+import {
+  catalogue,
+  chapterAt,
+  getBook,
+  PUBLIC_DOMAIN_SAMPLE_ID,
+} from '../../app/data/catalogue';
 import {clubs} from '../../app/data/clubs';
 import {getPerson, people} from '../../app/data/people';
 import * as social from '../../app/data/social';
@@ -48,6 +53,12 @@ describe('mock data integrity', () => {
     const book = getBook('where-the-crawdads-sing');
     expect(chapterAt(book, 0)).toBe(1);
     expect(chapterAt(book, book.durationSec)).toBe(book.chapters);
+  });
+
+  it('uses the recorded sample chapter durations at queue boundaries', () => {
+    const book = getBook(PUBLIC_DOMAIN_SAMPLE_ID);
+    expect(chapterAt(book, 4019)).toBe(2);
+    expect(chapterAt(book, 4020)).toBe(3);
   });
 });
 

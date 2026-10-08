@@ -337,6 +337,7 @@ export class PlayerController {
 
   private updateFromEngine(native: PlaybackSnapshot): void {
     const previousState = this.snapshot.state;
+    const previousTrackId = this.snapshot.trackId;
     const queue = this.queue;
     if (!queue) {
       this.snapshot = {
@@ -349,6 +350,7 @@ export class PlayerController {
       };
       this.emit();
       this.refreshSleepTimerAfterPause(previousState, native.state);
+      this.refreshSleepTimerAfterTrackChange(previousTrackId, native.trackId);
       return;
     }
 
@@ -375,6 +377,19 @@ export class PlayerController {
     };
     this.emit();
     this.refreshSleepTimerAfterPause(previousState, native.state);
+    this.refreshSleepTimerAfterTrackChange(previousTrackId, native.trackId);
+  }
+
+  private refreshSleepTimerAfterTrackChange(
+    previousTrackId: string | undefined,
+    nextTrackId: string | undefined,
+  ): void {
+    if (
+      previousTrackId !== nextTrackId &&
+      this.snapshot.sleepTimer?.kind === 'chapter'
+    ) {
+      this.restoreSleepTimer().catch(() => undefined);
+    }
   }
 
   private refreshSleepTimerAfterPause(

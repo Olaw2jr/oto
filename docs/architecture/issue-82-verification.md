@@ -11,9 +11,12 @@ AudioEngine/ChapterPlaybackSession pipeline.
 - ChapterPlaybackSession restores and checkpoints durable progress.
 - Sleep timers persist outside React. Android evaluates them in Media3's
   MediaLibraryService and iOS evaluates them in the RNTP playback service.
+- PlayerController refreshes persisted sleep-timer state on native pause and
+  active-track changes, so chapter completion cannot leave a stale timer badge.
 - AppProviders lazily composes one controller shared by MiniPlayer and PlayerScreen.
 - Production player state contains no setInterval/setTimeout mock playback path.
-- A public-domain LibriVox/Internet Archive sample is available for real HTTPS playback.
+- The authorized LibriVox/Internet Archive sample has 24 exact chapter files,
+  titles and durations for real HTTPS playback.
 
 ## Android physical-device acceptance
 
@@ -30,9 +33,13 @@ Use **The Adventures of Sherlock Holmes** public-domain sample.
 - [x] Minute sleep timer fires while the React UI is backgrounded. On the
   Samsung SM-S908U1, the 15-minute timer paused the Media3 session after expiry
   while Oto was backgrounded and cleared its native deadline.
-- [ ] End-of-chapter sleep timer stops at the chapter boundary.
-- [x] Force-stop/relaunch restores the last persisted position.
-- [ ] Relaunch does not create duplicate Media3 sessions.
+- [x] End-of-chapter sleep timer pauses at the chapter transition and clears its
+  native state. Controller badge refresh after native track change has regression
+  coverage.
+- [x] Force-stop/relaunch restores the last persisted position. On the
+  Samsung SM-S908U1, reloading the sample restored Chapter 4 at 1:43:22.
+- [x] Relaunch does not create duplicate Media3 sessions. The post-relaunch
+  MediaSession dump showed one Oto session, plus the separate Spotify session.
 
 Suggested ADB record:
 
@@ -59,19 +66,19 @@ restored at 4:05.
 
 2026-10-08 Android timer run: Sherlock Holmes HTTPS sample, 15-minute timer,
 Oto backgrounded. Media3 remained PLAYING during the countdown, then reported
-PAUSED at expiry. The native SharedPreferences deadline was cleared. The player
-badge stayed at 15m until the JavaScript controller refreshed; the controller
-now refreshes persisted timer state on the native playing-to-paused transition,
-covered by PlayerController regression coverage.
+PAUSED at expiry and cleared the native deadline. End-of-chapter mode paused
+at the chapter transition and cleared native timer state. PlayerController
+refreshes timer state on track changes, covered by a regression test.
 
 2026-10-08 Android focus run: Spotify acquired permanent audio focus while
 Oto's sample was playing in the background. Oto received focus loss and changed
 to PAUSED. Pausing Spotify left Oto paused, as expected for permanent focus
 loss; resumption is user-controlled.
 
-The sample is a single whole-book M4B exposed as one track, so the end-of-chapter
-timer cannot be meaningfully exercised with this fixture. Duplicate-session
-recovery has not been verified on-device.
+The validation sample uses 24 authorized Archive.org MP3 chapter files, so
+chapter transitions and the end-of-chapter timer are exercised as real queue
+events. Force-stop/relaunch restored Chapter 4 at 1:43:22, and a MediaSession
+dump showed one Oto session.
 
 ## iOS physical-device acceptance
 

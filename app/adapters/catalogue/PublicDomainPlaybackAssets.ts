@@ -1,4 +1,7 @@
-import {PUBLIC_DOMAIN_SAMPLE_ID} from '../../data/catalogue';
+import {
+  PUBLIC_DOMAIN_SAMPLE_CHAPTERS,
+  PUBLIC_DOMAIN_SAMPLE_ID,
+} from '../../data/catalogue';
 import type {MediaAsset} from '../../domain';
 import type {
   PlaybackAssetBinding,
@@ -66,38 +69,39 @@ export class PublicDomainPlaybackAssetRepository
     }
 
     const metadata = await this.client.get(PUBLIC_DOMAIN_ARCHIVE_ID);
-    const m4b = (metadata.files ?? []).find(file =>
-      file.name?.toLowerCase().endsWith('.m4b'),
-    );
-    if (!m4b?.name) {
-      throw new Error(
-        'Public-domain playback sample has no whole-book M4B asset',
-      );
-    }
+    const files = metadata.files ?? [];
+    return PUBLIC_DOMAIN_SAMPLE_CHAPTERS.map((chapter, index) => {
+      const fileName =
+        `adventuresholmes_${String(index + 1).padStart(2, '0')}_doyle_64kb.mp3`;
+      const file = files.find(candidate => candidate.name === fileName);
+      if (!file?.name) {
+        throw new Error(
+          `Public-domain playback sample is missing chapter asset ${fileName}`,
+        );
+      }
 
-    const asset: MediaAsset = {
-      id: `${PUBLIC_DOMAIN_ARCHIVE_ID}:${m4b.name}`,
-      renditionId,
-      format: 'm4b',
-      ...(positiveInt(m4b.size) !== undefined
-        ? {sizeBytes: positiveInt(m4b.size)}
-        : {}),
-      sources: [
-        {
-          kind: 'https',
-          uri:
-            `https://archive.org/download/${PUBLIC_DOMAIN_ARCHIVE_ID}/` +
-            encodedPath(m4b.name),
-          trustedSourceId: 'internetarchive',
-        },
-      ],
-    };
+      const asset: MediaAsset = {
+        id: `${PUBLIC_DOMAIN_ARCHIVE_ID}:${file.name}`,
+        renditionId,
+        format: 'mp3',
+        ...(positiveInt(file.size) !== undefined
+          ? {sizeBytes: positiveInt(file.size)}
+          : {}),
+        sources: [
+          {
+            kind: 'https',
+            uri:
+              `https://archive.org/download/${PUBLIC_DOMAIN_ARCHIVE_ID}/` +
+              encodedPath(file.name),
+            trustedSourceId: 'internetarchive',
+          },
+        ],
+      };
 
-    return [
-      {
-        chapterId: `${PUBLIC_DOMAIN_SAMPLE_ID}:chapter-1`,
+      return {
+        chapterId: `${PUBLIC_DOMAIN_SAMPLE_ID}:chapter-${index + 1}`,
         asset,
-      },
-    ];
+      };
+    });
   }
 }

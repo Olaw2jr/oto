@@ -12,6 +12,7 @@ import {
   catalogue,
   getBook,
   PUBLIC_DOMAIN_SAMPLE_ID,
+  PUBLIC_DOMAIN_SAMPLE_CHAPTERS,
 } from '../../data/catalogue';
 
 const VERIFIED_AT = '1970-01-01T00:00:00.000Z';
@@ -41,7 +42,16 @@ const toRendition = (bookId: BookId): AudioRendition => {
     narrators: [{name: book.narrator}],
     language: book.language,
     durationSec: book.durationSec,
-    chapters: Array.from({length: book.chapters}, (_, index) => {
+    chapters: book.id === PUBLIC_DOMAIN_SAMPLE_ID
+      ? PUBLIC_DOMAIN_SAMPLE_CHAPTERS.map((chapter, index) => ({
+          id: `${book.id}:chapter-${index + 1}`,
+          title: chapter.title,
+          startSec: PUBLIC_DOMAIN_SAMPLE_CHAPTERS
+            .slice(0, index)
+            .reduce((total, item) => total + item.durationSec, 0),
+          durationSec: chapter.durationSec,
+        }))
+      : Array.from({length: book.chapters}, (_, index) => {
       const startSec = index * chapterDuration;
       return {
         id: `${book.id}:chapter-${index + 1}`,
