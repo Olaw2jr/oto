@@ -1,6 +1,6 @@
 import React from 'react';
 import {act, screen} from '@testing-library/react-native';
-import NetInfo from '@react-native-community/netinfo';
+import {FakeConnectivity} from '../../app/connectivity';
 
 import BookScreen from '../../app/features/book/BookScreen';
 import ClubScreen from '../../app/features/club/ClubScreen';
@@ -125,25 +125,13 @@ describe('loading state', () => {
 });
 
 describe('offline illustration', () => {
-  afterEach(() => {
-    (NetInfo.useNetInfo as jest.Mock).mockReturnValue({
-      type: 'wifi',
-      isConnected: true,
-      isInternetReachable: true,
-    });
-  });
-
   it('uses the oto mark', async () => {
-    (NetInfo.useNetInfo as jest.Mock).mockReturnValue({
-      type: 'none',
-      isConnected: false,
-      isInternetReachable: false,
-    });
     await renderScreen(
       <FollowingScreen
         navigation={mockNavigation()}
         route={route('Following')}
       />,
+      {connectivity: new FakeConnectivity({online: false})},
     );
     expect(screen.getByLabelText('oto, offline')).toBeOnTheScreen();
     // Offline, the mark is quiet: no kaki anywhere on the screen.
