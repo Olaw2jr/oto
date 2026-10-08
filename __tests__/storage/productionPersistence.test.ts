@@ -84,6 +84,53 @@ describe('production persistence against SQLite', () => {
     }
   });
 
+  it('restores ratings, shelves and bookmarks after reopening the database', async () => {
+    const filename = join(directory, 'collections.sqlite');
+    const first = open(filename);
+    const app = await createPersistentApplicationContainer(
+      async () => first.db,
+    );
+    expect(app.collections.initial).toEqual({
+      ratings: {},
+      shelves: [],
+      bookmarks: {},
+    });
+    const {repository} = app.collections;
+    await repository.saveRating('starry-messenger', 4.5);
+    await repository.saveRating('greenlights', 3);
+    await repository.saveRating('greenlights', null);
+    await repository.saveShelf({
+      id: 'road-trips',
+      name: 'Road trips',
+      bookIds: ['greenlights', 'starry-messenger'],
+    });
+    await repository.saveShelf({
+      id: 'road-trips',
+      name: 'Road trips',
+      bookIds: ['starry-messenger'],
+    });
+    await repository.addBookmark('starry-messenger', 90);
+    await repository.addBookmark('starry-messenger', 30);
+    await repository.addBookmark('starry-messenger', 90);
+    first.close();
+
+    const second = open(filename);
+    try {
+      const restored = await createPersistentApplicationContainer(
+        async () => second.db,
+      );
+      expect(restored.collections.initial).toEqual({
+        ratings: {'starry-messenger': 4.5},
+        shelves: [
+          {id: 'road-trips', name: 'Road trips', bookIds: ['starry-messenger']},
+        ],
+        bookmarks: {'starry-messenger': [30, 90]},
+      });
+    } finally {
+      second.close();
+    }
+  });
+
   it('preserves legacy data and unrelated tables when upgrading and reopening', async () => {
     const connection = open(join(directory, 'legacy.sqlite'));
     try {
@@ -123,7 +170,7 @@ describe('production persistence against SQLite', () => {
     try {
       await new MigrationRunner(connection.db, migrations).migrate();
       const bad = {
-        version: 3,
+        version: migrations.length + 1,
         name: 'bad',
         sql: [
           'CREATE TABLE should_rollback (id TEXT)',
@@ -140,14 +187,14 @@ describe('production persistence against SQLite', () => {
       ).toEqual([]);
       expect(
         await connection.db.query('SELECT version FROM schema_migrations'),
-      ).toHaveLength(2);
+      ).toHaveLength(migrations.length);
       await new MigrationRunner(connection.db, [
         ...migrations,
         {...bad, sql: bad.sql.slice(0, 1)},
       ]).migrate();
       expect(
         await connection.db.query('SELECT version FROM schema_migrations'),
-      ).toHaveLength(3);
+      ).toHaveLength(migrations.length + 1);
     } finally {
       connection.close();
     }

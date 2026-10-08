@@ -12,3 +12,4 @@ export {
   ObservableLibraryRepository,
   ObservableProgressRepository,
 } from './ObservableLibraryRepository';
+export {InMemoryCollectionsRepository} from './InMemoryCollectionsRepository';

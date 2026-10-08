@@ -3,6 +3,7 @@ import {
 } from '../adapters/catalogue';
 import {
   createSeedLibraryGraph,
+  InMemoryCollectionsRepository,
   ServiceLibraryProviderAdapter,
   ObservableLibraryRepository,
   ObservableProgressRepository,
@@ -16,6 +17,7 @@ import {
   SourceResolver,
   type AudioEngine,
 } from '../audio';
+import type {PersonalCollections} from '../domain';
 import {RightsPolicy} from '../domain/rights';
 import {
   PlaybackQueueResolver,
@@ -25,13 +27,16 @@ import {
 } from '../player';
 import type {
   CatalogueRepository,
+  CollectionsRepository,
   LibraryRepository,
   ProgressRepository,
   RenditionRepository,
 } from '../repositories';
 import {getBook} from '../data/catalogue';
+import {shelvesSeed} from '../data/social';
 import {LibraryService} from '../services/LibraryService';
 import {
+  SqliteCollectionsRepository,
   SqliteLibraryRepository,
   SqliteProgressRepository,
   MigrationRunner,
@@ -55,6 +60,11 @@ export type ApplicationContainer = {
     library: LibraryService;
   };
   library: LibraryProviderAdapter;
+  // Ratings, your shelves and bookmarks, loaded before the UI mounts.
+  collections: {
+    repository: CollectionsRepository;
+    initial: PersonalCollections;
+  };
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
@@ -72,6 +82,16 @@ export type ApplicationContainerOptions = {
   createPlayerController?: () => Promise<PlayerController>;
   libraryGraph?: SeedLibraryGraph;
   databaseFactory?: () => Promise<SqlDatabase>;
+  collections?: ApplicationContainer['collections'];
+};
+
+const createSeedCollections = (): ApplicationContainer['collections'] => {
+  const repository = new InMemoryCollectionsRepository({
+    ratings: {},
+    shelves: shelvesSeed,
+    bookmarks: {},
+  });
+  return {repository, initial: repository.snapshot()};
 };
 
 const openDatabase = async (): Promise<SqlDatabase> => {
@@ -202,6 +222,7 @@ export const createApplicationContainer = (
       library: libraryGraph.service,
     },
     library: libraryGraph.adapter,
+    collections: options.collections ?? createSeedCollections(),
     audio: {
       createEngine,
       createPersistentSession,
@@ -227,6 +248,11 @@ export const createPersistentApplicationContainer = async (
   const seed = createSeedLibraryGraph();
   const storedLibrary = new SqliteLibraryRepository(database);
   const storedProgress = new SqliteProgressRepository(database);
+  const storedCollections = new SqliteCollectionsRepository(database);
+  const collections = {
+    repository: storedCollections,
+    initial: await storedCollections.load(),
+  };
   const library = new ObservableLibraryRepository(await storedLibrary.list());
   const progress = new ObservableProgressRepository();
   for (const entry of library.listSync()) {
@@ -274,6 +300,7 @@ export const createPersistentApplicationContainer = async (
     {
       libraryGraph: {...seed, library, progress, service, adapter},
       databaseFactory: async () => database,
+      collections,
     },
   );
   container.repositories.library = durableLibrary;
