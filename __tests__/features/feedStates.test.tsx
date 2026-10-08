@@ -112,17 +112,25 @@ describe('Following offline', () => {
     });
   });
 
-  it('explains it is offline and offers what still plays', async () => {
+  it('explains it is offline and offers your current book', async () => {
     const navigation = await renderFollowing();
     expect(screen.getByText('You are offline.')).toBeOnTheScreen();
     expect(screen.getByText("Can't reach your friends.")).toBeOnTheScreen();
     expect(screen.queryByTestId('update-Mika T.')).toBeNull();
 
-    expect(screen.getByText('Available offline')).toBeOnTheScreen();
+    expect(screen.getByText('Continue listening')).toBeOnTheScreen();
     await press(
       screen.getByRole('button', {name: /^Play Where the Crawdads Sing/}),
     );
     expect(navigation.navigate).toHaveBeenCalledWith('Player');
+  });
+
+  // oto has no downloads or update queue yet, so it must not promise them.
+  it('promises nothing oto cannot do offline', async () => {
+    await renderFollowing();
+    expect(screen.queryByText(/download/i)).toBeNull();
+    expect(screen.queryByText(/will post/i)).toBeNull();
+    expect(screen.queryByText('Available offline')).toBeNull();
   });
 
   it('tries again', async () => {
