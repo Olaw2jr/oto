@@ -5,6 +5,27 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # React Native pins its toolchain; these move with RN upgrades, not alone.
+    ignore:
+      # The RN renderer is built for one exact React version.
+      - dependency-name: 'react'
+      - dependency-name: 'react-test-renderer'
+      # Majors the RN 0.87 template, Babel preset and ESLint config don't support.
+      - dependency-name: '@babel/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'jest'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/jest'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'prettier'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@testing-library/react-native'
+        update-types: ['version-update:semver-major']
+      # Types follow the Node 24 runtime in .nvmrc.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       react-native:
         patterns: ['react-native', '@react-native/*', '@react-native-community/cli*']
@@ -15,6 +36,12 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    ignore:
+      # Gradle 9.8 bundles Kotlin 2.4, which RN 0.87's Gradle plugin (Kotlin
+      # 2.2) can't compile against. Move the wrapper with RN upgrades.
+      - dependency-name: 'gradle-wrapper'
+        update-types:
+          ['version-update:semver-minor', 'version-update:semver-major']
   - package-ecosystem: bundler
     directory: /
     schedule:
