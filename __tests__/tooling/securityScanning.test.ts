@@ -24,7 +24,7 @@ describe('security scanning', () => {
 
   it('blocks pull requests that add high-severity vulnerable dependencies', () => {
     const workflow = read('.github/workflows/dependency-review.yml');
-    expect(workflow).toContain('actions/dependency-review-action@v4');
+    expect(workflow).toContain('actions/dependency-review-action@v5');
     expect(workflow).toContain('fail-on-severity: high');
   });
 });
