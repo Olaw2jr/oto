@@ -9,6 +9,7 @@ import {
 import {ThemeProvider} from '../theme/ThemeProvider';
 import {LibraryProvider} from './library';
 import {ConnectivityProvider} from './network';
+import {reportStartup} from '../telemetry/startup';
 import {installGlobalErrorReporting, TelemetryProvider} from './telemetry';
 import {PlayerProvider} from './player';
 import {SessionProvider} from './session';
@@ -56,6 +57,7 @@ export const AppProviders = ({
       container.telemetry.telemetry,
     );
     const stopUploads = container.telemetry.start();
+    reportStartup(container.telemetry.telemetry);
     return () => {
       stopUploads();
       uninstall();

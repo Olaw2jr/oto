@@ -9,7 +9,7 @@ oto reports problems about itself to its own backend through a vendor-neutral
 |---|---|---|
 | `error` | Uncaught JS errors (`fatal`, `source: 'global'`), playback errors (`source: 'player'`), library write failures (`source: 'library.save'`) | `installGlobalErrorReporting`, `PlayerProvider`, `LibraryProvider` |
 | `event` | `playback.failed` (`reason: unavailable \| failed`, `bookId`), `playback.stopped` (`reason: native-error`) | `PlayerProvider` |
-| `metric` | Reserved for performance budgets (HA-07) | — |
+| `metric` | `startup.ready_ms`: JS start to providers ready, once per launch | `reportStartup` (`app/telemetry/startup.ts`) |
 
 ## Privacy rules
 
