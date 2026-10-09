@@ -6,9 +6,9 @@ const root = path.resolve(__dirname, '../..');
 const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
 describe('Android Media3 backend', () => {
-  it('pins Media3 1.11.0 playback, session and HLS artifacts', () => {
+  it('pins Media3 1.11.1 playback, session and HLS artifacts', () => {
     const gradle = read('android/app/build.gradle');
-    expect(gradle).toContain('media3Version = "1.11.0"');
+    expect(gradle).toContain('media3Version = "1.11.1"');
     expect(gradle).toContain('media3-exoplayer');
     expect(gradle).toContain('media3-session');
     expect(gradle).toContain('media3-exoplayer-hls');
