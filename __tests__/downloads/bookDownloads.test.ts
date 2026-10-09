@@ -87,6 +87,18 @@ describe('BookDownloads', () => {
     expect((await downloads.bookStatus('other')).state).toBe('none');
   });
 
+  it('refuses a download that would leave too little space', async () => {
+    const {engine, downloads} = setup();
+    engine.freeBytes = 500_000_000 + 2_500;
+    await expect(downloads.downloadBook('book-1', {wifiOnly: false})).rejects.toThrow(
+      'Not enough space: this book needs 1 MB and the phone has 1 MB free after keeping 500 MB spare',
+    );
+    expect(engine.requests).toEqual([]);
+
+    engine.freeBytes = 500_000_000 + 3_000;
+    await expect(downloads.downloadBook('book-1', {wifiOnly: false})).resolves.toBe(2);
+  });
+
   it('removes every chapter of a book', async () => {
     const {engine, downloads} = setup();
     await downloads.downloadBook('book-1', {wifiOnly: false});

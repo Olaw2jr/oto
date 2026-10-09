@@ -17,4 +17,7 @@ export class UnavailableDownloadEngine implements DownloadEngine {
   subscribe(): () => void {
     return () => {};
   }
+  async freeSpace(): Promise<number | null> {
+    return null;
+  }
 }

@@ -12,6 +12,22 @@ export class DownloadUnavailableError extends Error {
   }
 }
 
+// Space a download must leave free, so oto never fills the phone.
+export const DOWNLOAD_RESERVE_BYTES = 500_000_000;
+
+const megabytes = (bytes: number) => `${Math.max(0, Math.ceil(bytes / 1_000_000))} MB`;
+
+export class NotEnoughSpaceError extends Error {
+  constructor(neededBytes: number, freeBytes: number) {
+    super(
+      `Not enough space: this book needs ${megabytes(neededBytes)} and the phone has ${megabytes(
+        freeBytes - DOWNLOAD_RESERVE_BYTES,
+      )} free after keeping ${megabytes(DOWNLOAD_RESERVE_BYTES)} spare`,
+    );
+    this.name = 'NotEnoughSpaceError';
+  }
+}
+
 type Dependencies = {
   engine: DownloadEngine;
   renditions: Pick<RenditionRepository, 'listForWork'>;
@@ -66,6 +82,11 @@ export class BookDownloads {
     });
     if (requests.length !== rendition.chapters.length) {
       throw new DownloadUnavailableError();
+    }
+    const neededBytes = requests.reduce((sum, r) => sum + (r.sizeBytes ?? 0), 0);
+    const freeBytes = await engine.freeSpace();
+    if (freeBytes !== null && neededBytes + DOWNLOAD_RESERVE_BYTES > freeBytes) {
+      throw new NotEnoughSpaceError(neededBytes, freeBytes);
     }
     for (const request of requests) {
       await engine.start(request);

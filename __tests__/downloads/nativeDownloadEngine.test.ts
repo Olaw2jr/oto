@@ -8,6 +8,7 @@ const bridge = () => ({
     {id: 'asset-1', bookId: 'book-1', state: 'completed', bytesDownloaded: 10, totalBytes: 10},
   ]),
   playbackSource: jest.fn(async () => ({kind: 'https', uri: 'https://archive.org/c1.mp3', trustedSourceId: 'internetarchive'})),
+  freeSpace: jest.fn(async () => 1_000_000_000),
 });
 
 describe('NativeDownloadEngine', () => {

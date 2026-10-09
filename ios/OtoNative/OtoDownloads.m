@@ -252,6 +252,16 @@ RCT_EXPORT_METHOD(playbackSource:(NSString *)identifier
   });
 }
 
+RCT_EXPORT_METHOD(freeSpace:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+  NSNumber *available = nil;
+  [[self directory] getResourceValue:&available
+                              forKey:NSURLVolumeAvailableCapacityForImportantUsageKey
+                               error:nil];
+  resolve(available ?: [NSNull null]);
+}
+
 #pragma mark - URLSession delegate
 
 - (void)URLSession:(NSURLSession *)session
