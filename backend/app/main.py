@@ -12,6 +12,10 @@ from .models import (
 from .security import current_user, verify_google_id_token, issue_access_token
 
 app = FastAPI(title="Oto Headless API", version="0.1.0")
+from .social_api import router as social_router
+from .auth_api import router as auth_router
+app.include_router(social_router)
+app.include_router(auth_router)
 
 class GoogleLogin(BaseModel):
     id_token: str = Field(min_length=20)
@@ -52,8 +56,10 @@ async def google_login(payload: GoogleLogin, db: AsyncSession = Depends(session)
         db.add(user)
         await db.flush()
         db.add(OAuthIdentity(user_id=user.id, provider="google", subject=subject))
+    from .auth_sessions import new_refresh
+    refresh_token = await new_refresh(db, user.id)
     await db.commit()
-    return {"access_token": issue_access_token(user.id), "token_type": "bearer", "expires_in": 900}
+    return {"access_token": issue_access_token(user.id), "refresh_token": refresh_token, "token_type": "bearer", "expires_in": 900}
 
 @app.get("/v1/me")
 async def me(user: User = Depends(current_user)):
