@@ -78,4 +78,13 @@ describe('Android Media3 backend', () => {
     expect(module).toContain('setSleepTimerMinutes');
     expect(module).toContain('setSleepTimerEndOfChapter');
   });
+
+  // A failed stream leaves Media3 idle with a playerError; report it as an
+  // error so the app can tell the listener instead of going quiet.
+  it('reports a player error as the error state', () => {
+    const module = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3Module.kt',
+    );
+    expect(module).toMatch(/player\.playerError != null -> "error"/);
+  });
 });

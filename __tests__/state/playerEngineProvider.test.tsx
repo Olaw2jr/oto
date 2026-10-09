@@ -168,3 +168,41 @@ describe('PlayerProvider playback errors', () => {
     expect(result.current.error).toBeNull();
   });
 });
+
+describe('PlayerProvider native playback errors', () => {
+  it('tells the listener when playback stops on an error', async () => {
+    const book = getBook('where-the-crawdads-sing');
+    const engine = new FakeAudioEngine();
+    const controller = new PlayerController(engine);
+    await controller.load([
+      {
+        id: `${book.id}:chapter-1`,
+        bookId: book.id,
+        renditionId: seedRenditionId(book.id),
+        chapterId: `${book.id}:chapter-1`,
+        title: 'Chapter 1',
+        durationSec: book.durationSec,
+        source: {kind: 'remote', uri: 'https://example.test/book.mp3'},
+      },
+    ]);
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <SettingsProvider>
+        <LibraryProvider>
+          <PlayerProvider controller={controller}>{children}</PlayerProvider>
+        </LibraryProvider>
+      </SettingsProvider>
+    );
+    const {result} = renderHook(() => usePlayer(), {wrapper});
+    act(() => result.current.toggle());
+    await waitFor(() => expect(result.current.playing).toBe(true));
+
+    act(() => engine.fail());
+
+    await waitFor(() =>
+      expect(result.current.error).toBe(
+        'Playback stopped. Check your connection and try again.',
+      ),
+    );
+    expect(result.current.playing).toBe(false);
+  });
+});
