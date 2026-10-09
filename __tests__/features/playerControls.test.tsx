@@ -118,3 +118,61 @@ describe('PlayerScreen playback errors', () => {
     ).toBeNull();
   });
 });
+
+describe('PlayerScreen scrubber', () => {
+  const touch = (locationX: number) => ({
+    nativeEvent: {locationX, locationY: 10, pageX: locationX, pageY: 0},
+  });
+
+  const setupScrubber = async () => {
+    await renderScreen(<PlayerScreen navigation={mockNavigation()} route={route} />);
+    const scrubber = screen.getByRole('adjustable', {name: 'Position'});
+    fireEvent(scrubber, 'layout', {nativeEvent: {layout: {width: 400, height: 30, x: 0, y: 0}}});
+    return scrubber;
+  };
+  const elapsed = () => screen.getByLabelText('Elapsed').props.children;
+
+  it('lets you drag to a new position and seeks when you let go', async () => {
+    const {formatClock} = require('../../app/data/format');
+    const scrubber = await setupScrubber();
+    const duration = 12 * 3600 + 12 * 60; // Where the Crawdads Sing
+
+    expect(scrubber.props.onStartShouldSetResponder()).toBe(true);
+    await act(async () => {
+      fireEvent(scrubber, 'responderGrant', touch(100));
+      fireEvent(scrubber, 'responderMove', touch(300));
+    });
+    // Previews the drag position before seeking.
+    expect(elapsed()).toBe(formatClock(duration * 0.75));
+
+    await act(async () => {
+      fireEvent(scrubber, 'responderRelease', touch(300));
+    });
+    expect(elapsed()).toBe(formatClock(duration * 0.75));
+  });
+
+  it('seeks to where you tap', async () => {
+    const {formatClock} = require('../../app/data/format');
+    const scrubber = await setupScrubber();
+    const duration = 12 * 3600 + 12 * 60;
+
+    await act(async () => {
+      fireEvent(scrubber, 'responderGrant', touch(200));
+      fireEvent(scrubber, 'responderRelease', touch(200));
+    });
+    expect(elapsed()).toBe(formatClock(duration * 0.5));
+  });
+
+  it('keeps the position inside the book when dragged past either end', async () => {
+    const {formatClock} = require('../../app/data/format');
+    const scrubber = await setupScrubber();
+
+    await act(async () => {
+      fireEvent(scrubber, 'responderGrant', touch(-50));
+    });
+    expect(elapsed()).toBe(formatClock(0));
+    await act(async () => {
+      fireEvent(scrubber, 'responderRelease', touch(-50));
+    });
+  });
+});
