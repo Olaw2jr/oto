@@ -166,13 +166,15 @@ const createSeedCollections = (): ApplicationContainer['collections'] => {
   return {repository, initial: repository.snapshot()};
 };
 
-// The platform's background downloader; iOS joins in D3.
+// The platform's background downloader (Media3 on Android, URLSession on
+// iOS), when the native module is present.
 const createPlatformDownloadEngine = (): DownloadEngine => {
-  const {Platform} = require('react-native') as typeof import('react-native');
-  if (Platform.OS === 'android') {
-    const {NativeAndroidDownloadEngine} =
+  const {NativeModules} = require('react-native') as typeof import('react-native');
+  // Absent in tests and in native builds that predate downloads.
+  if (NativeModules.OtoDownloads) {
+    const {NativeDownloadEngine} =
       require('../adapters/downloads') as typeof import('../adapters/downloads');
-    return new NativeAndroidDownloadEngine();
+    return new NativeDownloadEngine();
   }
   return new UnavailableDownloadEngine();
 };

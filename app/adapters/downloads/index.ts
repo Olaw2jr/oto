@@ -1,2 +1,2 @@
-export {NativeAndroidDownloadEngine} from './NativeAndroidDownloadEngine';
-export type {NativeDownloadsBridge} from './NativeAndroidDownloadEngine';
+export {NativeDownloadEngine} from './NativeDownloadEngine';
+export type {NativeDownloadsBridge} from './NativeDownloadEngine';

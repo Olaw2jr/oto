@@ -22,6 +22,9 @@ target 'Eyy' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # oto's own native modules (downloads).
+  pod 'OtoNative', :path => './OtoNative'
+
   target 'EyyTests' do
     inherit! :complete
   end
