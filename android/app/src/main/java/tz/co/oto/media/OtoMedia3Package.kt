@@ -8,7 +8,8 @@ import com.facebook.react.uimanager.ViewManager
 class OtoMedia3Package : ReactPackage {
   override fun createNativeModules(
     reactContext: ReactApplicationContext,
-  ): List<NativeModule> = listOf(OtoMedia3Module(reactContext))
+  ): List<NativeModule> =
+    listOf(OtoMedia3Module(reactContext), OtoDownloadsModule(reactContext))
 
   override fun createViewManagers(
     reactContext: ReactApplicationContext,
