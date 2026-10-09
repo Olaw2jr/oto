@@ -22,6 +22,11 @@ target 'Eyy' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # Google Sign-In's Swift dependency (AppCheckCore) imports these as
+  # modules, which static libraries only provide with modular headers.
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
+
   target 'EyyTests' do
     inherit! :complete
   end
