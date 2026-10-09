@@ -38,11 +38,13 @@ import {LibraryService} from '../services/LibraryService';
 import {
   SqliteCollectionsRepository,
   SqliteLibraryRepository,
+  SqliteMutationOutbox,
   SqliteProgressRepository,
   MigrationRunner,
   migrations,
   type SqlDatabase,
 } from '../storage/sqlite';
+import {InMemoryMutationOutbox, type MutationOutbox} from '../sync';
 import {
   HttpsTransport,
   LocalFileTransport,
@@ -65,6 +67,11 @@ export type ApplicationContainer = {
     repository: CollectionsRepository;
     initial: PersonalCollections;
   };
+  sync: {
+    // Changes waiting for the server. Nothing sends them until a backend
+    // transport exists (BE-06).
+    outbox: MutationOutbox;
+  };
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
@@ -83,6 +90,7 @@ export type ApplicationContainerOptions = {
   libraryGraph?: SeedLibraryGraph;
   databaseFactory?: () => Promise<SqlDatabase>;
   collections?: ApplicationContainer['collections'];
+  outbox?: MutationOutbox;
 };
 
 const createSeedCollections = (): ApplicationContainer['collections'] => {
@@ -223,6 +231,7 @@ export const createApplicationContainer = (
     },
     library: libraryGraph.adapter,
     collections: options.collections ?? createSeedCollections(),
+    sync: {outbox: options.outbox ?? new InMemoryMutationOutbox()},
     audio: {
       createEngine,
       createPersistentSession,
@@ -301,6 +310,7 @@ export const createPersistentApplicationContainer = async (
       libraryGraph: {...seed, library, progress, service, adapter},
       databaseFactory: async () => database,
       collections,
+      outbox: new SqliteMutationOutbox(database),
     },
   );
   container.repositories.library = durableLibrary;
