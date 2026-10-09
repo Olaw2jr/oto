@@ -2,6 +2,7 @@ package tz.co.oto.media
 
 import android.content.ComponentName
 import android.os.Bundle
+import android.os.Handler
 import androidx.core.content.ContextCompat
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -30,6 +31,7 @@ class OtoMedia3Module(
 ) : ReactContextBaseJavaModule(reactContext) {
   companion object {
     private const val EVENT = "oto-media3-playback"
+    private const val PROGRESS_INTERVAL_MS = 1_000L
   }
 
   private var controllerFuture: ListenableFuture<MediaController>? = null
@@ -37,10 +39,28 @@ class OtoMedia3Module(
   private val cacheExecutor = Executors.newSingleThreadExecutor()
   private val sleepTimer = OtoMedia3SleepTimer(reactContext)
 
+  // Media3 raises no events as the position advances, so while playing send a
+  // snapshot every second, like RNTP's progress events on iOS (#137).
+  private var progressHandler: Handler? = null
+  private val progressTicker =
+    object : Runnable {
+      override fun run() {
+        val player = controller ?: return
+        emitSnapshot(player)
+        if (player.isPlaying) {
+          progressHandler?.postDelayed(this, PROGRESS_INTERVAL_MS)
+        }
+      }
+    }
+
   private val listener =
     object : Player.Listener {
       override fun onEvents(player: Player, events: Player.Events) {
         emitSnapshot(player)
+        progressHandler?.removeCallbacks(progressTicker)
+        if (player.isPlaying) {
+          progressHandler?.postDelayed(progressTicker, PROGRESS_INTERVAL_MS)
+        }
       }
     }
 
@@ -77,6 +97,7 @@ class OtoMedia3Module(
           val ready = future.get()
           if (controller == null) {
             controller = ready
+            progressHandler = Handler(ready.applicationLooper)
             ready.addListener(listener)
           }
           block(ready)
@@ -344,6 +365,8 @@ class OtoMedia3Module(
   ) {}
 
   override fun invalidate() {
+    progressHandler?.removeCallbacks(progressTicker)
+    progressHandler = null
     controller?.removeListener(listener)
     controller?.release()
     controller = null

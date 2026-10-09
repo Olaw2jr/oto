@@ -87,4 +87,22 @@ describe('Android Media3 backend', () => {
     );
     expect(module).toMatch(/player\.playerError != null -> "error"/);
   });
+
+  // #137: Media3 raises no events as the position advances, so while playing
+  // the module sends a snapshot every second, like RNTP's progress events.
+  it('sends a position update every second while playing', () => {
+    const module = read(
+      'android/app/src/main/java/tz/co/oto/media/OtoMedia3Module.kt',
+    );
+    expect(module).toContain('PROGRESS_INTERVAL_MS = 1_000L');
+    expect(module).toMatch(/postDelayed\(\s*this,\s*PROGRESS_INTERVAL_MS\s*\)/);
+    expect(module).toContain('player.isPlaying');
+    // Stopped when playback stops and when the module goes away.
+    expect(module).toMatch(/progressHandler\??\.removeCallbacks\(progressTicker\)/);
+    const invalidate = module.slice(module.indexOf('override fun invalidate()'));
+    expect(invalidate).toMatch(/progressHandler\??\.removeCallbacks\(progressTicker\)/);
+    // On the controller's own thread.
+    expect(module).toContain('Handler(ready.applicationLooper)');
+  });
 });
+

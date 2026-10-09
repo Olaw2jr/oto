@@ -121,4 +121,56 @@ describe('Media3Driver', () => {
     expect(listener).toHaveBeenCalledTimes(1);
     subscription.remove();
   });
+
+  // #137: one native snapshot stream backs every RNTP event name, so a
+  // listener registered for several events must still run once per update.
+  it('shares one native subscription and calls each listener once', () => {
+    const bridge = new FakeBridge();
+    // Like NativeEventEmitter: every addListener is its own subscription.
+    const native: Array<() => void> = [];
+    const driver = new Media3Driver(bridge, listener => {
+      native.push(listener);
+      return () => native.splice(native.indexOf(listener), 1);
+    });
+    const listener = jest.fn();
+
+    const subscriptions = [
+      'playback-state',
+      'playback-active-track-changed',
+      'playback-progress-updated',
+      'playback-queue-ended',
+    ].map(event => driver.addEventListener(event as any, listener));
+    native.forEach(emit => emit());
+
+    expect(native).toHaveLength(1);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    subscriptions.forEach(subscription => subscription.remove());
+    expect(native).toHaveLength(0);
+  });
+
+  it('publishes a moving position while playing, without state changes', async () => {
+    const {RntpAudioEngine} = require('../../app/audio/rntp/RntpAudioEngine');
+    const bridge = new FakeBridge();
+    let emitNative: () => void = () => {};
+    const driver = new Media3Driver(bridge, listener => {
+      emitNative = listener;
+      return () => {};
+    });
+    const engine = new RntpAudioEngine(driver);
+    const positions: number[] = [];
+    engine.subscribe((snapshot: {positionSec: number}) =>
+      positions.push(snapshot.positionSec),
+    );
+    bridge.snapshot.state = 'playing';
+
+    for (const position of [13, 14, 15]) {
+      bridge.snapshot.positionSec = position;
+      emitNative();
+      await new Promise(resolve => setImmediate(resolve));
+    }
+
+    expect(positions).toEqual([13, 14, 15]);
+  });
 });
+

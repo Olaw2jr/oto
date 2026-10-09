@@ -57,10 +57,18 @@ const locateGlobalPosition = (
   return {index: 0, positionSec: 0};
 };
 
+
+const CHECKPOINT_EVERY_SEC = 5;
 export class ChapterPlaybackSession {
   private active: ActiveSession | null = null;
   private unsubscribe: (() => void) | null = null;
   private checkpointQueue: Promise<void> = Promise.resolve();
+  // What was last written, so steady playback isn't saved on every tick.
+  private lastCheckpoint: {
+    trackId: string;
+    state: PlaybackSnapshot['state'];
+    positionSec: number;
+  } | null = null;
   private checkpointError: unknown;
   private hasCheckpointError = false;
   private preloadQueue: Promise<void> = Promise.resolve();
@@ -104,6 +112,7 @@ export class ChapterPlaybackSession {
     );
 
     this.unsubscribe?.();
+    this.lastCheckpoint = null;
     this.active = {
       bookId,
       renditionId,
@@ -139,6 +148,23 @@ export class ChapterPlaybackSession {
     if (index < 0) {
       return;
     }
+
+    // Engines report position about once a second while playing (#137).
+    // Write when the chapter or state changes, or every few seconds.
+    const last = this.lastCheckpoint;
+    if (
+      last &&
+      last.trackId === snapshot.trackId &&
+      last.state === snapshot.state &&
+      Math.abs(snapshot.positionSec - last.positionSec) < CHECKPOINT_EVERY_SEC
+    ) {
+      return;
+    }
+    this.lastCheckpoint = {
+      trackId: snapshot.trackId,
+      state: snapshot.state,
+      positionSec: snapshot.positionSec,
+    };
 
     const track = active.tracks[index];
     const chapterPosition = Math.min(

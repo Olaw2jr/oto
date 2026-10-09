@@ -176,6 +176,37 @@ describe('ChapterPlaybackSession', () => {
     expect(write).toHaveBeenCalledTimes(2);
   });
 
+  // #137: Android now reports position every second while playing; don't
+  // write progress to storage on every tick.
+  it('checkpoints a steadily playing chapter every few seconds, not every tick', async () => {
+    const {engine, session, service} = setup();
+    await session.load(book.id, rendition.id, tracks);
+    await engine.play();
+    await session.flush();
+    const write = jest.spyOn(service, 'setPosition');
+
+    for (let second = 1; second <= 10; second++) {
+      await engine.seekTo(second);
+    }
+    await session.flush();
+
+    expect(write.mock.calls.length).toBeGreaterThanOrEqual(1);
+    expect(write.mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
+  it('still saves right away when playback pauses', async () => {
+    const {engine, session, progress} = setup();
+    await session.load(book.id, rendition.id, tracks);
+    await engine.play();
+    await engine.seekTo(2);
+    await engine.pause();
+    await session.flush();
+
+    await expect(progress.get(book.id, rendition.id)).resolves.toMatchObject({
+      positionSec: 2,
+    });
+  });
+
   it('rejects a queue containing another rendition', async () => {
     const {session} = setup();
     const invalid = [

@@ -92,11 +92,36 @@ export class Media3Driver implements RntpDriver {
     return this.bridge.updateOptions(options);
   }
 
+  // Media3 sends one combined snapshot stream for every RNTP event name, so
+  // share one native subscription and call each distinct listener once per
+  // update, however many events it was registered for.
+  private readonly listeners = new Map<() => void, number>();
+  private unsubscribeNative: (() => void) | null = null;
+
   addEventListener(
     _event: RntpEventName,
     listener: () => void,
   ): RntpSubscription {
-    const unsubscribe = this.subscribeNative(listener);
-    return {remove: unsubscribe};
+    this.listeners.set(listener, (this.listeners.get(listener) ?? 0) + 1);
+    this.unsubscribeNative ??= this.subscribeNative(() => {
+      [...this.listeners.keys()].forEach(notify => notify());
+    });
+    let removed = false;
+    return {
+      remove: () => {
+        if (removed) return;
+        removed = true;
+        const count = (this.listeners.get(listener) ?? 1) - 1;
+        if (count > 0) {
+          this.listeners.set(listener, count);
+        } else {
+          this.listeners.delete(listener);
+        }
+        if (this.listeners.size === 0) {
+          this.unsubscribeNative?.();
+          this.unsubscribeNative = null;
+        }
+      },
+    };
   }
 }
