@@ -18,8 +18,27 @@ import {
   type ChapterPreloadCoordinator,
 } from '../audio';
 import type {PersonalCollections} from '../domain';
-import {ApiClient, FetchHttpTransport} from '../api';
-import {apiBaseUrl} from '../config/environment';
+import {
+  apiBaseUrl,
+  googleIosClientId,
+  googleWebClientId,
+} from '../config/environment';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import {
+  ApiClient,
+  assertSecureBaseUrl,
+  FetchHttpTransport,
+  OtoApiClient,
+  type HttpTransport,
+} from '../api';
+import {
+  AccountSession,
+  createGoogleIdentity,
+  syncWhileSignedIn,
+  type GoogleIdentity,
+  type TokenStore,
+} from '../auth';
+import {KeychainTokenStore} from '../auth/KeychainTokenStore';
 import type {Connectivity} from '../connectivity';
 import {
   InMemoryTelemetryStore,
@@ -64,6 +83,8 @@ import {
 import {
   InMemoryMutationOutbox,
   type MutationOutbox,
+  OtoApiMutationSender,
+  SyncEngine,
   SyncRecorder,
   syncCollections,
   syncLibrary,
@@ -100,6 +121,17 @@ export type ApplicationContainer = {
     recorder?: SyncRecorder;
   };
   connectivity: Connectivity;
+  // The oto-api account and the sync it drives. Only present when a
+  // backend is configured (apiBaseUrl).
+  account?: {
+    session: AccountSession;
+    client: OtoApiClient;
+    google: GoogleIdentity;
+    // Restores a saved account and sends queued changes while signed in.
+    start(): Promise<() => void>;
+    // Resolves once any send in progress has finished.
+    idle(): Promise<void>;
+  };
   telemetry: {
     telemetry: Telemetry;
     store: TelemetryStore;
@@ -139,6 +171,7 @@ export type ApplicationContainerOptions = {
   downloadEngine?: DownloadEngine;
   telemetryStore?: TelemetryStore;
   apiBaseUrl?: string | null;
+  account?: ApplicationContainer['account'];
 };
 
 const createTelemetry = (
@@ -318,6 +351,7 @@ export const createApplicationContainer = (
     library: libraryGraph.adapter,
     collections: options.collections ?? createSeedCollections(),
     sync: {outbox: options.outbox ?? new InMemoryMutationOutbox()},
+    account: options.account,
     connectivity,
     telemetry: createTelemetry(
       options.telemetryStore ?? new InMemoryTelemetryStore(),
@@ -352,7 +386,12 @@ export const createApplicationContainer = (
 // only used by explicitly injected test/prototype containers.
 export const createPersistentApplicationContainer = async (
   databaseFactory: () => Promise<SqlDatabase> = openDatabase,
-  options: {apiBaseUrl?: string | null} = {},
+  options: {
+    apiBaseUrl?: string | null;
+    // Tests replace the network and the device's secure storage.
+    transport?: HttpTransport;
+    tokenStore?: TokenStore;
+  } = {},
 ): Promise<ApplicationContainer> => {
   const database = await databaseFactory();
   await new MigrationRunner(database, migrations).migrate();
@@ -429,6 +468,33 @@ export const createPersistentApplicationContainer = async (
     apiBaseUrl: backend,
   });
   container.sync.recorder = recorder;
+  if (backend) {
+    assertSecureBaseUrl(backend);
+    const transport = options.transport ?? new FetchHttpTransport(backend);
+    const session = new AccountSession(
+      transport,
+      options.tokenStore ?? new KeychainTokenStore(),
+    );
+    const client = new OtoApiClient(transport, session);
+    const engine = new SyncEngine({
+      outbox,
+      sender: new OtoApiMutationSender(client),
+      connectivity: container.connectivity,
+    });
+    container.account = {
+      session,
+      client,
+      google: createGoogleIdentity(
+        {webClientId: googleWebClientId, iosClientId: googleIosClientId},
+        GoogleSignin,
+      ),
+      start: async () => {
+        await session.restore();
+        return syncWhileSignedIn(session, engine);
+      },
+      idle: () => engine.idle(),
+    };
+  }
   container.repositories.library = durableLibrary;
   container.repositories.progress = durableProgress;
   return container;

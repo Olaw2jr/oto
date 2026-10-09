@@ -3,6 +3,7 @@ import {StyleSheet, View} from 'react-native';
 
 import {RootStackScreenProps} from '../../navigator/types';
 import {useSession} from '../../state/session';
+import {useAccountSignIn} from './useAccountSignIn';
 import {
   Button,
   Checkbox,
@@ -18,6 +19,7 @@ const TERMS = 'I agree to the Terms and Privacy Policy.';
 
 const SignUpScreen = ({navigation}: RootStackScreenProps<'SignUp'>) => {
   const {signIn} = useSession();
+  const account = useAccountSignIn();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -100,7 +102,7 @@ const SignUpScreen = ({navigation}: RootStackScreenProps<'SignUp'>) => {
           kind="secondary"
           label="Google"
           accessibilityLabel="Continue with Google"
-          onPress={signIn}
+          onPress={account.continueWithGoogle}
           stretch
         />
       </View>

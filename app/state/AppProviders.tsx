@@ -14,6 +14,7 @@ import {settleOnBackground} from '../sync';
 import {installGlobalErrorReporting, TelemetryProvider} from './telemetry';
 import {PlayerProvider} from './player';
 import {SessionProvider} from './session';
+import {AccountProvider} from './account';
 import {SettingsProvider} from './settings';
 import {SocialProvider} from './social';
 import {TasteProvider} from './taste';
@@ -63,7 +64,19 @@ export const AppProviders = ({
       ? settleOnBackground(recorder, AppState)
       : () => {};
     reportStartup(container.telemetry.telemetry);
+    // Restore a saved oto-api account and send queued changes while signed in.
+    let stopAccount: (() => void) | undefined;
+    let mounted = true;
+    container.account?.start().then(
+      stop => (mounted ? (stopAccount = stop) : stop()),
+      failure =>
+        container.telemetry.telemetry.error(failure, {
+          source: 'account.start',
+        }),
+    );
     return () => {
+      mounted = false;
+      stopAccount?.();
       stopSettling();
       stopUploads();
       uninstall();
@@ -96,18 +109,20 @@ export const AppProviders = ({
         <TelemetryProvider telemetry={container.telemetry.telemetry}>
           <ConnectivityProvider connectivity={container.connectivity}>
             <SessionProvider>
-              <SettingsProvider>
-                <LibraryProvider
-                  adapter={container.library}
-                  collections={container.collections}>
-                  <PlayerProvider
-                    createController={container.audio.createPlayerController}>
-                    <SocialProvider>
-                      <TasteProvider>{children}</TasteProvider>
-                    </SocialProvider>
-                  </PlayerProvider>
-                </LibraryProvider>
-              </SettingsProvider>
+              <AccountProvider account={container.account}>
+                <SettingsProvider>
+                  <LibraryProvider
+                    adapter={container.library}
+                    collections={container.collections}>
+                    <PlayerProvider
+                      createController={container.audio.createPlayerController}>
+                      <SocialProvider>
+                        <TasteProvider>{children}</TasteProvider>
+                      </SocialProvider>
+                    </PlayerProvider>
+                  </LibraryProvider>
+                </SettingsProvider>
+              </AccountProvider>
             </SessionProvider>
           </ConnectivityProvider>
         </TelemetryProvider>
