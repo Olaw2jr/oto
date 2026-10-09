@@ -31,6 +31,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     return true
   }
+
+  // iOS woke oto to finish background downloads; OtoDownloads calls the
+  // handler once the session's events are delivered.
+  func application(
+    _ application: UIApplication,
+    handleEventsForBackgroundURLSession identifier: String,
+    completionHandler: @escaping () -> Void
+  ) {
+    NotificationCenter.default.post(
+      name: Notification.Name("OtoDownloadsBackgroundEvents"),
+      object: nil,
+      userInfo: ["identifier": identifier, "completionHandler": completionHandler]
+    )
+  }
 }
 
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
