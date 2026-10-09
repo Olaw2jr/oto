@@ -132,7 +132,7 @@ const DiscoverScreen = ({navigation}: TabScreenProps<'Discover'>) => {
         style={[styles.search, {backgroundColor: colors.raised}]}>
         <Icon name="search" color="graphite" size={20} />
         <Txt color="graphite" style={styles.searchText}>
-          Titles, authors, clubs, people
+          Titles, authors and clubs
         </Txt>
       </Pressable>
 
