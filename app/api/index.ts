@@ -7,3 +7,4 @@ export type {
   HttpResponse,
 } from './types';
 export {FakeHttpTransport} from './testing/FakeHttpTransport';
+export {FetchHttpTransport} from './FetchHttpTransport';

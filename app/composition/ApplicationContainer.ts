@@ -1,6 +1,4 @@
-import {
-  PublicDomainPlaybackAssetRepository,
-} from '../adapters/catalogue';
+import {PublicDomainPlaybackAssetRepository} from '../adapters/catalogue';
 import {
   createSeedLibraryGraph,
   InMemoryCollectionsRepository,
@@ -20,7 +18,16 @@ import {
   type ChapterPreloadCoordinator,
 } from '../audio';
 import type {PersonalCollections} from '../domain';
+import {ApiClient, FetchHttpTransport} from '../api';
+import {apiBaseUrl} from '../config/environment';
 import type {Connectivity} from '../connectivity';
+import {
+  InMemoryTelemetryStore,
+  QueuedTelemetry,
+  TelemetryUploader,
+  type Telemetry,
+  type TelemetryStore,
+} from '../telemetry';
 import {RightsPolicy} from '../domain/rights';
 import {
   PlaybackQueueResolver,
@@ -43,6 +50,7 @@ import {
   SqliteLibraryRepository,
   SqliteMutationOutbox,
   SqliteProgressRepository,
+  SqliteTelemetryStore,
   MigrationRunner,
   migrations,
   type SqlDatabase,
@@ -77,6 +85,14 @@ export type ApplicationContainer = {
     outbox: MutationOutbox;
   };
   connectivity: Connectivity;
+  telemetry: {
+    telemetry: Telemetry;
+    store: TelemetryStore;
+    // Resolves once recorded events are stored (tests and shutdown).
+    idle(): Promise<void>;
+    // Uploads to the backend's telemetry endpoint when one is configured.
+    start(): () => void;
+  };
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
@@ -101,6 +117,33 @@ export type ApplicationContainerOptions = {
   collections?: ApplicationContainer['collections'];
   outbox?: MutationOutbox;
   connectivity?: Connectivity;
+  telemetryStore?: TelemetryStore;
+  apiBaseUrl?: string | null;
+};
+
+const createTelemetry = (
+  store: TelemetryStore,
+  connectivity: Connectivity,
+  baseUrl: string | null,
+): ApplicationContainer['telemetry'] => {
+  const telemetry = new QueuedTelemetry(store);
+  return {
+    telemetry,
+    store,
+    idle: () => telemetry.idle(),
+    start: () => {
+      if (!baseUrl) return () => {};
+      return new TelemetryUploader({
+        store,
+        connectivity,
+        api: new ApiClient(new FetchHttpTransport(baseUrl)),
+        schedule: (run, delayMs) => {
+          const timer = setTimeout(run, delayMs);
+          return () => clearTimeout(timer);
+        },
+      }).start();
+    },
+  };
 };
 
 const createSeedCollections = (): ApplicationContainer['collections'] => {
@@ -122,8 +165,7 @@ export const createApplicationContainer = (
 ): ApplicationContainer => {
   const libraryGraph = options.libraryGraph ?? createSeedLibraryGraph();
   const playbackAssets =
-    options.playbackAssets ??
-    new PublicDomainPlaybackAssetRepository();
+    options.playbackAssets ?? new PublicDomainPlaybackAssetRepository();
   const databaseFactory = options.databaseFactory ?? openDatabase;
   let database: Promise<SqlDatabase> | undefined;
   const sharedDatabase = () => (database ??= databaseFactory());
@@ -132,37 +174,39 @@ export const createApplicationContainer = (
     (async (): Promise<ContentTransport | undefined> => {
       const {Platform} = await import('react-native');
       if (Platform.OS !== 'android') return undefined;
-      const {createAndroidTorrentRuntime} = await import(
-        '../adapters/torrent'
-      );
+      const {createAndroidTorrentRuntime} = await import('../adapters/torrent');
       return createAndroidTorrentRuntime().streaming;
     });
 
-  const createEngine = options.createAudioEngine ?? (async (): Promise<AudioEngine> => {
-    const {Platform} = await import('react-native');
-    if (Platform.OS === 'android') {
-      const {createNativeMedia3AudioEngine} = await import(
-        '../adapters/audio/media3/createNativeMedia3AudioEngine'
+  const createEngine =
+    options.createAudioEngine ??
+    (async (): Promise<AudioEngine> => {
+      const {Platform} = await import('react-native');
+      if (Platform.OS === 'android') {
+        const {createNativeMedia3AudioEngine} = await import(
+          '../adapters/audio/media3/createNativeMedia3AudioEngine'
+        );
+        return createNativeMedia3AudioEngine();
+      }
+      const {createNativeRntpAudioEngine} = await import(
+        '../audio/rntp/createNativeRntpAudioEngine'
       );
-      return createNativeMedia3AudioEngine();
-    }
-    const {createNativeRntpAudioEngine} = await import(
-      '../audio/rntp/createNativeRntpAudioEngine'
-    );
-    return createNativeRntpAudioEngine();
-  });
+      return createNativeRntpAudioEngine();
+    });
 
-  const createPreloader = options.createPreloader ?? (async () => {
-    const {Platform} = await import('react-native');
-    const {ChapterPreloadCoordinator} = await import('../audio/preload');
-    const backend =
-      Platform.OS === 'android'
-        ? new (
-            await import('../adapters/audio/media3')
-          ).Media3PreloadBackend()
-        : new (await import('../audio/preload')).QueueAwarePreloadBackend();
-    return new ChapterPreloadCoordinator(backend);
-  });
+  const createPreloader =
+    options.createPreloader ??
+    (async () => {
+      const {Platform} = await import('react-native');
+      const {ChapterPreloadCoordinator} = await import('../audio/preload');
+      const backend =
+        Platform.OS === 'android'
+          ? new (
+              await import('../adapters/audio/media3')
+            ).Media3PreloadBackend()
+          : new (await import('../audio/preload')).QueueAwarePreloadBackend();
+      return new ChapterPreloadCoordinator(backend);
+    });
 
   const createPersistentLibraryService = async () => {
     const db = await sharedDatabase();
@@ -176,18 +220,14 @@ export const createApplicationContainer = (
     });
   };
 
-  const createPersistentSession =
-    async (): Promise<ChapterPlaybackSession> => {
-      const service = await createPersistentLibraryService();
-      const engine = await createEngine();
-      return new ChapterPlaybackSession(
-        engine,
-        service,
-        await createPreloader(),
-      );
-    };
+  const createPersistentSession = async (): Promise<ChapterPlaybackSession> => {
+    const service = await createPersistentLibraryService();
+    const engine = await createEngine();
+    return new ChapterPlaybackSession(engine, service, await createPreloader());
+  };
 
-  const createSleepTimer = options.createSleepTimerController ??
+  const createSleepTimer =
+    options.createSleepTimerController ??
     (async (): Promise<PlayerSleepTimerController> => {
       const {Platform} = await import('react-native');
       if (Platform.OS === 'android') {
@@ -202,46 +242,46 @@ export const createApplicationContainer = (
       return createNativeSleepTimerController();
     });
 
-  const createPlayerController =
-    async (): Promise<PlayerController> => {
-      const service = await createPersistentLibraryService();
-      const engine = await createEngine();
-      const session = new ChapterPlaybackSession(
-        engine,
-        service,
-        await createPreloader(),
-      );
-      const transports: ContentTransport[] = [
-        new LocalFileTransport(),
-        new HttpsTransport({
-          start: async () => {
-            throw new Error(
-              'Direct HTTP downloads are not configured by the player',
-            );
-          },
-        }),
-      ];
-      const torrentTransport = await createTorrentStreamingTransport();
-      if (torrentTransport) transports.push(torrentTransport);
-      const sources = new SourceResolver(
-        new TransportRegistry(transports),
-        new RightsPolicy('TZ', ['internetarchive']),
-        {locate: async () => null},
-      );
-      const queueResolver = new PlaybackQueueResolver(
-        libraryGraph.catalogue,
-        libraryGraph.renditions,
-        playbackAssets,
-        sources,
-      );
+  const createPlayerController = async (): Promise<PlayerController> => {
+    const service = await createPersistentLibraryService();
+    const engine = await createEngine();
+    const session = new ChapterPlaybackSession(
+      engine,
+      service,
+      await createPreloader(),
+    );
+    const transports: ContentTransport[] = [
+      new LocalFileTransport(),
+      new HttpsTransport({
+        start: async () => {
+          throw new Error(
+            'Direct HTTP downloads are not configured by the player',
+          );
+        },
+      }),
+    ];
+    const torrentTransport = await createTorrentStreamingTransport();
+    if (torrentTransport) transports.push(torrentTransport);
+    const sources = new SourceResolver(
+      new TransportRegistry(transports),
+      new RightsPolicy('TZ', ['internetarchive']),
+      {locate: async () => null},
+    );
+    const queueResolver = new PlaybackQueueResolver(
+      libraryGraph.catalogue,
+      libraryGraph.renditions,
+      playbackAssets,
+      sources,
+    );
 
-      return new PlayerController(engine, {
-        session,
-        queueResolver,
-        sleepTimer: await createSleepTimer(),
-      });
-    };
+    return new PlayerController(engine, {
+      session,
+      queueResolver,
+      sleepTimer: await createSleepTimer(),
+    });
+  };
 
+  const connectivity = options.connectivity ?? new NetInfoConnectivity();
   return {
     repositories: {
       catalogue: libraryGraph.catalogue,
@@ -255,7 +295,12 @@ export const createApplicationContainer = (
     library: libraryGraph.adapter,
     collections: options.collections ?? createSeedCollections(),
     sync: {outbox: options.outbox ?? new InMemoryMutationOutbox()},
-    connectivity: options.connectivity ?? new NetInfoConnectivity(),
+    connectivity,
+    telemetry: createTelemetry(
+      options.telemetryStore ?? new InMemoryTelemetryStore(),
+      connectivity,
+      options.apiBaseUrl === undefined ? apiBaseUrl : options.apiBaseUrl,
+    ),
     audio: {
       createEngine,
       createPersistentSession,
@@ -329,14 +374,13 @@ export const createPersistentApplicationContainer = async (
     seedRenditionId,
     id => getBook(id).durationSec,
   );
-  const container = createApplicationContainer(
-    {
-      libraryGraph: {...seed, library, progress, service, adapter},
-      databaseFactory: async () => database,
-      collections,
-      outbox: new SqliteMutationOutbox(database),
-    },
-  );
+  const container = createApplicationContainer({
+    libraryGraph: {...seed, library, progress, service, adapter},
+    databaseFactory: async () => database,
+    collections,
+    outbox: new SqliteMutationOutbox(database),
+    telemetryStore: new SqliteTelemetryStore(database),
+  });
   container.repositories.library = durableLibrary;
   container.repositories.progress = durableProgress;
   return container;

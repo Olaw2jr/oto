@@ -93,4 +93,14 @@ export const migrations: SqlMigration[] = [
       )`,
     ],
   },
+  {
+    version: 4,
+    name: 'telemetry_events',
+    sql: [
+      `CREATE TABLE IF NOT EXISTS telemetry_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payload_json TEXT NOT NULL
+      )`,
+    ],
+  },
 ];

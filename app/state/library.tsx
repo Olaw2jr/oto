@@ -16,6 +16,8 @@ import {
 } from '../adapters/library';
 import type {PersonalCollections, ShelfRecord} from '../domain';
 import type {CollectionsRepository} from '../repositories';
+import type {Telemetry} from '../telemetry';
+import {useTelemetry} from './telemetry';
 import {shelvesSeed, Status} from '../data/social';
 
 export type Shelf = ShelfRecord & {custom: boolean};
@@ -37,8 +39,11 @@ const createSeedCollections = (): LibraryCollections => {
 };
 
 // Saving happens in the background; the screen already shows the change.
-const persist = (write: Promise<void>) => {
-  write.catch(error => console.warn('Could not save to your library', error));
+const persist = (write: Promise<void>, telemetry?: Telemetry) => {
+  write.catch(error => {
+    console.warn('Could not save to your library', error);
+    telemetry?.error(error, {source: 'library.save'});
+  });
 };
 
 type LibraryValue = {
@@ -87,6 +92,7 @@ export const LibraryProvider = ({
     adapter.getSnapshot,
     adapter.getSnapshot,
   );
+  const telemetry = useTelemetry();
   const [{repository, initial}] = useState(
     () => providedCollections ?? createSeedCollections(),
   );
@@ -104,9 +110,9 @@ export const LibraryProvider = ({
     (next: ShelfRecord[], changed: ShelfRecord) => {
       customRef.current = next;
       setCustom(next);
-      persist(repository.saveShelf(changed));
+      persist(repository.saveShelf(changed), telemetry);
     },
-    [repository],
+    [repository, telemetry],
   );
 
   const addBookmark = useCallback(
@@ -118,9 +124,9 @@ export const LibraryProvider = ({
           ? current
           : {...current, [bookId]: [...list, second].sort((a, b) => a - b)};
       });
-      persist(repository.addBookmark(bookId, second));
+      persist(repository.addBookmark(bookId, second), telemetry);
     },
-    [repository],
+    [repository, telemetry],
   );
 
   const removeBookmark = useCallback(
@@ -221,9 +227,9 @@ export const LibraryProvider = ({
         }
         return next;
       });
-      persist(repository.saveRating(bookId, stars ?? null));
+      persist(repository.saveRating(bookId, stars ?? null), telemetry);
     },
-    [repository],
+    [repository, telemetry],
   );
 
   // The external-store revision is an invalidation signal for adapter-derived shelves.

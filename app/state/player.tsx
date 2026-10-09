@@ -18,6 +18,7 @@ import type {
 } from '../player';
 import {useLibrary} from './library';
 import {SPEED_OPTIONS, useSettings} from './settings';
+import {useTelemetry} from './telemetry';
 
 export const RATES = SPEED_OPTIONS;
 
@@ -172,6 +173,7 @@ export const PlayerProvider = ({
     void controller.setRate(speed).catch(() => {});
   }, [controller, speed]);
 
+  const telemetry = useTelemetry();
   const [error, setError] = useState<string | null>(null);
   const dismissError = useCallback(() => setError(null), []);
 
@@ -179,22 +181,30 @@ export const PlayerProvider = ({
   useEffect(() => {
     if (snapshot.state === 'error') {
       setError(STOPPED_MESSAGE);
+      telemetry.event('playback.stopped', {reason: 'native-error'});
     }
-  }, [snapshot.state]);
+  }, [snapshot.state, telemetry]);
 
-  const run = useCallback((operation: () => Promise<void>) => {
-    void operation().then(
-      () => setError(null),
-      failure => {
-        console.warn('Player operation failed', failure);
-        setError(
-          failure instanceof PlaybackUnavailableError
-            ? UNAVAILABLE_MESSAGE
-            : FAILED_MESSAGE,
-        );
-      },
-    );
-  }, []);
+  const run = useCallback(
+    (operation: () => Promise<void>, bookId?: string) => {
+      void operation().then(
+        () => setError(null),
+        failure => {
+          console.warn('Player operation failed', failure);
+          const unavailable = failure instanceof PlaybackUnavailableError;
+          telemetry.event('playback.failed', {
+            reason: unavailable ? 'unavailable' : 'failed',
+            ...(bookId ? {bookId} : {}),
+          });
+          if (!unavailable) {
+            telemetry.error(failure, {source: 'player'});
+          }
+          setError(unavailable ? UNAVAILABLE_MESSAGE : FAILED_MESSAGE);
+        },
+      );
+    },
+    [telemetry],
+  );
 
   const play = useCallback(
     (id: string) => {
@@ -205,7 +215,7 @@ export const PlayerProvider = ({
           library.setStatus(id, 'listening');
         }
         await active.play();
-      });
+      }, id);
     },
     [library, prepare, run],
   );
