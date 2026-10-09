@@ -7,12 +7,21 @@ tags: [smoke]
 - tapOn: "Library"
 - tapOn: "New shelf.*"
 - inputText: "Road trips"
+# The keyboard covers the form's buttons on small screens.
+- hideKeyboard
+- scrollUntilVisible:
+    element: "Create"
+    direction: DOWN
 - tapOn: "Create"
+- scrollUntilVisible:
+    element: "Road trips.*"
+    direction: DOWN
 - tapOn: "Road trips.*"
 - tapOn: "Shelf options"
 - tapOn: "Rename"
 - eraseText
 - inputText: "Long drives"
+- hideKeyboard
 - tapOn: "Save"
 - assertVisible: "Long drives"
 - tapOn: "Shelf options"
