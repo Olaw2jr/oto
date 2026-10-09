@@ -1,0 +1,15 @@
+# First run: onboarding, sign in, land on Home with a playable book.
+appId: tz.co.oto
+tags: [smoke]
+---
+- launchApp:
+    clearState: true
+- tapOn: "Continue to onboarding"
+- tapOn: "Skip"
+- tapOn: "Sign in"
+- tapOn:
+    text: "Sign in"
+    index: 0
+- assertVisible: "Continue listening"
+# A fresh install continues the public-domain sample, which can play.
+- assertVisible: "The Adventures of Sherlock Holmes"
