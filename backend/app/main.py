@@ -16,6 +16,12 @@ from .social_api import router as social_router
 from .auth_api import router as auth_router
 app.include_router(social_router)
 app.include_router(auth_router)
+from .discovery_api import router as discovery_router
+from .sync_api import router as sync_router
+from .observability import RequestAudit
+app.include_router(discovery_router)
+app.include_router(sync_router)
+app.add_middleware(RequestAudit)
 
 class GoogleLogin(BaseModel):
     id_token: str = Field(min_length=20)
