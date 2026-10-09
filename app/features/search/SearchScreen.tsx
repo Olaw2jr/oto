@@ -107,7 +107,7 @@ const SearchScreen = ({navigation}: RootStackScreenProps<'Search'>) => {
           <TextInput
             accessibilityLabel="Search"
             autoFocus
-            placeholder="Titles, authors, clubs, people"
+            placeholder="Titles, authors and clubs"
             placeholderTextColor={colors.graphite}
             value={query}
             onChangeText={setQuery}

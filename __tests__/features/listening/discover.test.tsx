@@ -19,7 +19,7 @@ describe('DiscoverScreen', () => {
     await setup();
     expect(screen.getByRole('header', {name: 'Discover'})).toBeOnTheScreen();
     expect(
-      screen.getByText('Titles, authors, clubs, people'),
+      screen.getByText('Titles, authors and clubs'),
     ).toBeOnTheScreen();
 
     const forYou = screen.getByRole('button', {name: 'For you'});

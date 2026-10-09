@@ -9,8 +9,7 @@ import React, {
   useState,
 } from 'react';
 
-import {CatalogueBook, getBook} from '../data/catalogue';
-import {CURRENT_BOOK} from '../data/social';
+import {CatalogueBook, getBook, PUBLIC_DOMAIN_SAMPLE_ID} from '../data/catalogue';
 import {PlaybackUnavailableError} from '../player/PlaybackQueueResolver';
 import type {
   PlayerController,
@@ -81,7 +80,12 @@ export const PlayerProvider = ({
     () => providedController?.getSnapshot() ?? EMPTY_SNAPSHOT,
   );
   const [selectedBookId, setSelectedBookId] = useState(
-    snapshot.bookId ?? CURRENT_BOOK,
+    // A book you're listening to, else the public-domain sample, which plays
+    // on a fresh install (other catalogue books have no cleared audio yet).
+    () =>
+      snapshot.bookId ??
+      library.byStatus('listening')[0] ??
+      PUBLIC_DOMAIN_SAMPLE_ID,
   );
 
   useEffect(() => {
