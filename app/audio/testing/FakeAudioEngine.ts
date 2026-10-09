@@ -147,6 +147,12 @@ export class FakeAudioEngine implements AudioEngine {
     return durationSec === undefined ? lower : Math.min(durationSec, lower);
   }
 
+  // Simulates the native player reaching the end of the queue.
+  finish(): void {
+    this.snapshot = {...this.snapshot, state: 'ended'};
+    this.emit();
+  }
+
   // Simulates the native player stopping on an error, e.g. a lost stream.
   fail(): void {
     this.snapshot = {...this.snapshot, state: 'error'};

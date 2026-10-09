@@ -26,9 +26,10 @@ internal class WebSeedProxy {
   private val seeds = ConcurrentHashMap<String, String>()
   private val random = SecureRandom()
   private val clients = Executors.newCachedThreadPool()
+  private val acceptor = Executors.newSingleThreadExecutor()
 
   init {
-    Executors.newSingleThreadExecutor().execute {
+    acceptor.execute {
       while (!server.isClosed) {
         try {
           val socket = server.accept()
@@ -59,9 +60,16 @@ internal class WebSeedProxy {
     return "http://127.0.0.1:${server.localPort}/$token/"
   }
 
+  // Forget a seed registered by register(); its loopback URL stops working.
+  fun unregister(url: String) {
+    val token = url.substringAfter("127.0.0.1:").substringAfter('/').substringBefore('/')
+    seeds.remove(token)
+  }
+
   fun close() {
     seeds.clear()
     server.close()
+    acceptor.shutdownNow()
     clients.shutdownNow()
   }
 

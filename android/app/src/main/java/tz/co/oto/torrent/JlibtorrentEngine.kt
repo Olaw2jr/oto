@@ -59,6 +59,10 @@ internal data class ActiveTorrentSession(
   val files: List<NativeTorrentFile>,
   val priorities: MutableMap<Int, Priority> =
     ConcurrentHashMap(),
+  // Pieces playback has asked for in streamed files.
+  val wantedPieces: MutableSet<Int> = ConcurrentHashMap.newKeySet(),
+  // Loopback URLs that replaced this torrent's HTTPS web seeds.
+  val proxiedSeeds: List<String> = emptyList(),
 )
 
 class JlibtorrentEngine(private val context: Context) {
@@ -66,7 +70,10 @@ class JlibtorrentEngine(private val context: Context) {
   private val sessions =
     ConcurrentHashMap<String, ActiveTorrentSession>()
   private val lifecycleLock = Any()
-  private val webSeedProxy by lazy { WebSeedProxy() }
+  // Created with the first HTTPS web seed, closed with the last torrent.
+  private var proxy: WebSeedProxy? = null
+  private val webSeedProxy: WebSeedProxy
+    get() = synchronized(lifecycleLock) { proxy ?: WebSeedProxy().also { proxy = it } }
 
   @Volatile private var started = false
 
@@ -116,13 +123,13 @@ class JlibtorrentEngine(private val context: Context) {
 
   // libtorrent's own TLS fails on Android (#135); give it plain-HTTP loopback
   // URLs for HTTPS web seeds before the paused torrent starts.
-  private fun proxyHttpsWebSeeds(handle: TorrentHandle) {
-    for (seed in handle.urlSeeds()) {
-      if (!seed.startsWith("https://")) continue
-      handle.removeUrlSeed(seed)
-      handle.addUrlSeed(webSeedProxy.register(seed))
-    }
-  }
+  private fun proxyHttpsWebSeeds(handle: TorrentHandle): List<String> =
+    handle.urlSeeds()
+      .filter { it.startsWith("https://") }
+      .map { seed ->
+        handle.removeUrlSeed(seed)
+        webSeedProxy.register(seed).also(handle::addUrlSeed)
+      }
 
   private fun readHttpsTorrent(uri: String): ByteArray {
     var current = URI(uri)
@@ -283,7 +290,7 @@ class JlibtorrentEngine(private val context: Context) {
     )
 
     val handle = findHandle(info)
-    proxyHttpsWebSeeds(handle)
+    val proxiedSeeds = proxyHttpsWebSeeds(handle)
     handle.resume()
 
     val storage = info.files()
@@ -302,6 +309,7 @@ class JlibtorrentEngine(private val context: Context) {
       handle = handle,
       saveDir = saveDir,
       files = files,
+      proxiedSeeds = proxiedSeeds,
     )
     sessions[sessionId] = active
 
@@ -325,6 +333,19 @@ class JlibtorrentEngine(private val context: Context) {
     if (active.handle.isValid()) {
       active.handle.pause()
       manager.remove(active.handle)
+    }
+    active.proxiedSeeds.forEach { webSeedProxy.unregister(it) }
+    // With no torrents left, stop libtorrent (listen sockets, DHT, trackers)
+    // until the next open (#138).
+    synchronized(lifecycleLock) {
+      if (sessions.isEmpty()) {
+        if (started) {
+          manager.stop()
+          started = false
+        }
+        proxy?.close()
+        proxy = null
+      }
     }
   }
 
@@ -396,6 +417,7 @@ class JlibtorrentEngine(private val context: Context) {
       priorities[index] = value
     }
     active.handle.prioritizeFiles(priorities)
+    applyStreamingPieces(active)
   }
 
   // libtorrent writes pieces of a priority-0 file into its hidden .parts
@@ -408,6 +430,26 @@ class JlibtorrentEngine(private val context: Context) {
     val priorities = Priority.array(Priority.IGNORE, active.info.numFiles())
     active.priorities.forEach { (index, value) -> priorities[index] = value }
     active.handle.prioritizeFiles(priorities)
+    applyStreamingPieces(active)
+  }
+
+  // A streamed file sits at Priority.NORMAL only so its pieces are written to
+  // the file, but that priority wants the whole file. File-priority changes
+  // reset piece priorities to their file's, so after each one, drop every
+  // piece still at the streaming level that playback didn't ask for (#138).
+  // Pieces shared with an offline download sit higher and are kept.
+  private fun applyStreamingPieces(active: ActiveTorrentSession) {
+    if (active.priorities.values.none { it == Priority.NORMAL }) return
+    active.wantedPieces.removeAll { active.handle.havePiece(it) }
+    val pieces = active.handle.piecePriorities()
+    for (index in pieces.indices) {
+      if (index in active.wantedPieces) {
+        pieces[index] = Priority.SEVEN
+      } else if (pieces[index] == Priority.NORMAL) {
+        pieces[index] = Priority.IGNORE
+      }
+    }
+    active.handle.prioritizePieces(pieces)
   }
 
   fun prioritizeRange(
@@ -432,6 +474,7 @@ class JlibtorrentEngine(private val context: Context) {
     val last =
       active.info.mapFile(fileIndex, boundedEnd, 1).piece()
 
+    active.wantedPieces.addAll(first..last)
     for (piece in first..last) {
       active.handle.piecePriority(piece, Priority.SEVEN)
       active.handle.setPieceDeadline(
