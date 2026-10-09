@@ -123,6 +123,17 @@ const createSeedCollections = (): ApplicationContainer['collections'] => {
   return {repository, initial: repository.snapshot()};
 };
 
+// The platform's background downloader; iOS joins in D3.
+const createPlatformDownloadEngine = (): DownloadEngine => {
+  const {Platform} = require('react-native') as typeof import('react-native');
+  if (Platform.OS === 'android') {
+    const {NativeAndroidDownloadEngine} =
+      require('../adapters/downloads') as typeof import('../adapters/downloads');
+    return new NativeAndroidDownloadEngine();
+  }
+  return new UnavailableDownloadEngine();
+};
+
 const openDatabase = async (): Promise<SqlDatabase> => {
   const {openOtoDatabase} = await import('../storage/sqlite/openOtoDatabase');
   return openOtoDatabase();
@@ -133,8 +144,7 @@ export const createApplicationContainer = (
 ): ApplicationContainer => {
   const libraryGraph = options.libraryGraph ?? createSeedLibraryGraph();
   const rightsPolicy = new RightsPolicy('TZ', ['internetarchive']);
-  const downloadEngine =
-    options.downloadEngine ?? new UnavailableDownloadEngine();
+  const downloadEngine = options.downloadEngine ?? createPlatformDownloadEngine();
   const playbackAssets =
     options.playbackAssets ??
     new PublicDomainPlaybackAssetRepository();
