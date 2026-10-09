@@ -161,6 +161,35 @@ describe('listening goal', () => {
     expect(screen.getByText('10 of 12 books')).toBeOnTheScreen();
   });
 
+  // A real library starts empty, without the demo's finished books.
+  it('counts every book you finish, whatever the library started with', async () => {
+    const Library = () => {
+      const library = useLibrary();
+      return (
+        <>
+          <Text
+            onPress={() => library.setStatus('atomic-habits', 'listening')}>
+            unfinish
+          </Text>
+          <Text
+            onPress={() => library.setStatus('project-hail-mary', 'finished')}>
+            finish
+          </Text>
+        </>
+      );
+    };
+    await renderScreen(
+      <>
+        <Library />
+        <YouScreen navigation={mockNavigation()} route={route('You')} />
+      </>,
+    );
+    await press(screen.getByText('unfinish'));
+    expect(screen.getByText('8 of 12 books')).toBeOnTheScreen();
+    await press(screen.getByText('finish'));
+    expect(screen.getByText('9 of 12 books')).toBeOnTheScreen();
+  });
+
   it('changes the goal', async () => {
     await renderScreen(
       <YouScreen navigation={mockNavigation()} route={route('You')} />,

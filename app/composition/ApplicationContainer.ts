@@ -3,6 +3,7 @@ import {
 } from '../adapters/catalogue';
 import {
   createSeedLibraryGraph,
+  InMemoryCollectionsRepository,
   ServiceLibraryProviderAdapter,
   ObservableLibraryRepository,
   ObservableProgressRepository,
@@ -10,6 +11,7 @@ import {
   type SeedLibraryGraph,
   type LibraryProviderAdapter,
 } from '../adapters/library';
+import {NetInfoConnectivity} from '../adapters/connectivity';
 import {
   ChapterPlaybackSession,
   LivePlaybackSession,
@@ -17,6 +19,8 @@ import {
   type AudioEngine,
   type ChapterPreloadCoordinator,
 } from '../audio';
+import type {PersonalCollections} from '../domain';
+import type {Connectivity} from '../connectivity';
 import {RightsPolicy} from '../domain/rights';
 import {
   PlaybackQueueResolver,
@@ -26,19 +30,24 @@ import {
 } from '../player';
 import type {
   CatalogueRepository,
+  CollectionsRepository,
   LibraryRepository,
   ProgressRepository,
   RenditionRepository,
 } from '../repositories';
 import {getBook} from '../data/catalogue';
+import {shelvesSeed} from '../data/social';
 import {LibraryService} from '../services/LibraryService';
 import {
+  SqliteCollectionsRepository,
   SqliteLibraryRepository,
+  SqliteMutationOutbox,
   SqliteProgressRepository,
   MigrationRunner,
   migrations,
   type SqlDatabase,
 } from '../storage/sqlite';
+import {InMemoryMutationOutbox, type MutationOutbox} from '../sync';
 import {
   HttpsTransport,
   LocalFileTransport,
@@ -57,6 +66,17 @@ export type ApplicationContainer = {
     library: LibraryService;
   };
   library: LibraryProviderAdapter;
+  // Ratings, your shelves and bookmarks, loaded before the UI mounts.
+  collections: {
+    repository: CollectionsRepository;
+    initial: PersonalCollections;
+  };
+  sync: {
+    // Changes waiting for the server. Nothing sends them until a backend
+    // transport exists (BE-06).
+    outbox: MutationOutbox;
+  };
+  connectivity: Connectivity;
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
@@ -78,6 +98,18 @@ export type ApplicationContainerOptions = {
   createAudioEngine?: () => Promise<AudioEngine>;
   createPreloader?: () => Promise<ChapterPreloadCoordinator | undefined>;
   createSleepTimerController?: () => Promise<PlayerSleepTimerController>;
+  collections?: ApplicationContainer['collections'];
+  outbox?: MutationOutbox;
+  connectivity?: Connectivity;
+};
+
+const createSeedCollections = (): ApplicationContainer['collections'] => {
+  const repository = new InMemoryCollectionsRepository({
+    ratings: {},
+    shelves: shelvesSeed,
+    bookmarks: {},
+  });
+  return {repository, initial: repository.snapshot()};
 };
 
 const openDatabase = async (): Promise<SqlDatabase> => {
@@ -221,6 +253,9 @@ export const createApplicationContainer = (
       library: libraryGraph.service,
     },
     library: libraryGraph.adapter,
+    collections: options.collections ?? createSeedCollections(),
+    sync: {outbox: options.outbox ?? new InMemoryMutationOutbox()},
+    connectivity: options.connectivity ?? new NetInfoConnectivity(),
     audio: {
       createEngine,
       createPersistentSession,
@@ -246,6 +281,11 @@ export const createPersistentApplicationContainer = async (
   const seed = createSeedLibraryGraph();
   const storedLibrary = new SqliteLibraryRepository(database);
   const storedProgress = new SqliteProgressRepository(database);
+  const storedCollections = new SqliteCollectionsRepository(database);
+  const collections = {
+    repository: storedCollections,
+    initial: await storedCollections.load(),
+  };
   const library = new ObservableLibraryRepository(await storedLibrary.list());
   const progress = new ObservableProgressRepository();
   for (const entry of library.listSync()) {
@@ -293,6 +333,8 @@ export const createPersistentApplicationContainer = async (
     {
       libraryGraph: {...seed, library, progress, service, adapter},
       databaseFactory: async () => database,
+      collections,
+      outbox: new SqliteMutationOutbox(database),
     },
   );
   container.repositories.library = durableLibrary;

@@ -20,6 +20,9 @@ export const SKIP_OPTIONS: SkipIntervals[] = [
   {back: 30, forward: 30},
 ];
 
+// Playback speeds in the order the player cycles through them.
+export const SPEED_OPTIONS = [1, 1.25, 1.5, 2, 0.75];
+
 export const NOTIFICATION_LABELS: Record<Notifications, string> = {
   clubs: 'Club sessions',
   all: 'Everything',
@@ -32,6 +35,7 @@ export type Settings = {
   spoilerSafe: boolean;
   notifications: Notifications;
   skip: SkipIntervals;
+  speed: number;
   // Books to finish this year.
   goal: number;
 };
@@ -44,6 +48,7 @@ const defaults: Settings = {
   spoilerSafe: true,
   notifications: 'clubs',
   skip: {back: 15, forward: 30},
+  speed: 1,
   goal: 12,
 };
 
@@ -54,6 +59,9 @@ const valid = (key: string, value: unknown) => {
   }
   if (key === 'goal') {
     return GOAL_OPTIONS.includes(value as number);
+  }
+  if (key === 'speed') {
+    return SPEED_OPTIONS.includes(value as number);
   }
   if (key === 'skip') {
     return SKIP_OPTIONS.some(

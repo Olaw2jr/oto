@@ -8,6 +8,7 @@ import {
 } from '../composition';
 import {ThemeProvider} from '../theme/ThemeProvider';
 import {LibraryProvider} from './library';
+import {ConnectivityProvider} from './network';
 import {PlayerProvider} from './player';
 import {SessionProvider} from './session';
 import {SettingsProvider} from './settings';
@@ -70,18 +71,22 @@ export const AppProviders = ({
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <SessionProvider>
-          <SettingsProvider>
-            <LibraryProvider adapter={container.library}>
-              <PlayerProvider
-                createController={container.audio.createPlayerController}>
-                <SocialProvider>
-                  <TasteProvider>{children}</TasteProvider>
-                </SocialProvider>
-              </PlayerProvider>
-            </LibraryProvider>
-          </SettingsProvider>
-        </SessionProvider>
+        <ConnectivityProvider connectivity={container.connectivity}>
+          <SessionProvider>
+            <SettingsProvider>
+              <LibraryProvider
+                adapter={container.library}
+                collections={container.collections}>
+                <PlayerProvider
+                  createController={container.audio.createPlayerController}>
+                  <SocialProvider>
+                    <TasteProvider>{children}</TasteProvider>
+                  </SocialProvider>
+                </PlayerProvider>
+              </LibraryProvider>
+            </SettingsProvider>
+          </SessionProvider>
+        </ConnectivityProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

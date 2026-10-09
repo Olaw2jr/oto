@@ -11,15 +11,16 @@ import React, {
 
 import {CatalogueBook, getBook} from '../data/catalogue';
 import {CURRENT_BOOK} from '../data/social';
+import {PlaybackUnavailableError} from '../player/PlaybackQueueResolver';
 import type {
   PlayerController,
   PlayerControllerSnapshot,
   PlayerSleepTimer,
 } from '../player';
 import {useLibrary} from './library';
-import {useSettings} from './settings';
+import {SPEED_OPTIONS, useSettings} from './settings';
 
-export const RATES = [1, 1.25, 1.5, 2, 0.75];
+export const RATES = SPEED_OPTIONS;
 
 export type SleepTimer = PlayerSleepTimer;
 
@@ -35,7 +36,15 @@ type PlayerValue = {
   cycleRate: () => void;
   sleepTimer: SleepTimer;
   setSleepTimer: (timer: SleepTimer) => void;
+  // Why the last player action failed, in words for the listener.
+  error: string | null;
+  dismissError: () => void;
 };
+
+export const UNAVAILABLE_MESSAGE =
+  "This book isn't available to listen to yet.";
+export const FAILED_MESSAGE =
+  "Couldn't start playback. Check your connection and try again.";
 
 const PlayerContext = createContext<PlayerValue | null>(null);
 
@@ -57,7 +66,7 @@ export const PlayerProvider = ({
   createController?: () => Promise<PlayerController>;
 }) => {
   const library = useLibrary();
-  const {skip: skipIntervals} = useSettings();
+  const {skip: skipIntervals, speed, set: setSetting} = useSettings();
   const controllerRef = useRef<PlayerController | null>(
     providedController ?? null,
   );
@@ -129,9 +138,12 @@ export const PlayerProvider = ({
         backwardSec: skipIntervals.back,
         forwardSec: skipIntervals.forward,
       });
+      if (active.getSnapshot().rate !== speed) {
+        await active.setRate(speed);
+      }
       return active;
     },
-    [ensureController, skipIntervals.back, skipIntervals.forward],
+    [ensureController, skipIntervals.back, skipIntervals.forward, speed],
   );
 
   useEffect(() => {
@@ -146,10 +158,29 @@ export const PlayerProvider = ({
       .catch(() => {});
   }, [controller, skipIntervals.back, skipIntervals.forward]);
 
+  // The saved speed outlives the session; apply it once a controller exists.
+  useEffect(() => {
+    if (!controller || controller.getSnapshot().rate === speed) {
+      return;
+    }
+    void controller.setRate(speed).catch(() => {});
+  }, [controller, speed]);
+
+  const [error, setError] = useState<string | null>(null);
+  const dismissError = useCallback(() => setError(null), []);
+
   const run = useCallback((operation: () => Promise<void>) => {
-    void operation().catch(error => {
-      console.warn('Player operation failed', error);
-    });
+    void operation().then(
+      () => setError(null),
+      failure => {
+        console.warn('Player operation failed', failure);
+        setError(
+          failure instanceof PlaybackUnavailableError
+            ? UNAVAILABLE_MESSAGE
+            : FAILED_MESSAGE,
+        );
+      },
+    );
   }, []);
 
   const play = useCallback(
@@ -200,9 +231,10 @@ export const PlayerProvider = ({
         const currentRate = active.getSnapshot().rate;
         const next =
           RATES[(RATES.indexOf(currentRate) + 1) % RATES.length];
+        setSetting('speed', next);
         await active.setRate(next);
       }),
-    [prepare, run, selectedBookId],
+    [prepare, run, selectedBookId, setSetting],
   );
 
   const setSleepTimer = useCallback(
@@ -233,6 +265,8 @@ export const PlayerProvider = ({
       cycleRate,
       sleepTimer: snapshot.sleepTimer,
       setSleepTimer,
+      error,
+      dismissError,
     }),
     [
       book,
@@ -246,6 +280,8 @@ export const PlayerProvider = ({
       seekTo,
       cycleRate,
       setSleepTimer,
+      error,
+      dismissError,
     ],
   );
 

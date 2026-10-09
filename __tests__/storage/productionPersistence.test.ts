@@ -1,44 +1,9 @@
-/// <reference types="node" />
-import {DatabaseSync} from 'node:sqlite';
 import {mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createPersistentApplicationContainer} from '../../app/composition/ApplicationContainer';
-import {
-  MigrationRunner,
-  migrations,
-  OpSqliteDatabase,
-} from '../../app/storage/sqlite';
-import type {OpSqliteClient} from '../../app/storage/sqlite/OpSqliteDatabase';
-
-// Exercise the driver boundary with real SQLite, including file reopen and DDL
-// rollback, instead of reproducing SQLite behavior in a fake SQL parser.
-const open = (filename: string) => {
-  const native = new DatabaseSync(filename);
-  const execute: OpSqliteClient['execute'] = async (sql, params = []) => {
-    const statement = native.prepare(sql);
-    return {
-      rows: statement.all(...(params as (string | number | null)[])) as Record<
-        string,
-        string | number | null
-      >[],
-    };
-  };
-  const db = new OpSqliteDatabase({
-    execute,
-    transaction: async work => {
-      native.exec('BEGIN');
-      try {
-        await work({execute});
-        native.exec('COMMIT');
-      } catch (error) {
-        native.exec('ROLLBACK');
-        throw error;
-      }
-    },
-  });
-  return {db, close: () => native.close()};
-};
+import {MigrationRunner, migrations} from '../../app/storage/sqlite';
+import {openNodeSqlite as open} from './sqlite-test-utils';
 
 describe('production persistence against SQLite', () => {
   let directory: string;
@@ -84,6 +49,81 @@ describe('production persistence against SQLite', () => {
     }
   });
 
+  it('restores ratings, shelves and bookmarks after reopening the database', async () => {
+    const filename = join(directory, 'collections.sqlite');
+    const first = open(filename);
+    const app = await createPersistentApplicationContainer(
+      async () => first.db,
+    );
+    expect(app.collections.initial).toEqual({
+      ratings: {},
+      shelves: [],
+      bookmarks: {},
+    });
+    const {repository} = app.collections;
+    await repository.saveRating('starry-messenger', 4.5);
+    await repository.saveRating('greenlights', 3);
+    await repository.saveRating('greenlights', null);
+    await repository.saveShelf({
+      id: 'road-trips',
+      name: 'Road trips',
+      bookIds: ['greenlights', 'starry-messenger'],
+    });
+    await repository.saveShelf({
+      id: 'road-trips',
+      name: 'Road trips',
+      bookIds: ['starry-messenger'],
+    });
+    await repository.addBookmark('starry-messenger', 90);
+    await repository.addBookmark('starry-messenger', 30);
+    await repository.addBookmark('starry-messenger', 90);
+    first.close();
+
+    const second = open(filename);
+    try {
+      const restored = await createPersistentApplicationContainer(
+        async () => second.db,
+      );
+      expect(restored.collections.initial).toEqual({
+        ratings: {'starry-messenger': 4.5},
+        shelves: [
+          {id: 'road-trips', name: 'Road trips', bookIds: ['starry-messenger']},
+        ],
+        bookmarks: {'starry-messenger': [30, 90]},
+      });
+    } finally {
+      second.close();
+    }
+  });
+
+  it('keeps changes waiting to sync after reopening the database', async () => {
+    const filename = join(directory, 'outbox.sqlite');
+    const first = open(filename);
+    const app = await createPersistentApplicationContainer(
+      async () => first.db,
+    );
+    await app.sync.outbox.enqueue({
+      id: 'm1',
+      kind: 'library.status',
+      entityId: 'starry-messenger',
+      payload: {status: 'want'},
+      createdAt: '2026-10-09T10:00:00.000Z',
+    });
+    first.close();
+
+    const second = open(filename);
+    try {
+      const restored = await createPersistentApplicationContainer(
+        async () => second.db,
+      );
+      expect(
+        (await restored.sync.outbox.listReady(new Date())).map(m => m.id),
+      ).toEqual(['m1']);
+    } finally {
+      second.close();
+    }
+  });
+
   it('preserves legacy data and unrelated tables when upgrading and reopening', async () => {
     const connection = open(join(directory, 'legacy.sqlite'));
     try {
@@ -123,7 +163,7 @@ describe('production persistence against SQLite', () => {
     try {
       await new MigrationRunner(connection.db, migrations).migrate();
       const bad = {
-        version: 3,
+        version: migrations.length + 1,
         name: 'bad',
         sql: [
           'CREATE TABLE should_rollback (id TEXT)',
@@ -140,14 +180,14 @@ describe('production persistence against SQLite', () => {
       ).toEqual([]);
       expect(
         await connection.db.query('SELECT version FROM schema_migrations'),
-      ).toHaveLength(2);
+      ).toHaveLength(migrations.length);
       await new MigrationRunner(connection.db, [
         ...migrations,
         {...bad, sql: bad.sql.slice(0, 1)},
       ]).migrate();
       expect(
         await connection.db.query('SELECT version FROM schema_migrations'),
-      ).toHaveLength(3);
+      ).toHaveLength(migrations.length + 1);
     } finally {
       connection.close();
     }

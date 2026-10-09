@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
 import {act, fireEvent, screen, within} from '@testing-library/react-native';
-import NetInfo from '@react-native-community/netinfo';
+import {FakeConnectivity} from '../../app/connectivity';
 
 import FollowingScreen from '../../app/features/following/FollowingScreen';
 import {mockNavigation, renderScreen} from '../test-utils';
@@ -10,13 +10,14 @@ const press = (el: any) =>
   act(async () => {
     fireEvent.press(el);
   });
-const renderFollowing = async () => {
+const renderFollowing = async (connectivity?: FakeConnectivity) => {
   const navigation = mockNavigation();
   await renderScreen(
     <FollowingScreen
       navigation={navigation}
       route={{key: 'F', name: 'Following'} as any}
     />,
+    {connectivity},
   );
   return navigation;
 };
@@ -97,38 +98,45 @@ describe('update menu', () => {
 });
 
 describe('Following offline', () => {
+  let connectivity: FakeConnectivity;
   beforeEach(() => {
-    (NetInfo.useNetInfo as jest.Mock).mockReturnValue({
-      type: 'none',
-      isConnected: false,
-      isInternetReachable: false,
-    });
+    connectivity = new FakeConnectivity({online: false});
   });
-  afterEach(() => {
-    (NetInfo.useNetInfo as jest.Mock).mockReturnValue({
-      type: 'wifi',
-      isConnected: true,
-      isInternetReachable: true,
-    });
-  });
+  const renderOffline = () => renderFollowing(connectivity);
 
-  it('explains it is offline and offers what still plays', async () => {
-    const navigation = await renderFollowing();
+  it('explains it is offline and offers your current book', async () => {
+    const navigation = await renderOffline();
     expect(screen.getByText('You are offline.')).toBeOnTheScreen();
     expect(screen.getByText("Can't reach your friends.")).toBeOnTheScreen();
     expect(screen.queryByTestId('update-Mika T.')).toBeNull();
 
-    expect(screen.getByText('Available offline')).toBeOnTheScreen();
+    expect(screen.getByText('Continue listening')).toBeOnTheScreen();
     await press(
       screen.getByRole('button', {name: /^Play Where the Crawdads Sing/}),
     );
     expect(navigation.navigate).toHaveBeenCalledWith('Player');
   });
 
-  it('tries again', async () => {
+  // oto has no downloads or update queue yet, so it must not promise them.
+  it('promises nothing oto cannot do offline', async () => {
     await renderFollowing();
+    expect(screen.queryByText(/download/i)).toBeNull();
+    expect(screen.queryByText(/will post/i)).toBeNull();
+    expect(screen.queryByText('Available offline')).toBeNull();
+  });
+
+  it('tries again', async () => {
+    const refresh = jest.spyOn(connectivity, 'refresh');
+    await renderOffline();
     await press(screen.getByRole('button', {name: 'Try again'}));
-    expect(NetInfo.refresh).toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalled();
+  });
+
+  it('shows the feed again when the connection comes back', async () => {
+    await renderOffline();
+    await act(async () => connectivity.set({online: true}));
+    expect(screen.queryByText('You are offline.')).toBeNull();
+    expect(screen.getAllByTestId('update-Mika T.').length).toBeGreaterThan(0);
   });
 });
 

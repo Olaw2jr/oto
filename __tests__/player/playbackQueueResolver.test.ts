@@ -8,6 +8,7 @@ import type {
 import {RightsPolicy} from '../../app/domain/rights';
 import {
   PlaybackQueueResolver,
+  PlaybackUnavailableError,
   type PlaybackAssetBinding,
   type PlaybackAssetRepository,
 } from '../../app/player/PlaybackQueueResolver';
@@ -156,6 +157,45 @@ describe('PlaybackQueueResolver', () => {
 
     await expect(resolver.resolve(work.id)).rejects.toThrow(
       'Missing media asset for chapter chapter-2',
+    );
+  });
+
+  it('reports a book without rights-cleared audio as unavailable', async () => {
+    const resolver = new PlaybackQueueResolver(
+      catalogue,
+      {
+        get: async () => null,
+        listForWork: async () => [
+          {...rendition, rights: {...rights, status: 'unknown'}},
+        ],
+      },
+      assetRepository,
+      new SourceResolver(
+        new TransportRegistry([new FakeContentTransport('https')]),
+        new RightsPolicy('TZ', ['internetarchive']),
+        {locate: async () => null},
+      ),
+    );
+
+    await expect(resolver.resolve(work.id)).rejects.toBeInstanceOf(
+      PlaybackUnavailableError,
+    );
+  });
+
+  it('reports a missing chapter asset as unavailable', async () => {
+    const resolver = new PlaybackQueueResolver(
+      catalogue,
+      renditions,
+      {listForRendition: async () => assets.slice(0, 1)},
+      new SourceResolver(
+        new TransportRegistry([new FakeContentTransport('https')]),
+        new RightsPolicy('TZ', ['internetarchive']),
+        {locate: async () => null},
+      ),
+    );
+
+    await expect(resolver.resolve(work.id)).rejects.toBeInstanceOf(
+      PlaybackUnavailableError,
     );
   });
 });

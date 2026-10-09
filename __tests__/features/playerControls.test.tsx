@@ -5,8 +5,11 @@ import {
   screen,
 } from '@testing-library/react-native';
 
+import {createApplicationContainer} from '../../app/composition';
 import PlayerScreen from '../../app/features/player/PlayerScreen';
-import {mockNavigation, renderScreen} from '../test-utils';
+import {PlaybackUnavailableError} from '../../app/player';
+import {AppProviders} from '../../app/state/AppProviders';
+import {mockNavigation, renderAsync, renderScreen} from '../test-utils';
 
 const press = (el: any) =>
   act(async () => {
@@ -88,5 +91,30 @@ describe('PlayerScreen controls', () => {
     await press(screen.getByRole('button', {name: 'More'}));
     await press(screen.getByRole('button', {name: 'Close'}));
     expect(screen.queryByRole('button', {name: 'View book'})).toBeNull();
+  });
+});
+
+describe('PlayerScreen playback errors', () => {
+  beforeEach(() => jest.spyOn(console, 'warn').mockImplementation(() => {}));
+  afterEach(() => jest.restoreAllMocks());
+
+  it('explains why a book will not play and lets you dismiss it', async () => {
+    const container = createApplicationContainer({
+      createPlayerController: () =>
+        Promise.reject(new PlaybackUnavailableError('no rendition')),
+    });
+    await renderAsync(
+      <AppProviders container={container}>
+        <PlayerScreen navigation={mockNavigation()} route={route} />
+      </AppProviders>,
+    );
+    await press(screen.getByRole('button', {name: 'Play'}));
+    expect(
+      screen.getByText("This book isn't available to listen to yet."),
+    ).toBeOnTheScreen();
+    await press(screen.getByRole('button', {name: 'Dismiss'}));
+    expect(
+      screen.queryByText("This book isn't available to listen to yet."),
+    ).toBeNull();
   });
 });

@@ -8,7 +8,7 @@ import {chapterAt} from '../../data/catalogue';
 import {formatRemaining} from '../../data/format';
 import {openPerson} from '../../navigator/openPerson';
 import {TabScreenProps} from '../../navigator/types';
-import {retryConnection, useOnline} from '../../state/network';
+import {useOnline, useRetryConnection} from '../../state/network';
 import {usePlayer} from '../../state/player';
 import {useSocial} from '../../state/social';
 import {useFirstLoad} from '../../state/firstLoad';
@@ -26,6 +26,7 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
   const [filter, setFilter] = useState<Filter>('Friends');
   const [reported, setReported] = useState(false);
   const online = useOnline();
+  const retryConnection = useRetryConnection();
   const player = usePlayer();
 
   const items = feed.filter(item =>
@@ -57,7 +58,9 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
             <Txt variant="caption" color="ink" weight="semibold">
               You are offline.
             </Txt>{' '}
-            <Txt variant="caption">Downloaded books still play.</Txt>
+            <Txt variant="caption">
+              Friends' updates will be back when you reconnect.
+            </Txt>
           </Txt>
         </View>
 
@@ -72,8 +75,7 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
             Can't reach your friends.
           </Txt>
           <Txt color="graphite" align="center" style={styles.offlineBody}>
-            Check your connection and try again. Your updates will post as soon
-            as you are back online.
+            Check your connection and try again.
           </Txt>
           <View style={styles.retry}>
             <Button label="Try again" size="small" onPress={retryConnection} />
@@ -81,7 +83,7 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
         </View>
 
         <Txt variant="label" style={styles.availableLabel}>
-          Available offline
+          Continue listening
         </Txt>
         <Pressable
           accessibilityRole="button"

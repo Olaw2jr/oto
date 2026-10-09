@@ -4,17 +4,42 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
 
 import {
   createSeedLibraryProviderAdapter,
+  InMemoryCollectionsRepository,
   type LibraryProviderAdapter,
 } from '../adapters/library';
-import {CustomShelf, shelvesSeed, Status} from '../data/social';
+import type {PersonalCollections, ShelfRecord} from '../domain';
+import type {CollectionsRepository} from '../repositories';
+import {shelvesSeed, Status} from '../data/social';
 
-export type Shelf = CustomShelf & {custom: boolean};
+export type Shelf = ShelfRecord & {custom: boolean};
+
+// Where ratings, your shelves and bookmarks are kept, and what they held
+// when the app opened.
+export type LibraryCollections = {
+  repository: CollectionsRepository;
+  initial: PersonalCollections;
+};
+
+const createSeedCollections = (): LibraryCollections => {
+  const repository = new InMemoryCollectionsRepository({
+    ratings: {},
+    shelves: shelvesSeed,
+    bookmarks: {},
+  });
+  return {repository, initial: repository.snapshot()};
+};
+
+// Saving happens in the background; the screen already shows the change.
+const persist = (write: Promise<void>) => {
+  write.catch(error => console.warn('Could not save to your library', error));
+};
 
 type LibraryValue = {
   status: (bookId: string) => Status | undefined;
@@ -45,9 +70,11 @@ const LibraryContext = createContext<LibraryValue | null>(null);
 export const LibraryProvider = ({
   children,
   adapter: providedAdapter,
+  collections: providedCollections,
 }: {
   children: ReactNode;
   adapter?: LibraryProviderAdapter;
+  collections?: LibraryCollections;
 }) => {
   const [adapter] = useState(
     () => providedAdapter ?? createSeedLibraryProviderAdapter(),
@@ -57,67 +84,100 @@ export const LibraryProvider = ({
     adapter.getSnapshot,
     adapter.getSnapshot,
   );
-  const [ratings, setRatings] = useState<Record<string, number>>({});
-  const [custom, setCustom] = useState<CustomShelf[]>(shelvesSeed);
-  const [marks, setMarks] = useState<Record<string, number[]>>({});
+  const [{repository, initial}] = useState(
+    () => providedCollections ?? createSeedCollections(),
+  );
+  const [ratings, setRatings] = useState<Record<string, number>>(
+    initial.ratings,
+  );
+  const [custom, setCustom] = useState<ShelfRecord[]>(initial.shelves);
+  const [marks, setMarks] = useState<Record<string, number[]>>(
+    initial.bookmarks,
+  );
+  // The latest shelves, so a change can be saved as well as shown.
+  const customRef = useRef(custom);
 
-  const addBookmark = useCallback((bookId: string, at: number) => {
-    const second = Math.floor(at);
-    setMarks(current => {
-      const list = current[bookId] ?? [];
-      return list.includes(second)
-        ? current
-        : {...current, [bookId]: [...list, second].sort((a, b) => a - b)};
-    });
-  }, []);
+  const saveShelves = useCallback(
+    (next: ShelfRecord[], changed: ShelfRecord) => {
+      customRef.current = next;
+      setCustom(next);
+      persist(repository.saveShelf(changed));
+    },
+    [repository],
+  );
+
+  const addBookmark = useCallback(
+    (bookId: string, at: number) => {
+      const second = Math.floor(at);
+      setMarks(current => {
+        const list = current[bookId] ?? [];
+        return list.includes(second)
+          ? current
+          : {...current, [bookId]: [...list, second].sort((a, b) => a - b)};
+      });
+      persist(repository.addBookmark(bookId, second));
+    },
+    [repository],
+  );
 
   const createShelf = useCallback(
     (name: string, bookId?: string) => {
+      const current = customRef.current;
       const base =
         name
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)/g, '') || 'shelf';
-      const taken = new Set(custom.map(s => s.id).concat(['want', 'finished']));
+      const taken = new Set(
+        current.map(s => s.id).concat(['want', 'finished']),
+      );
       let id = base;
       for (let n = 2; taken.has(id); n++) {
         id = `${base}-${n}`;
       }
-      setCustom(current => [
-        ...current,
-        {id, name: name.trim(), bookIds: bookId ? [bookId] : []},
-      ]);
+      const shelf = {id, name: name.trim(), bookIds: bookId ? [bookId] : []};
+      saveShelves([...current, shelf], shelf);
       return id;
     },
-    [custom],
+    [saveShelves],
   );
 
-  const toggleOnShelf = useCallback((shelfId: string, bookId: string) => {
-    setCustom(current =>
-      current.map(s =>
-        s.id !== shelfId
-          ? s
-          : {
-              ...s,
-              bookIds: s.bookIds.includes(bookId)
-                ? s.bookIds.filter(b => b !== bookId)
-                : [...s.bookIds, bookId],
-            },
-      ),
-    );
-  }, []);
-
-  const setRating = useCallback((bookId: string, stars: number | undefined) => {
-    setRatings(current => {
-      const next = {...current};
-      if (stars === undefined) {
-        delete next[bookId];
-      } else {
-        next[bookId] = stars;
+  const toggleOnShelf = useCallback(
+    (shelfId: string, bookId: string) => {
+      const current = customRef.current;
+      const shelf = current.find(s => s.id === shelfId);
+      if (!shelf) {
+        return;
       }
-      return next;
-    });
-  }, []);
+      const changed = {
+        ...shelf,
+        bookIds: shelf.bookIds.includes(bookId)
+          ? shelf.bookIds.filter(b => b !== bookId)
+          : [...shelf.bookIds, bookId],
+      };
+      saveShelves(
+        current.map(s => (s.id === shelfId ? changed : s)),
+        changed,
+      );
+    },
+    [saveShelves],
+  );
+
+  const setRating = useCallback(
+    (bookId: string, stars: number | undefined) => {
+      setRatings(current => {
+        const next = {...current};
+        if (stars === undefined) {
+          delete next[bookId];
+        } else {
+          next[bookId] = stars;
+        }
+        return next;
+      });
+      persist(repository.saveRating(bookId, stars ?? null));
+    },
+    [repository],
+  );
 
   // The external-store revision is an invalidation signal for adapter-derived shelves.
   /* eslint-disable react-hooks/exhaustive-deps */

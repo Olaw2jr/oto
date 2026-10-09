@@ -4,6 +4,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 import BookDetailsScreen from '../features/book/BookDetailsScreen';
 import BookScreen from '../features/book/BookScreen';
+import ReviewsScreen from '../features/book/ReviewsScreen';
 import MoodScreen from '../features/discover/MoodScreen';
 import CatalogScreen from '../features/library/CatalogScreen';
 import LibraryScreen from '../features/library/LibraryScreen';
@@ -65,6 +66,7 @@ const RootNavigator = () => {
           <Stack.Screen name="Tabs" component={Tabs} />
           <Stack.Screen name="Book" component={BookScreen} />
           <Stack.Screen name="BookDetails" component={BookDetailsScreen} />
+          <Stack.Screen name="Reviews" component={ReviewsScreen} />
           <Stack.Screen
             name="Player"
             component={PlayerScreen}

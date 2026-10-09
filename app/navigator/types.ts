@@ -23,6 +23,7 @@ export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   Book: {bookId: string};
   BookDetails: {bookId: string};
+  Reviews: {bookId: string};
   Player: undefined;
   Club: {clubId: string};
   UpdateCompose: {bookId?: string} | undefined;

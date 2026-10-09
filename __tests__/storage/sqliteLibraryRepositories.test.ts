@@ -1,6 +1,7 @@
 import type {LibraryEntry, ListeningProgress} from '../../app/domain';
 import {
   FakeSqlDatabase,
+  SqliteCollectionsRepository,
   SqliteLibraryRepository,
   SqliteProgressRepository,
 } from '../../app/storage/sqlite';
@@ -89,6 +90,27 @@ describe('SQLite library repositories', () => {
       75,
       120,
       now(),
+    ]);
+  });
+});
+
+describe('SQLite collections repository', () => {
+  it('replaces a shelf and its books in one transaction', async () => {
+    const db = new FakeSqlDatabase();
+    const repository = new SqliteCollectionsRepository(db, now);
+
+    await repository.saveShelf({
+      id: 'road-trips',
+      name: 'Road trips',
+      bookIds: ['book-1', 'book-2'],
+    });
+
+    expect(db.transactionCount).toBe(1);
+    expect(db.transactionExecuted.map(e => e.params)).toEqual([
+      ['road-trips', 'Road trips', now(), now()],
+      ['road-trips'],
+      ['road-trips', 'book-1', 0, now()],
+      ['road-trips', 'book-2', 1, now()],
     ]);
   });
 });
