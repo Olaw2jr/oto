@@ -118,14 +118,16 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
 
       <Card style={styles.group}>
         <Row last>
-          <View style={styles.profile}>
+          <View
+            accessible
+            accessibilityLabel={`Signed in as ${me.name}, @${me.handle}`}
+            style={styles.profile}>
             <Avatar name={me.name} size={44} />
             <View style={styles.profileText}>
               <Txt variant="strong">{me.name}</Txt>
               <Txt variant="caption">{`@${me.handle}`}</Txt>
             </View>
           </View>
-          <Icon name="forward" size={18} color="graphite" />
         </Row>
       </Card>
 
