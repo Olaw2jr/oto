@@ -142,9 +142,9 @@ export const LibraryProvider = ({
         }
         return next;
       });
-      persist(repository.removeBookmark(bookId, second));
+      persist(repository.removeBookmark(bookId, second), telemetry);
     },
-    [repository],
+    [repository, telemetry],
   );
 
   const createShelf = useCallback(
@@ -211,9 +211,9 @@ export const LibraryProvider = ({
       const next = customRef.current.filter(s => s.id !== shelfId);
       customRef.current = next;
       setCustom(next);
-      persist(repository.deleteShelf(shelfId));
+      persist(repository.deleteShelf(shelfId), telemetry);
     },
-    [repository],
+    [repository, telemetry],
   );
 
   const setRating = useCallback(
