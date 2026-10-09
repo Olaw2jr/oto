@@ -32,6 +32,12 @@ type SocialValue = {
   hideUpdate: (itemId: string) => void;
   reportUpdate: (itemId: string) => void;
   mute: (personId: string) => void;
+  // People you muted, to unmute from Settings.
+  mutedPeople: string[];
+  unmute: (personId: string) => void;
+  // Updates you hid or reported, to show again from Settings.
+  hiddenCount: number;
+  unhideAll: () => void;
   liked: (id: string) => boolean;
   likeCount: (id: string, base: number) => number;
   toggleLike: (id: string) => void;
@@ -159,6 +165,15 @@ export const SocialProvider = ({children}: {children: ReactNode}) => {
       // Reports go nowhere yet (no backend); the update is hidden for you.
       reportUpdate: id => setHidden(s => new Set(s).add(id)),
       mute: personId => setMuted(s => new Set(s).add(personId)),
+      mutedPeople: [...muted],
+      unmute: personId =>
+        setMuted(s => {
+          const next = new Set(s);
+          next.delete(personId);
+          return next;
+        }),
+      hiddenCount: hidden.size,
+      unhideAll: () => setHidden(new Set()),
       liked: id => likes.has(id),
       likeCount: (id, base) => base + (likes.has(id) ? 1 : 0),
       toggleLike: id => setLikes(s => toggle(s, id)),
