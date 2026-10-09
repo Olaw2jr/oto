@@ -183,6 +183,13 @@ describe('ClubScreen', () => {
     expect(screen.getByText('Chapter 14 · 12 going')).toBeOnTheScreen();
   });
 
+  // Replies have no screen yet, so the count mustn't look like an action.
+  it('shows reply counts as plain text', async () => {
+    await setup();
+    expect(screen.queryByText(/^Reply · /)).toBeNull();
+    expect(screen.getAllByText(/^\d+ repl(y|ies)$/).length).toBeGreaterThan(0);
+  });
+
   it('RSVPs and leaves/joins', async () => {
     await setup();
     await press(screen.getByRole('button', {name: 'RSVP'}));

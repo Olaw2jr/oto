@@ -94,6 +94,14 @@ describe('SettingsScreen', () => {
     });
   });
 
+  // There's no profile editor yet, so the summary isn't presented as a link.
+  it('shows your profile as a summary, not a link', async () => {
+    await setup();
+    const summary = screen.getByLabelText(/^Signed in as /);
+    expect(summary.props.accessibilityRole).toBeUndefined();
+    expect(summary.props.onPress).toBeUndefined();
+  });
+
   it('cycles the default playback speed', async () => {
     await setup();
     await press(screen.getByRole('button', {name: 'Playback speed, 1×'}));
