@@ -87,6 +87,13 @@ export class SqliteCollectionsRepository implements CollectionsRepository {
     });
   }
 
+  async removeBookmark(bookId: BookId, atSec: number): Promise<void> {
+    await this.db.execute(
+      'DELETE FROM bookmarks WHERE book_id = ? AND at_sec = ?',
+      [bookId, Math.floor(atSec)],
+    );
+  }
+
   async addBookmark(bookId: BookId, atSec: number): Promise<void> {
     await this.db.execute(
       `INSERT INTO bookmarks(book_id, at_sec, created_at)

@@ -63,6 +63,7 @@ type LibraryValue = {
   // Moments you bookmarked in each book, in seconds, earliest first.
   bookmarks: (bookId: string) => number[];
   addBookmark: (bookId: string, at: number) => void;
+  removeBookmark: (bookId: string, at: number) => void;
 };
 
 const LibraryContext = createContext<LibraryValue | null>(null);
@@ -116,6 +117,24 @@ export const LibraryProvider = ({
           : {...current, [bookId]: [...list, second].sort((a, b) => a - b)};
       });
       persist(repository.addBookmark(bookId, second));
+    },
+    [repository],
+  );
+
+  const removeBookmark = useCallback(
+    (bookId: string, at: number) => {
+      const second = Math.floor(at);
+      setMarks(current => {
+        const list = (current[bookId] ?? []).filter(m => m !== second);
+        const next = {...current};
+        if (list.length) {
+          next[bookId] = list;
+        } else {
+          delete next[bookId];
+        }
+        return next;
+      });
+      persist(repository.removeBookmark(bookId, second));
     },
     [repository],
   );
@@ -214,6 +233,7 @@ export const LibraryProvider = ({
       toggleOnShelf,
       bookmarks: id => marks[id] ?? [],
       addBookmark,
+      removeBookmark,
     };
   }, [
     adapter,
@@ -224,6 +244,7 @@ export const LibraryProvider = ({
     toggleOnShelf,
     marks,
     addBookmark,
+    removeBookmark,
     revision,
   ]);
   /* eslint-enable react-hooks/exhaustive-deps */

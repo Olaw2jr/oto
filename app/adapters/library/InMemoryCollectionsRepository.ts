@@ -52,6 +52,18 @@ export class InMemoryCollectionsRepository implements CollectionsRepository {
     };
   }
 
+  async removeBookmark(bookId: BookId, atSec: number): Promise<void> {
+    const second = Math.floor(atSec);
+    const list = (this.state.bookmarks[bookId] ?? []).filter(m => m !== second);
+    const bookmarks = {...this.state.bookmarks};
+    if (list.length) {
+      bookmarks[bookId] = list;
+    } else {
+      delete bookmarks[bookId];
+    }
+    this.state = {...this.state, bookmarks};
+  }
+
   async addBookmark(bookId: BookId, atSec: number): Promise<void> {
     const second = Math.floor(atSec);
     const list = this.state.bookmarks[bookId] ?? [];

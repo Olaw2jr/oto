@@ -372,16 +372,24 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
         onClose={() => setSheet(null)}>
         {library.bookmarks(book.id).length ? (
           library.bookmarks(book.id).map(at => (
-            <SheetRow
-              key={at}
-              icon="play"
-              label={`${formatClock(at)} · Chapter ${chapterAt(book, at)}`}
-              accessibilityLabel={`Play from ${formatClock(at)}`}
-              onPress={() => {
-                player.seekTo(at);
-                setSheet(null);
-              }}
-            />
+            <View key={at} style={styles.bookmarkRow}>
+              <View style={styles.bookmarkPlay}>
+                <SheetRow
+                  icon="play"
+                  label={`${formatClock(at)} · Chapter ${chapterAt(book, at)}`}
+                  accessibilityLabel={`Play from ${formatClock(at)}`}
+                  onPress={() => {
+                    player.seekTo(at);
+                    setSheet(null);
+                  }}
+                />
+              </View>
+              <IconButton
+                icon="close"
+                label={`Delete bookmark at ${formatClock(at)}`}
+                onPress={() => library.removeBookmark(book.id, at)}
+              />
+            </View>
           ))
         ) : (
           <Txt color="graphite" style={styles.noBookmarks}>
@@ -410,6 +418,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   noBookmarks: {marginVertical: 16},
+  bookmarkRow: {flexDirection: 'row', alignItems: 'center'},
+  bookmarkPlay: {flex: 1},
   content: {paddingHorizontal: 22},
   bar: {
     flexDirection: 'row',
