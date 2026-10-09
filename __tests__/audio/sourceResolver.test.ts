@@ -47,7 +47,22 @@ describe('SourceResolver', () => {
     expect(playable.transport).toBe('local');
   });
 
-  it('preserves provider source order after checking for local copies', async () => {
+  it('prefers trusted HTTPS over torrent when no local copy exists', async () => {
+    const resolver = new SourceResolver(
+      new TransportRegistry([
+        new FakeContentTransport('https'),
+        new FakeContentTransport('torrent'),
+      ]),
+      new RightsPolicy('TZ', ['internetarchive']),
+      {locate: async () => null},
+    );
+
+    const playable = await resolver.resolve(asset, rights);
+
+    expect(playable.transport).toBe('https');
+  });
+
+  it('prefers HTTPS whichever order the provider lists sources in', async () => {
     const resolver = new SourceResolver(
       new TransportRegistry([
         new FakeContentTransport('https'),
