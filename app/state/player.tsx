@@ -43,6 +43,8 @@ type PlayerValue = {
 
 export const UNAVAILABLE_MESSAGE =
   "This book isn't available to listen to yet.";
+export const STOPPED_MESSAGE =
+  'Playback stopped. Check your connection and try again.';
 export const FAILED_MESSAGE =
   "Couldn't start playback. Check your connection and try again.";
 
@@ -168,6 +170,13 @@ export const PlayerProvider = ({
 
   const [error, setError] = useState<string | null>(null);
   const dismissError = useCallback(() => setError(null), []);
+
+  // The native player stopped on its own, e.g. the stream was lost.
+  useEffect(() => {
+    if (snapshot.state === 'error') {
+      setError(STOPPED_MESSAGE);
+    }
+  }, [snapshot.state]);
 
   const run = useCallback((operation: () => Promise<void>) => {
     void operation().then(
