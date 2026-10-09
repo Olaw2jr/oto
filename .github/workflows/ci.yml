@@ -22,3 +22,5 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test -- --ci
+      - name: JS bundle size budget
+        run: npm run perf:bundle

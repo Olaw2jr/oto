@@ -12,7 +12,8 @@
     "check": "npm run typecheck && npm run lint && npm test",
     "icons": "node scripts/generate-icons.js",
     "release:validate": "node scripts/release/validate.js",
-    "postinstall": "node scripts/patch-rntp-v4.js && node scripts/patch-rn-gradle-plugin-kotlin.js"
+    "postinstall": "node scripts/patch-rntp-v4.js && node scripts/patch-rn-gradle-plugin-kotlin.js",
+    "perf:bundle": "node scripts/perf/check-bundle-budget.js"
   },
   "dependencies": {
     "@op-engineering/op-sqlite": "18.2.5",
