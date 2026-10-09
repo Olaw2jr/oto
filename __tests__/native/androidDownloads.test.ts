@@ -44,4 +44,28 @@ describe('Android downloads', () => {
     expect(module).toContain('"oto-downloads"');
     expect(read('android/app/src/main/java/tz/co/oto/media/OtoMedia3Package.kt')).toContain('OtoDownloadsModule(');
   });
+
+  // D5: storage limits.
+  it('reports free space for download checks', () => {
+    expect(read(`${media}/OtoDownloadsModule.kt`)).toContain('fun freeSpace(');
+    expect(read(`${media}/OtoDownloadsModule.kt`)).toContain('StatFs(');
+    expect(read('ios/OtoNative/OtoDownloads.m')).toContain('RCT_EXPORT_METHOD(freeSpace:');
+    expect(read('ios/OtoNative/OtoDownloads.m')).toContain('NSURLVolumeAvailableCapacityForImportantUsageKey');
+  });
+
+  it('sizes the streaming cache to the device', () => {
+    const cache = read(`${media}/OtoMedia3Cache.kt`);
+    expect(cache).toContain('fun streamingCacheBytes(');
+    expect(cache).toContain('LeastRecentlyUsedCacheEvictor(streamingCacheBytes(context))');
+  });
+
+  it('prunes streamed torrent data when torrents stop', () => {
+    const engine = read('android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt');
+    expect(engine).toContain('fun pruneStreamedData(');
+    expect(engine).toContain('TORRENT_DATA_MAX_AGE_MS');
+    expect(engine).toContain('TORRENT_DATA_BUDGET_BYTES');
+    const close = engine.slice(engine.indexOf('  fun close(sessionId: String)'));
+    expect(close).toContain('pruneStreamedData()');
+  });
 });
+

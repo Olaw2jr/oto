@@ -9,6 +9,7 @@ import type {
 export class FakeDownloadEngine implements DownloadEngine {
   readonly requests: DownloadRequest[] = [];
   wifiOnly = true;
+  freeBytes: number | null = Number.MAX_SAFE_INTEGER;
   private readonly statuses = new Map<string, DownloadStatus>();
   private readonly listeners = new Set<(status: DownloadStatus) => void>();
 
@@ -45,6 +46,10 @@ export class FakeDownloadEngine implements DownloadEngine {
   subscribe(listener: (status: DownloadStatus) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  async freeSpace(): Promise<number | null> {
+    return this.freeBytes;
   }
 
   // Test helper: report progress for a download.

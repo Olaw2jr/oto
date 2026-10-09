@@ -13,6 +13,7 @@ export type NativeDownloadsBridge = {
   setWifiOnly(wifiOnly: boolean): Promise<void>;
   list(): Promise<DownloadStatus[]>;
   playbackSource(id: string): Promise<MediaSource | null>;
+  freeSpace(): Promise<number | null>;
 };
 
 type Subscribe = (listener: (status: DownloadStatus) => void) => () => void;
@@ -56,5 +57,9 @@ export class NativeDownloadEngine implements DownloadEngine {
 
   subscribe(listener: (status: DownloadStatus) => void): () => void {
     return this.subscribeNative(listener);
+  }
+
+  freeSpace(): Promise<number | null> {
+    return this.bridge.freeSpace();
   }
 }

@@ -3,6 +3,7 @@ package tz.co.oto.media
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.StatFs
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
@@ -159,6 +160,15 @@ class OtoDownloadsModule(
       )
     } catch (error: Exception) {
       promise.reject("download_source_failed", error)
+    }
+  }
+
+  @ReactMethod
+  fun freeSpace(promise: Promise) {
+    try {
+      promise.resolve(StatFs(reactContext.noBackupFilesDir.path).availableBytes.toDouble())
+    } catch (error: Exception) {
+      promise.resolve(null)
     }
   }
 
