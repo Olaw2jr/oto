@@ -94,6 +94,21 @@ describe('application dependency direction', () => {
     }
   });
 
+  it('reads the network only through the connectivity adapter', () => {
+    const adapter = path.join(app, 'adapters', 'connectivity');
+    for (const file of sourceFiles(app)) {
+      if (file.startsWith(adapter)) {
+        continue;
+      }
+      expect({
+        file: path.relative(root, file),
+        netInfo: fs
+          .readFileSync(file, 'utf8')
+          .includes('@react-native-community/netinfo'),
+      }).toEqual({file: path.relative(root, file), netInfo: false});
+    }
+  });
+
   it('keeps sync contracts independent from React and concrete persistence', () => {
     const sync = path.join(app, 'sync');
     expect(fs.existsSync(sync)).toBe(true);
