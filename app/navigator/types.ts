@@ -37,6 +37,7 @@ export type RootStackParamList = {
   Person: {personId: string};
   Author: {name: string};
   Settings: undefined;
+  Downloads: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> =
