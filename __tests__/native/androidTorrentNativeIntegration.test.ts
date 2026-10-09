@@ -71,4 +71,31 @@ describe('Android native torrent runtime', () => {
     expect(engine).toContain('Thread.currentThread().interrupt()');
     expect(server).toContain('if (!rangeReady) return');
   });
+
+  // Found on a Galaxy S22 Ultra: a timeout on the range thread killed the app.
+  it('fails one range request without crashing the app', () => {
+    const server = read(
+      'android/app/src/main/java/tz/co/oto/torrent/LoopbackRangeServer.kt',
+    );
+    const engine = read(
+      'android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt',
+    );
+
+    expect(server).toMatch(/clients\.execute \{\s*try \{\s*socket\.use\(::serve\)/);
+    expect(server).toContain('catch (error: Throwable)');
+    expect(engine).not.toContain('"Timed out waiting for torrent byte range"');
+    expect(engine).toContain('logStalledRange');
+  });
+
+  // Recent Android hides the routing table, so libtorrent's default 0.0.0.0
+  // listen fails and no outgoing peer or web seed connection can open.
+  it('listens on the active network addresses', () => {
+    const engine = read(
+      'android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt',
+    );
+
+    expect(engine).toContain('activeListenInterfaces()');
+    expect(engine).toContain('connectivity.getLinkProperties');
+    expect(engine).toContain('manager.start(SessionParams(settings))');
+  });
 });

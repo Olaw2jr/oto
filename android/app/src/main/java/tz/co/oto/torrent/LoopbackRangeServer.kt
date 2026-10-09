@@ -1,6 +1,7 @@
 package tz.co.oto.torrent
 
 import android.util.Base64
+import android.util.Log
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
@@ -97,7 +98,13 @@ class LoopbackRangeServer(
           try {
             val socket = server.accept()
             clients.execute {
-              socket.use(::serve)
+              try {
+                socket.use(::serve)
+              } catch (error: Throwable) {
+                // One failed request closes its connection; the player
+                // reports a source error instead of the app crashing.
+                Log.w(TAG, "Torrent range request failed", error)
+              }
             }
           } catch (_: Throwable) {
             if (!server.isClosed) {
@@ -387,3 +394,5 @@ class LoopbackRangeServer(
     }
   }
 }
+
+private const val TAG = "OtoTorrentRange"

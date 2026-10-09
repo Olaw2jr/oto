@@ -1,11 +1,15 @@
 package tz.co.oto.torrent
 
 import android.content.Context
+import android.net.ConnectivityManager
 import android.util.Base64
+import android.util.Log
 import com.frostwire.jlibtorrent.AddTorrentParams
 import com.frostwire.jlibtorrent.AlertListener
 import com.frostwire.jlibtorrent.Priority
 import com.frostwire.jlibtorrent.SessionManager
+import com.frostwire.jlibtorrent.SessionParams
+import com.frostwire.jlibtorrent.SettingsPack
 import com.frostwire.jlibtorrent.TorrentHandle
 import com.frostwire.jlibtorrent.TorrentInfo
 import com.frostwire.jlibtorrent.TorrentFlags
@@ -14,6 +18,7 @@ import com.frostwire.jlibtorrent.alerts.AlertType
 import com.frostwire.jlibtorrent.alerts.SaveResumeDataAlert
 import java.io.File
 import java.io.FileOutputStream
+import java.net.Inet6Address
 import java.net.URI
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -67,10 +72,37 @@ class JlibtorrentEngine(private val context: Context) {
     if (started) return
     synchronized(lifecycleLock) {
       if (!started) {
-        manager.start()
+        val listen = activeListenInterfaces()
+        Log.i(TAG, "Starting torrent session, listening on ${listen ?: "default"}")
+        val settings = SettingsPack()
+        listen?.let(settings::listenInterfaces)
+        manager.start(SessionParams(settings))
         started = true
       }
     }
+  }
+
+  // libtorrent's default 0.0.0.0 listen address needs the routing table,
+  // which recent Android hides from apps ("enum_route ... not supported").
+  // Without a listen socket libtorrent 2.0 can't open outgoing peer or web
+  // seed connections either, so listen on the active network's addresses.
+  private fun activeListenInterfaces(): String? {
+    val connectivity =
+      context.getSystemService(ConnectivityManager::class.java)
+        ?: return null
+    val link =
+      connectivity.getLinkProperties(connectivity.activeNetwork)
+        ?: return null
+    return link.linkAddresses
+      .map { it.address }
+      .filter { !it.isLoopbackAddress && !it.isLinkLocalAddress }
+      .mapNotNull { address ->
+        val host = address.hostAddress?.substringBefore('%')
+          ?: return@mapNotNull null
+        if (address is Inet6Address) "[$host]:0" else "$host:0"
+      }
+      .joinToString(",")
+      .ifEmpty { null }
   }
 
   private fun readHttpsTorrent(uri: String): ByteArray {
@@ -498,8 +530,31 @@ class JlibtorrentEngine(private val context: Context) {
         return false
       }
     }
-    throw IllegalStateException(
-      "Timed out waiting for torrent byte range",
+    logStalledRange(active, first, last)
+    return false
+  }
+
+  // What the swarm looked like when a range stalled, for device debugging.
+  private fun logStalledRange(
+    active: ActiveTorrentSession,
+    first: Int,
+    last: Int,
+  ) {
+    val status = active.handle.status()
+    if (status == null) {
+      Log.w(TAG, "Torrent range stalled: pieces $first..$last, no status")
+      return
+    }
+    Log.w(
+      TAG,
+      "Torrent range stalled: pieces $first..$last state=${status.state()} " +
+        "peers=${status.numPeers()} seeds=${status.numSeeds()} " +
+        "connections=${status.numConnections()} known=${status.listPeers()} " +
+        "rate=${status.downloadRate()} progress=${status.progress()} " +
+        "error=${status.errorCode()?.message()} " +
+        "trackers=${active.handle.trackers().size} " +
+        "webSeeds=${active.handle.urlSeeds().size} " +
+        "dht=${manager.isDhtRunning}",
     )
   }
 
@@ -513,3 +568,5 @@ class JlibtorrentEngine(private val context: Context) {
     }
   }
 }
+
+private const val TAG = "OtoTorrent"
