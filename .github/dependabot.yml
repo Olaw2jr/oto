@@ -37,11 +37,11 @@ updates:
       interval: weekly
     open-pull-requests-limit: 3
     ignore:
-      # Gradle 9.8 bundles Kotlin 2.4, which RN 0.87's Gradle plugin (Kotlin
-      # 2.2) can't compile against. Move the wrapper with RN upgrades.
+      # Each Gradle release embeds a newer Kotlin; scripts/
+      # patch-rn-gradle-plugin-kotlin.js keeps RN's Gradle plugin in step for
+      # 9.x. A new major moves with a React Native upgrade.
       - dependency-name: 'gradle-wrapper'
-        update-types:
-          ['version-update:semver-minor', 'version-update:semver-major']
+        update-types: ['version-update:semver-major']
   - package-ecosystem: bundler
     directory: /
     schedule:
