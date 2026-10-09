@@ -152,25 +152,42 @@ describe('Following offline', () => {
   });
   const renderOffline = () => renderFollowing(connectivity);
 
-  it('explains it is offline and offers your current book', async () => {
-    const navigation = await renderOffline();
+  it('explains it is offline and offers the books you downloaded', async () => {
+    const {FakeDownloadEngine} = require('../../app/downloads');
+    const {PUBLIC_DOMAIN_SAMPLE_ID} = require('../../app/data/catalogue');
+    const engine = new FakeDownloadEngine();
+    await engine.start({id: 'sample-1', bookId: PUBLIC_DOMAIN_SAMPLE_ID, uri: 'https://x', cacheKey: 'k', title: 'Chapter 1', sizeBytes: 1, wifiOnly: true});
+    engine.progress('sample-1', 1, 1, 'completed');
+    const navigation = mockNavigation();
+    await renderScreen(
+      <FollowingScreen navigation={navigation} route={{key: 'F', name: 'Following'} as any} />,
+      {connectivity, downloadEngine: engine},
+    );
     expect(screen.getByText('You are offline.')).toBeOnTheScreen();
     expect(screen.getByText("Can't reach your friends.")).toBeOnTheScreen();
     expect(screen.queryByTestId('update-Mika T.')).toBeNull();
 
-    expect(screen.getByText('Continue listening')).toBeOnTheScreen();
+    expect(screen.getByText('Available offline')).toBeOnTheScreen();
     await press(
-      screen.getByRole('button', {name: /^Play Where the Crawdads Sing/}),
+      screen.getByRole('button', {name: 'Play The Adventures of Sherlock Holmes'}),
     );
     expect(navigation.navigate).toHaveBeenCalledWith('Player');
   });
 
-  // oto has no downloads or update queue yet, so it must not promise them.
+  it('says how to listen offline when nothing is downloaded', async () => {
+    const navigation = await renderOffline();
+    expect(
+      screen.getByText('Nothing downloaded yet. Download a book from its page to listen without a connection.'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByRole('button', {name: /^Play /})).toBeNull();
+    await press(screen.getByRole('link', {name: 'Downloads'}));
+    expect(navigation.navigate).toHaveBeenCalledWith('Downloads');
+  });
+
   it('promises nothing oto cannot do offline', async () => {
-    await renderFollowing();
-    expect(screen.queryByText(/download/i)).toBeNull();
+    await renderOffline();
     expect(screen.queryByText(/will post/i)).toBeNull();
-    expect(screen.queryByText('Available offline')).toBeNull();
+    expect(screen.queryByText(/still play/i)).toBeNull();
   });
 
   it('tries again', async () => {

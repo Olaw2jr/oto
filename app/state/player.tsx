@@ -17,6 +17,7 @@ import type {
   PlayerSleepTimer,
 } from '../player';
 import {useLibrary} from './library';
+import {useOnline} from './network';
 import {SPEED_OPTIONS, useSettings} from './settings';
 import {useTelemetry} from './telemetry';
 
@@ -45,6 +46,8 @@ export const UNAVAILABLE_MESSAGE =
   "This book isn't available to listen to yet.";
 export const STOPPED_MESSAGE =
   'Playback stopped. Check your connection and try again.';
+export const OFFLINE_MESSAGE =
+  "You're offline. Download books to listen without a connection.";
 export const FAILED_MESSAGE =
   "Couldn't start playback. Check your connection and try again.";
 
@@ -175,6 +178,7 @@ export const PlayerProvider = ({
 
   const telemetry = useTelemetry();
   const [error, setError] = useState<string | null>(null);
+  const online = useOnline();
   const dismissError = useCallback(() => setError(null), []);
 
   // The native player stopped on its own, e.g. the stream was lost.
@@ -199,11 +203,17 @@ export const PlayerProvider = ({
           if (!unavailable) {
             telemetry.error(failure, {source: 'player'});
           }
-          setError(unavailable ? UNAVAILABLE_MESSAGE : FAILED_MESSAGE);
+          setError(
+            unavailable
+              ? UNAVAILABLE_MESSAGE
+              : online
+              ? FAILED_MESSAGE
+              : OFFLINE_MESSAGE,
+          );
         },
       );
     },
-    [telemetry],
+    [telemetry, online],
   );
 
   const play = useCallback(
