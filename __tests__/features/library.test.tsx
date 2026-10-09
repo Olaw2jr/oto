@@ -180,6 +180,48 @@ describe('ShelfScreen', () => {
   });
 });
 
+describe('ShelfScreen editing', () => {
+  const open = async (shelfId = 'quiet-nights') => {
+    const navigation = mockNavigation();
+    await renderScreen(
+      <ShelfScreen navigation={navigation} route={route('Shelf', {shelfId})} />,
+    );
+    return navigation;
+  };
+
+  it('removes a book from your shelf', async () => {
+    await open();
+    await press(
+      screen.getByRole('button', {name: 'Remove Tuesdays with Morrie from Quiet nights'}),
+    );
+    expect(screen.queryByRole('button', {name: /^Tuesdays with Morrie/})).toBeNull();
+  });
+
+  it('renames your shelf', async () => {
+    await open();
+    await press(screen.getByRole('button', {name: 'Shelf options'}));
+    await press(screen.getByRole('button', {name: 'Rename'}));
+    fireEvent.changeText(screen.getByLabelText('Shelf name'), 'Sleepy listens');
+    await press(screen.getByRole('button', {name: 'Save'}));
+    expect(screen.getByRole('header', {name: 'Sleepy listens'})).toBeOnTheScreen();
+  });
+
+  it('deletes your shelf after you confirm', async () => {
+    const navigation = await open();
+    await press(screen.getByRole('button', {name: 'Shelf options'}));
+    await press(screen.getByRole('button', {name: 'Delete shelf'}));
+    expect(screen.getByText('Delete Quiet nights? The books stay in your library.')).toBeOnTheScreen();
+    await press(screen.getByRole('button', {name: 'Delete'}));
+    expect(navigation.goBack).toHaveBeenCalled();
+  });
+
+  it('leaves Want to listen and Finished alone', async () => {
+    await open('want');
+    expect(screen.queryByRole('button', {name: 'Shelf options'})).toBeNull();
+    expect(screen.queryAllByRole('button', {name: /^Remove /})).toHaveLength(0);
+  });
+});
+
 describe('SaveToShelfScreen', () => {
   it('adds a book to shelves and makes a new one', async () => {
     const navigation = mockNavigation();

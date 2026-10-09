@@ -60,6 +60,8 @@ type LibraryValue = {
   shelf: (id: string) => Shelf | undefined;
   createShelf: (name: string, bookId?: string) => string;
   toggleOnShelf: (shelfId: string, bookId: string) => void;
+  renameShelf: (shelfId: string, name: string) => void;
+  deleteShelf: (shelfId: string) => void;
   // Moments you bookmarked in each book, in seconds, earliest first.
   bookmarks: (bookId: string) => number[];
   addBookmark: (bookId: string, at: number) => void;
@@ -182,6 +184,32 @@ export const LibraryProvider = ({
     [saveShelves],
   );
 
+  const renameShelf = useCallback(
+    (shelfId: string, name: string) => {
+      const current = customRef.current;
+      const shelf = current.find(s => s.id === shelfId);
+      if (!shelf || !name.trim()) {
+        return;
+      }
+      const changed = {...shelf, name: name.trim()};
+      saveShelves(
+        current.map(s => (s.id === shelfId ? changed : s)),
+        changed,
+      );
+    },
+    [saveShelves],
+  );
+
+  const deleteShelf = useCallback(
+    (shelfId: string) => {
+      const next = customRef.current.filter(s => s.id !== shelfId);
+      customRef.current = next;
+      setCustom(next);
+      persist(repository.deleteShelf(shelfId));
+    },
+    [repository],
+  );
+
   const setRating = useCallback(
     (bookId: string, stars: number | undefined) => {
       setRatings(current => {
@@ -231,6 +259,8 @@ export const LibraryProvider = ({
       shelf: id => shelves.find(s => s.id === id),
       createShelf,
       toggleOnShelf,
+      renameShelf,
+      deleteShelf,
       bookmarks: id => marks[id] ?? [],
       addBookmark,
       removeBookmark,
@@ -242,6 +272,8 @@ export const LibraryProvider = ({
     setRating,
     createShelf,
     toggleOnShelf,
+    renameShelf,
+    deleteShelf,
     marks,
     addBookmark,
     removeBookmark,

@@ -94,6 +94,13 @@ export class SqliteCollectionsRepository implements CollectionsRepository {
     );
   }
 
+  async deleteShelf(shelfId: string): Promise<void> {
+    await this.db.transaction(async tx => {
+      await tx.execute('DELETE FROM shelf_books WHERE shelf_id = ?', [shelfId]);
+      await tx.execute('DELETE FROM shelves WHERE id = ?', [shelfId]);
+    });
+  }
+
   async addBookmark(bookId: BookId, atSec: number): Promise<void> {
     await this.db.execute(
       `INSERT INTO bookmarks(book_id, at_sec, created_at)

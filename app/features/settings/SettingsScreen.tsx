@@ -5,6 +5,7 @@ import {getPerson, ME} from '../../data/people';
 import {RootStackScreenProps} from '../../navigator/types';
 import {usePlayer} from '../../state/player';
 import {useSession} from '../../state/session';
+import {useSocial} from '../../state/social';
 import {NotificationsSheet} from '../../components/NotificationsSheet';
 import {
   NOTIFICATION_LABELS,
@@ -15,6 +16,7 @@ import {
 import {AppearancePreference, useTheme} from '../../theme/ThemeProvider';
 import {
   Avatar,
+  Button,
   Card,
   Icon,
   Screen,
@@ -97,7 +99,10 @@ const SwitchRow = ({
 const skipLabel = (s: SkipIntervals) => `${s.back} s · ${s.forward} s`;
 
 const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
-  const [sheet, setSheet] = useState<'skip' | 'notifications' | null>(null);
+  const [sheet, setSheet] = useState<
+    'skip' | 'notifications' | 'muted' | 'hidden' | null
+  >(null);
+  const social = useSocial();
   const {preference, setPreference} = useTheme();
   const {signOut} = useSession();
   const settings = useSettings();
@@ -168,6 +173,20 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
           onChange={v => settings.set('spoilerSafe', v)}
         />
         <ValueRow
+          label="Muted people"
+          value={
+            social.mutedPeople.length
+              ? String(social.mutedPeople.length)
+              : 'None'
+          }
+          onPress={() => setSheet('muted')}
+        />
+        <ValueRow
+          label="Hidden updates"
+          value={social.hiddenCount ? String(social.hiddenCount) : 'None'}
+          onPress={() => setSheet('hidden')}
+        />
+        <ValueRow
           label="Notifications"
           value={NOTIFICATION_LABELS[settings.notifications]}
           onPress={() => setSheet('notifications')}
@@ -222,6 +241,48 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
         visible={sheet === 'notifications'}
         onClose={() => setSheet(null)}
       />
+      <Sheet
+        visible={sheet === 'muted'}
+        title="Muted people"
+        onClose={() => setSheet(null)}>
+        {social.mutedPeople.length ? (
+          social.mutedPeople.map(id => (
+            <SheetRow
+              key={id}
+              icon="mute"
+              label={getPerson(id).short}
+              value="Unmute"
+              accessibilityLabel={`Unmute ${getPerson(id).short}`}
+              onPress={() => social.unmute(id)}
+            />
+          ))
+        ) : (
+          <Txt color="graphite" style={styles.sheetNote}>
+            You haven't muted anyone.
+          </Txt>
+        )}
+      </Sheet>
+      <Sheet
+        visible={sheet === 'hidden'}
+        title="Hidden updates"
+        onClose={() => setSheet(null)}>
+        <Txt color="graphite" style={styles.sheetNote}>
+          {social.hiddenCount
+            ? `${social.hiddenCount} ${
+                social.hiddenCount === 1 ? 'update is' : 'updates are'
+              } hidden from your feed.`
+            : 'Nothing is hidden from your feed.'}
+        </Txt>
+        {social.hiddenCount ? (
+          <Button
+            label="Show hidden updates again"
+            onPress={() => {
+              social.unhideAll();
+              setSheet(null);
+            }}
+          />
+        ) : null}
+      </Sheet>
     </Screen>
   );
 };
@@ -244,6 +305,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   divider: {borderBottomWidth: 1},
+  sheetNote: {marginVertical: 12},
   profile: {flexDirection: 'row', alignItems: 'center', paddingVertical: 12},
   profileText: {marginLeft: 14},
   value: {flexDirection: 'row', alignItems: 'center'},

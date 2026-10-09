@@ -97,6 +97,54 @@ describe('update menu', () => {
   });
 });
 
+describe('undoing mutes and hides from Settings', () => {
+  const SettingsScreen =
+    require('../../app/features/settings/SettingsScreen').default;
+  const renderBoth = async () => {
+    await renderScreen(
+      <>
+        <FollowingScreen
+          navigation={mockNavigation()}
+          route={{key: 'F', name: 'Following'} as any}
+        />
+        <SettingsScreen
+          navigation={mockNavigation()}
+          route={{key: 'S', name: 'Settings'} as any}
+        />
+      </>,
+    );
+  };
+
+  it('unmutes a person', async () => {
+    await renderBoth();
+    expect(screen.getByRole('button', {name: 'Muted people, None'})).toBeOnTheScreen();
+    await press(
+      screen.getAllByRole('button', {name: 'More options for this update'})[0],
+    );
+    await press(screen.getByRole('menuitem', {name: 'Mute Mika'}));
+    expect(screen.queryAllByTestId('update-Mika T.')).toHaveLength(0);
+
+    await press(screen.getByRole('button', {name: 'Muted people, 1'}));
+    await press(screen.getByRole('button', {name: 'Unmute Mika T.'}));
+    expect(screen.getAllByTestId('update-Mika T.').length).toBeGreaterThan(0);
+  });
+
+  it('shows hidden updates again', async () => {
+    await renderBoth();
+    await press(
+      within(card('Ren I.')).getByRole('button', {
+        name: 'More options for this update',
+      }),
+    );
+    await press(screen.getByRole('menuitem', {name: 'Hide this update'}));
+    expect(screen.queryByTestId('update-Ren I.')).toBeNull();
+
+    await press(screen.getByRole('button', {name: 'Hidden updates, 1'}));
+    await press(screen.getByRole('button', {name: 'Show hidden updates again'}));
+    expect(card('Ren I.')).toBeOnTheScreen();
+  });
+});
+
 describe('Following offline', () => {
   let connectivity: FakeConnectivity;
   beforeEach(() => {

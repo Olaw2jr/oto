@@ -64,6 +64,13 @@ export class InMemoryCollectionsRepository implements CollectionsRepository {
     this.state = {...this.state, bookmarks};
   }
 
+  async deleteShelf(shelfId: string): Promise<void> {
+    this.state = {
+      ...this.state,
+      shelves: this.state.shelves.filter(s => s.id !== shelfId),
+    };
+  }
+
   async addBookmark(bookId: BookId, atSec: number): Promise<void> {
     const second = Math.floor(atSec);
     const list = this.state.bookmarks[bookId] ?? [];
