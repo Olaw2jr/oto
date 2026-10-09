@@ -85,14 +85,19 @@ export class TorrentStreamTransport implements ContentTransport {
       if (closed) return;
       closed = true;
       if (route) await this.gateway.close(route.routeId);
-      if (file) await this.pool.releaseFile(lease, file.index);
+      if (file) await this.pool.releaseFile(lease, file.index, 'stream');
       await this.pool.release(lease);
     };
 
     try {
       file = await this.select(lease, source);
-      await this.pool.retainFile(lease, file.index);
-      await this.prioritize(lease, file, context, positionSec);
+      await this.pool.retainFile(lease, file.index, 'stream');
+      // Only when playback starts here; preparing a chapter queue must not
+      // make every chapter urgent. The range server prioritizes whatever
+      // the player actually requests.
+      if (context.positionSec !== undefined) {
+        await this.prioritize(lease, file, context, positionSec);
+      }
       route = await this.gateway.open(lease.session.id, file.index);
 
       return {

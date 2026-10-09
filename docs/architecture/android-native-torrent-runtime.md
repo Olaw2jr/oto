@@ -79,3 +79,32 @@ transport for assets that the catalogue/provider layer has already authorized.
 
 A physical-device public-domain streaming test is still required before issue
 #83 is closed.
+
+## Android networking and streaming priorities (#135)
+
+Validated on a Galaxy S22 Ultra (Android 16) streaming the Sherlock Holmes
+public-domain torrent with its HTTPS source removed:
+
+- **Listen addresses.** libtorrent's default `0.0.0.0` listen needs the
+  routing table, which Android hides (`enum_route … not supported`). Without a
+  listen socket libtorrent 2.0 opens no outgoing connections, so the session
+  listens on the active network's addresses plus `127.0.0.1`.
+- **HTTPS web seeds.** libtorrent's bundled OpenSSL fails every TLS connection
+  on Android (`asio.ssl … init fail (BIO routines)`; supplying CA certificates
+  does not help). `WebSeedProxy` replaces each HTTPS web seed with a
+  `http://127.0.0.1:<port>/<token>/` URL and fetches requests with Android's
+  TLS (`HttpsURLConnection`). It listens only on loopback, forwards only to the
+  seed registered under a 192-bit token, allows GET/HEAD, passes `Range`
+  through, reuses upstream connections, and remembers each item's storage-node
+  redirect.
+- **Priorities.** Preparing a chapter queue no longer makes every chapter
+  urgent: the queue prepares sources without a position, streamed files stay at
+  priority 0, and only the ranges the player requests become `SEVEN` with
+  deadlines (re-applied every 2 s while waiting). The file being played is
+  raised to the lowest wanted priority so its pieces land in the file rather
+  than libtorrent's `.parts` file. Offline downloads still request whole files.
+  Web seed requests are capped at 1 MiB.
+
+Result: playback from a cleared cache, skip, seeking beyond the buffer and
+pause/resume all work, and streaming stored ~27 MB (the played chapter)
+instead of the whole book.

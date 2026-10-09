@@ -142,3 +142,63 @@ describe('torrent playback hardening', () => {
     expect(engine.closedSessions).toContain('fake-session');
   });
 });
+
+// #135: preparing a whole chapter queue marked every chapter's opening as
+// urgent and queued every chapter for full download, so the chapter being
+// played waited behind all the others.
+describe('torrent streaming priorities', () => {
+  const source = {
+    kind: 'torrent' as const,
+    magnetUri: 'magnet:?xt=urn:btih:abc',
+    fileIndex: 0,
+    trustedSourceId: 'internetarchive',
+  };
+  const setup = () => {
+    const engine = new FakeTorrentEngine([
+      {index: 0, path: 'book.mp3', sizeBytes: 10_000},
+    ]);
+    const pool = new TorrentSessionPool(engine);
+    const gateway = new LocalhostRangeGateway({
+      start: async () => ({routeId: 'route-1', port: 43123}),
+      stop: async () => {},
+    });
+    return {
+      engine,
+      pool,
+      streaming: new TorrentStreamTransport(pool, gateway),
+      downloads: new TorrentDownloadManager(pool, new InMemoryTorrentResumeStore()),
+    };
+  };
+
+  it('leaves a prepared but unplayed chapter alone', async () => {
+    const {engine, streaming} = setup();
+    await streaming.prepare(source, {durationSec: 100});
+
+    expect(engine.rangePriorities).toEqual([]);
+    expect(engine.filePriorities.get('fake-session:0')).toBe('off');
+  });
+
+  it('prioritizes the range around where playback starts', async () => {
+    const {engine, streaming} = setup();
+    await streaming.prepare(source, {
+      durationSec: 100,
+      positionSec: 10,
+      bufferAheadSec: 20,
+      lookBehindSec: 5,
+    });
+
+    expect(engine.rangePriorities.at(-1)).toMatchObject({
+      startByte: 500,
+      endByte: 2999,
+    });
+    expect(engine.filePriorities.get('fake-session:0')).toBe('off');
+  });
+
+  it('still downloads the whole file when an offline download wants it', async () => {
+    const {engine, streaming, downloads} = setup();
+    await streaming.prepare(source, {durationSec: 100});
+    await downloads.start('asset-1', source);
+
+    expect(engine.filePriorities.get('fake-session:0')).toBe('high');
+  });
+});
