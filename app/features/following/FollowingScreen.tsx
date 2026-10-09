@@ -8,7 +8,7 @@ import {chapterAt} from '../../data/catalogue';
 import {formatRemaining} from '../../data/format';
 import {openPerson} from '../../navigator/openPerson';
 import {TabScreenProps} from '../../navigator/types';
-import {retryConnection, useOnline} from '../../state/network';
+import {useOnline, useRetryConnection} from '../../state/network';
 import {usePlayer} from '../../state/player';
 import {useSocial} from '../../state/social';
 import {useFirstLoad} from '../../state/firstLoad';
@@ -26,6 +26,7 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
   const [filter, setFilter] = useState<Filter>('Friends');
   const [reported, setReported] = useState(false);
   const online = useOnline();
+  const retryConnection = useRetryConnection();
   const player = usePlayer();
 
   const items = feed.filter(item =>
