@@ -8,8 +8,10 @@ import {RightsPolicy} from '../domain/rights';
 import type {PlayableSource, PrepareContext} from '../transports';
 import {TransportRegistry} from '../transports';
 
+// Where a downloaded copy of an asset can be played from: a local file, or
+// (Android) the HTTPS source served from the download cache.
 export interface DownloadedAssetLocator {
-  locate(assetId: string): Promise<LocalMediaSource | null>;
+  locate(assetId: string): Promise<MediaSource | null>;
 }
 
 const order = (source: MediaSource): number => {

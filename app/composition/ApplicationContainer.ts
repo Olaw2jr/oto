@@ -21,6 +21,12 @@ import {
 } from '../audio';
 import type {PersonalCollections} from '../domain';
 import type {Connectivity} from '../connectivity';
+import {
+  BookDownloads,
+  createDownloadedAssetLocator,
+  UnavailableDownloadEngine,
+  type DownloadEngine,
+} from '../downloads';
 import {RightsPolicy} from '../domain/rights';
 import {
   PlaybackQueueResolver,
@@ -77,6 +83,10 @@ export type ApplicationContainer = {
     outbox: MutationOutbox;
   };
   connectivity: Connectivity;
+  downloads: {
+    engine: DownloadEngine;
+    books: BookDownloads;
+  };
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
@@ -101,6 +111,7 @@ export type ApplicationContainerOptions = {
   collections?: ApplicationContainer['collections'];
   outbox?: MutationOutbox;
   connectivity?: Connectivity;
+  downloadEngine?: DownloadEngine;
 };
 
 const createSeedCollections = (): ApplicationContainer['collections'] => {
@@ -121,6 +132,9 @@ export const createApplicationContainer = (
   options: ApplicationContainerOptions = {},
 ): ApplicationContainer => {
   const libraryGraph = options.libraryGraph ?? createSeedLibraryGraph();
+  const rightsPolicy = new RightsPolicy('TZ', ['internetarchive']);
+  const downloadEngine =
+    options.downloadEngine ?? new UnavailableDownloadEngine();
   const playbackAssets =
     options.playbackAssets ??
     new PublicDomainPlaybackAssetRepository();
@@ -225,8 +239,8 @@ export const createApplicationContainer = (
       if (torrentTransport) transports.push(torrentTransport);
       const sources = new SourceResolver(
         new TransportRegistry(transports),
-        new RightsPolicy('TZ', ['internetarchive']),
-        {locate: async () => null},
+        rightsPolicy,
+        createDownloadedAssetLocator(downloadEngine),
       );
       const queueResolver = new PlaybackQueueResolver(
         libraryGraph.catalogue,
@@ -256,6 +270,15 @@ export const createApplicationContainer = (
     collections: options.collections ?? createSeedCollections(),
     sync: {outbox: options.outbox ?? new InMemoryMutationOutbox()},
     connectivity: options.connectivity ?? new NetInfoConnectivity(),
+    downloads: {
+      engine: downloadEngine,
+      books: new BookDownloads({
+        engine: downloadEngine,
+        renditions: libraryGraph.renditions,
+        assets: playbackAssets,
+        rightsPolicy,
+      }),
+    },
     audio: {
       createEngine,
       createPersistentSession,
