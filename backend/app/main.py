@@ -19,8 +19,10 @@ app.include_router(auth_router)
 from .discovery_api import router as discovery_router
 from .sync_api import router as sync_router
 from .observability import RequestAudit
+from .telemetry_api import router as telemetry_router
 app.include_router(discovery_router)
 app.include_router(sync_router)
+app.include_router(telemetry_router)
 app.add_middleware(RequestAudit)
 
 class GoogleLogin(BaseModel):
