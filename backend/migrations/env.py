@@ -4,6 +4,7 @@ from alembic import context
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy import pool
 from app.models import Base
+from app import social_models, auth_sessions  # register tables
 
 config = context.config
 target_metadata = Base.metadata
