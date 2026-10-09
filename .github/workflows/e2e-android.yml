@@ -63,7 +63,7 @@ jobs:
           disable-animations: true
           script: |
             adb install android/app/build/outputs/apk/release/app-release.apk
-            maestro test .maestro --include-tags smoke --format junit --output maestro-report.xml --debug-output maestro-debug
+            maestro test .maestro --include-tags smoke --format junit --output maestro-report.xml --test-output-dir maestro-debug
       - uses: actions/upload-artifact@v6
         if: always()
         with:

@@ -6,10 +6,14 @@ tags: [smoke]
     clearState: true
 - tapOn: "Continue to onboarding"
 - tapOn: "Skip"
-- tapOn: "Sign in"
-- tapOn:
-    text: "Sign in"
-    index: 0
-- assertVisible: "Continue listening"
+# Sign-up's social buttons sign in too (auth is a placeholder until BE-02);
+# they sit below the fold on small screens.
+- scrollUntilVisible:
+    element: "Google"
+    direction: DOWN
+- tapOn: "Google"
+- extendedWaitUntil:
+    visible: "Continue listening"
+    timeout: 20000
 # A fresh install continues the public-domain sample, which can play.
 - assertVisible: "The Adventures of Sherlock Holmes"
