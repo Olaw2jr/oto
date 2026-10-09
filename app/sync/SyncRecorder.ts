@@ -19,22 +19,39 @@ type Options = {
 export class SyncRecorder {
   private readonly now: () => Date;
   private readonly newId: () => string;
-  private readonly lastProgress = new Map<string, {positionSec: number; atMs: number}>();
+  private readonly lastProgress = new Map<
+    string,
+    {positionSec: number; atMs: number}
+  >();
   private readonly heldBack = new Map<string, number>();
+  private readonly listeners = new Set<() => void>();
 
   constructor(private readonly options: Options) {
     this.now = options.now ?? (() => new Date());
     this.newId = options.newId ?? randomUuid;
   }
 
-  private record(kind: MutationKind, entityId: string, payload: MutationPayload) {
-    return this.options.outbox.enqueue({
+  // Told after each change lands in the outbox, so it can be sent soon.
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private async record(
+    kind: MutationKind,
+    entityId: string,
+    payload: MutationPayload,
+  ) {
+    await this.options.outbox.enqueue({
       id: this.newId(),
       kind,
       entityId,
       payload,
       createdAt: this.now().toISOString(),
     });
+    this.listeners.forEach(listener => listener());
   }
 
   libraryStatus(bookId: string, status: LibraryStatus | 'removed') {
@@ -70,8 +87,13 @@ export class SyncRecorder {
     const held = [...this.heldBack];
     this.heldBack.clear();
     for (const [bookId, position] of held) {
-      this.lastProgress.set(bookId, {positionSec: position, atMs: this.now().getTime()});
-      await this.record('progress.update', editionEntityId(bookId), {position_sec: position});
+      this.lastProgress.set(bookId, {
+        positionSec: position,
+        atMs: this.now().getTime(),
+      });
+      await this.record('progress.update', editionEntityId(bookId), {
+        position_sec: position,
+      });
     }
   }
 

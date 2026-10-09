@@ -47,6 +47,36 @@ describe('syncWhileSignedIn', () => {
     expect(calls).toHaveLength(3);
   });
 
+  it('sends new changes shortly after they are recorded', async () => {
+    jest.useFakeTimers();
+    try {
+      const transport = new FakeHttpTransport();
+      const session = new AccountSession(transport, new InMemoryTokenStore());
+      const {fake, calls} = engine();
+      let notify = () => {};
+      const recorded = {
+        subscribe: (fn: () => void) => ((notify = fn), () => {}),
+      };
+
+      syncWhileSignedIn(session, fake, recorded);
+      notify();
+      jest.advanceTimersByTime(5000);
+      expect(calls).toEqual([]); // Signed out: changes wait.
+
+      transport.enqueue(tokens);
+      await session.signInAsDeveloper('amani');
+      calls.length = 0;
+      notify();
+      notify();
+      jest.advanceTimersByTime(1000);
+      expect(calls).toEqual([]);
+      jest.advanceTimersByTime(1500);
+      expect(calls).toEqual(['flush']); // One send for the burst.
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('starts at once for an account restored from the device', async () => {
     const session = new AccountSession(
       new FakeHttpTransport(),

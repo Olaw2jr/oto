@@ -490,7 +490,7 @@ export const createPersistentApplicationContainer = async (
       ),
       start: async () => {
         await session.restore();
-        return syncWhileSignedIn(session, engine);
+        return syncWhileSignedIn(session, engine, recorder);
       },
       idle: () => engine.idle(),
     };
