@@ -4,7 +4,7 @@ import Svg, {Circle} from 'react-native-svg';
 
 import logo from '../theme/logo';
 import {useTheme} from '../theme/ThemeProvider';
-import {Txt} from '../ui';
+import {Txt, useReducedMotion} from '../ui';
 
 export type LoadingLayout = 'tiles' | 'list' | 'detail';
 
@@ -20,8 +20,13 @@ export const LoadingState = ({message, layout = 'list'}: LoadingStateProps) => {
   const {colors} = useTheme();
   const spin = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(1)).current;
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
+    // Hold still unless the system is known to allow motion.
+    if (reducedMotion !== false) {
+      return;
+    }
     const loops = [
       Animated.loop(
         Animated.timing(spin, {
@@ -48,7 +53,7 @@ export const LoadingState = ({message, layout = 'list'}: LoadingStateProps) => {
     ];
     loops.forEach(l => l.start());
     return () => loops.forEach(l => l.stop());
-  }, [spin, pulse]);
+  }, [spin, pulse, reducedMotion]);
 
   const block = (width: number | string, height: number, extra?: object) => (
     <View

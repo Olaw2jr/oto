@@ -19,3 +19,4 @@ export {TextField} from './TextField';
 export {TextLink} from './TextLink';
 export {Txt} from './Txt';
 export type {TxtVariant} from './Txt';
+export {useReducedMotion} from './useReducedMotion';
