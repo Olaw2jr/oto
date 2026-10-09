@@ -5,7 +5,7 @@ Android playback is owned by `OtoMedia3PlaybackService`, a Media3
 playback survives UI/background transitions and is discoverable by platform
 media controllers.
 
-Media3 is pinned to 1.11.0. Playback and preload warming share one 512 MiB LRU
+Media3 is pinned to 1.11.1. Playback and preload warming share one 512 MiB LRU
 `SimpleCache` through a `CacheDataSource.Factory`.
 
 The React Native bridge is intentionally thin. Oto's application layer still
