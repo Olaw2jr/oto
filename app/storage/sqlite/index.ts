@@ -12,5 +12,6 @@ export {SqliteCollectionsRepository} from './SqliteCollectionsRepository';
 export {SqliteLibraryRepository} from './SqliteLibraryRepository';
 export {SqliteMutationOutbox} from './SqliteMutationOutbox';
 export {SqliteProgressRepository} from './SqliteProgressRepository';
+export {SqliteTelemetryStore} from './SqliteTelemetryStore';
 export {OpSqliteDatabase} from './OpSqliteDatabase';
 export type {OpSqliteClient} from './OpSqliteDatabase';

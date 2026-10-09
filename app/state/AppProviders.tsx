@@ -9,6 +9,7 @@ import {
 import {ThemeProvider} from '../theme/ThemeProvider';
 import {LibraryProvider} from './library';
 import {ConnectivityProvider} from './network';
+import {installGlobalErrorReporting, TelemetryProvider} from './telemetry';
 import {PlayerProvider} from './player';
 import {SessionProvider} from './session';
 import {SettingsProvider} from './settings';
@@ -48,6 +49,19 @@ export const AppProviders = ({
     };
   }, [providedContainer, attempt]);
 
+  // Report uncaught errors and upload queued telemetry while mounted.
+  useEffect(() => {
+    if (!container) return;
+    const uninstall = installGlobalErrorReporting(
+      container.telemetry.telemetry,
+    );
+    const stopUploads = container.telemetry.start();
+    return () => {
+      stopUploads();
+      uninstall();
+    };
+  }, [container]);
+
   if (!container) {
     return (
       <View accessibilityRole="summary">
@@ -71,22 +85,24 @@ export const AppProviders = ({
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <ConnectivityProvider connectivity={container.connectivity}>
-          <SessionProvider>
-            <SettingsProvider>
-              <LibraryProvider
-                adapter={container.library}
-                collections={container.collections}>
-                <PlayerProvider
-                  createController={container.audio.createPlayerController}>
-                  <SocialProvider>
-                    <TasteProvider>{children}</TasteProvider>
-                  </SocialProvider>
-                </PlayerProvider>
-              </LibraryProvider>
-            </SettingsProvider>
-          </SessionProvider>
-        </ConnectivityProvider>
+        <TelemetryProvider telemetry={container.telemetry.telemetry}>
+          <ConnectivityProvider connectivity={container.connectivity}>
+            <SessionProvider>
+              <SettingsProvider>
+                <LibraryProvider
+                  adapter={container.library}
+                  collections={container.collections}>
+                  <PlayerProvider
+                    createController={container.audio.createPlayerController}>
+                    <SocialProvider>
+                      <TasteProvider>{children}</TasteProvider>
+                    </SocialProvider>
+                  </PlayerProvider>
+                </LibraryProvider>
+              </SettingsProvider>
+            </SessionProvider>
+          </ConnectivityProvider>
+        </TelemetryProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

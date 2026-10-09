@@ -126,6 +126,30 @@ describe('production persistence against SQLite', () => {
     }
   });
 
+  it('keeps telemetry waiting for the backend across a restart', async () => {
+    const filename = join(directory, 'telemetry.sqlite');
+    const first = open(filename);
+    const app = await createPersistentApplicationContainer(
+      async () => first.db,
+    );
+    app.telemetry.telemetry.event('app.opened', {cold: true});
+    await app.telemetry.idle();
+    first.close();
+
+    const second = open(filename);
+    try {
+      const restored = await createPersistentApplicationContainer(
+        async () => second.db,
+      );
+      const queued = await restored.telemetry.store.oldest(10);
+      expect(queued.map(item => item.event)).toEqual([
+        expect.objectContaining({kind: 'event', name: 'app.opened', props: {cold: true}}),
+      ]);
+    } finally {
+      second.close();
+    }
+  });
+
   it('preserves legacy data and unrelated tables when upgrading and reopening', async () => {
     const connection = open(join(directory, 'legacy.sqlite'));
     try {
