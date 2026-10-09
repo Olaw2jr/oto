@@ -19,6 +19,10 @@ async def apply_event(tx, topic: str, data: dict):
         await tx.run(
             "MERGE (a:User {id:$user_id}) MERGE (b:Book {id:$book_id}) "
             "MERGE (a)-[:SAVED]->(b)", **data)
+    elif topic == "social.reviewed":
+        await tx.run("MERGE (a:User {id:$user_id}) MERGE (b:Book {id:$book_id}) MERGE (a)-[:REVIEWED]->(b)", **data)
+    elif topic == "social.club_joined":
+        await tx.run("MERGE (a:User {id:$user_id}) MERGE (c:Club {id:$club_id}) MERGE (a)-[:MEMBER_OF]->(c)", **data)
     elif topic == "social.event" and data.get("book_id"):
         await tx.run(
             "MERGE (a:User {id:$actor_id}) MERGE (b:Book {id:$book_id}) "
