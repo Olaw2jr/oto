@@ -16,7 +16,11 @@ import {
   PlayerController,
   type PlaybackAssetRepository,
 } from '../app/player';
-import {createApplicationContainer} from '../app/composition';
+import {
+  createApplicationContainer,
+  type ApplicationContainerOptions,
+} from '../app/composition';
+import {FakeConnectivity} from '../app/connectivity';
 import {ThemeProvider} from '../app/theme/ThemeProvider';
 import {AppProviders} from '../app/state/AppProviders';
 import {
@@ -91,9 +95,13 @@ export const createTestPlayerController = async (): Promise<PlayerController> =>
   });
 };
 
-export const createTestContainer = () =>
+export const createTestContainer = (
+  options: ApplicationContainerOptions = {},
+) =>
   createApplicationContainer({
     createPlayerController: createTestPlayerController,
+    connectivity: new FakeConnectivity(),
+    ...options,
   });
 
 // The providers resolve stored state asynchronously after mount;
@@ -107,9 +115,18 @@ export const renderAsync = async (ui: ReactElement) => {
 export const renderWithTheme = (ui: ReactElement) =>
   renderAsync(<ThemeProvider>{ui}</ThemeProvider>);
 
-export const renderScreen = (ui: ReactElement) =>
+// Options replace parts of the test container, e.g. an offline connectivity.
+export const renderScreen = (
+  ui: ReactElement,
+  options: Partial<ApplicationContainerOptions> = {},
+) =>
   renderAsync(
-    <AppProviders container={createTestContainer()}>
+    <AppProviders
+      container={createTestContainer(
+        Object.fromEntries(
+          Object.entries(options).filter(([, value]) => value !== undefined),
+        ),
+      )}>
       {ui}
     </AppProviders>,
   );

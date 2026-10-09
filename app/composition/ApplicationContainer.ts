@@ -11,6 +11,7 @@ import {
   type SeedLibraryGraph,
   type LibraryProviderAdapter,
 } from '../adapters/library';
+import {NetInfoConnectivity} from '../adapters/connectivity';
 import {
   ChapterPlaybackSession,
   LivePlaybackSession,
@@ -18,6 +19,7 @@ import {
   type AudioEngine,
 } from '../audio';
 import type {PersonalCollections} from '../domain';
+import type {Connectivity} from '../connectivity';
 import {RightsPolicy} from '../domain/rights';
 import {
   PlaybackQueueResolver,
@@ -72,6 +74,7 @@ export type ApplicationContainer = {
     // transport exists (BE-06).
     outbox: MutationOutbox;
   };
+  connectivity: Connectivity;
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
@@ -91,6 +94,7 @@ export type ApplicationContainerOptions = {
   databaseFactory?: () => Promise<SqlDatabase>;
   collections?: ApplicationContainer['collections'];
   outbox?: MutationOutbox;
+  connectivity?: Connectivity;
 };
 
 const createSeedCollections = (): ApplicationContainer['collections'] => {
@@ -232,6 +236,7 @@ export const createApplicationContainer = (
     library: libraryGraph.adapter,
     collections: options.collections ?? createSeedCollections(),
     sync: {outbox: options.outbox ?? new InMemoryMutationOutbox()},
+    connectivity: options.connectivity ?? new NetInfoConnectivity(),
     audio: {
       createEngine,
       createPersistentSession,
