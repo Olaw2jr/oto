@@ -29,3 +29,5 @@ oto reports problems about itself to its own backend through a vendor-neutral
   while online, on start and on reconnect, and retries failures with the sync
   engine's backoff. Events are removed only after the backend accepts them.
 - The uploader starts only when `app/config/environment.ts#apiBaseUrl` is set.
+  The endpoint is `app/telemetry_api.py` in
+  [oto-api](https://github.com/Olaw2jr/oto-api), which enforces the same limits.
