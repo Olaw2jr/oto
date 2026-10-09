@@ -4,16 +4,16 @@ import {Pressable, StyleSheet, View} from 'react-native';
 import {BookCover} from '../../components/BookCover';
 import OtoLogo from '../../components/OtoLogo';
 import {LoadingState} from '../../components/LoadingState';
-import {chapterAt} from '../../data/catalogue';
-import {formatRemaining} from '../../data/format';
+import {getBook} from '../../data/catalogue';
 import {openPerson} from '../../navigator/openPerson';
 import {TabScreenProps} from '../../navigator/types';
 import {useOnline, useRetryConnection} from '../../state/network';
+import {useDownloadedBooks} from '../../state/downloads';
 import {usePlayer} from '../../state/player';
 import {useSocial} from '../../state/social';
 import {useFirstLoad} from '../../state/firstLoad';
 import {useTheme} from '../../theme/ThemeProvider';
-import {Button, Card, Icon, IconButton, Screen, Txt} from '../../ui';
+import {Button, Card, Icon, IconButton, Screen, TextLink, Txt} from '../../ui';
 import {FeedCard} from './FeedCard';
 
 const filters = ['Friends', 'Clubs', 'Reviews'] as const;
@@ -28,6 +28,7 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
   const online = useOnline();
   const retryConnection = useRetryConnection();
   const player = usePlayer();
+  const downloads = useDownloadedBooks();
 
   const items = feed.filter(item =>
     filter === 'Clubs'
@@ -38,10 +39,10 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
   );
 
   if (!online) {
-    const {book, position} = player;
-    const where = `Chapter ${chapterAt(book, position)} · ${formatRemaining(
-      book.durationSec - position,
-    )}`;
+    // Only what's actually downloaded plays without a connection.
+    const offlineBooks = downloads.entries
+      .filter(entry => entry.status.state === 'completed')
+      .map(entry => getBook(entry.bookId));
     return (
       <Screen scroll>
         <Txt variant="display">Following</Txt>
@@ -83,26 +84,42 @@ const FollowingScreen = ({navigation}: TabScreenProps<'Following'>) => {
         </View>
 
         <Txt variant="label" style={styles.availableLabel}>
-          Continue listening
+          Available offline
         </Txt>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Play ${book.title}, ${where}`}
-          onPress={() => {
-            player.play(book.id);
-            navigation.navigate('Player');
-          }}>
-          <Card style={styles.available}>
-            <BookCover book={book} size={52} />
-            <View style={styles.availableText}>
-              <Txt variant="bookTitle" numberOfLines={1}>
-                {book.title}
-              </Txt>
-              <Txt variant="small">{where}</Txt>
-            </View>
-            <Icon name="play" size={24} />
-          </Card>
-        </Pressable>
+        {offlineBooks.length ? (
+          offlineBooks.map(book => (
+            <Pressable
+              key={book.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Play ${book.title}`}
+              onPress={() => {
+                player.play(book.id);
+                navigation.navigate('Player');
+              }}>
+              <Card style={styles.available}>
+                <BookCover book={book} size={52} />
+                <View style={styles.availableText}>
+                  <Txt variant="bookTitle" numberOfLines={1}>
+                    {book.title}
+                  </Txt>
+                  <Txt variant="small">{book.author}</Txt>
+                </View>
+                <Icon name="play" size={24} />
+              </Card>
+            </Pressable>
+          ))
+        ) : (
+          <View>
+            <Txt color="graphite">
+              Nothing downloaded yet. Download a book from its page to listen
+              without a connection.
+            </Txt>
+            <TextLink
+              label="Downloads"
+              onPress={() => navigation.navigate('Downloads')}
+            />
+          </View>
+        )}
       </Screen>
     );
   }

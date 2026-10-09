@@ -30,15 +30,16 @@ const useConnectivity = () => {
   return connectivity;
 };
 
-// Offline only when the device is sure; an unknown state counts as online.
+// Offline only when the device is sure; an unknown state, or no provider,
+// counts as online.
 export const useOnline = () => {
-  const connectivity = useConnectivity();
+  const connectivity = useContext(ConnectivityContext);
   const subscribe = useCallback(
-    (onChange: () => void) => connectivity.subscribe(onChange),
+    (onChange: () => void) => connectivity?.subscribe(onChange) ?? (() => {}),
     [connectivity],
   );
   const online = useCallback(
-    () => connectivity.current().online,
+    () => connectivity?.current().online ?? true,
     [connectivity],
   );
   return useSyncExternalStore(subscribe, online, online);
