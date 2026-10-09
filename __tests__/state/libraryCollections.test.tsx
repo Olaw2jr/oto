@@ -40,6 +40,8 @@ describe('LibraryProvider collections', () => {
       result.current.toggleOnShelf('quiet', 'starry-messenger');
       result.current.toggleOnShelf('quiet', 'greenlights');
       result.current.addBookmark('greenlights', 3.7);
+      result.current.addBookmark('greenlights', 30);
+      result.current.removeBookmark('greenlights', 30);
     });
     let id = '';
     await act(async () => {

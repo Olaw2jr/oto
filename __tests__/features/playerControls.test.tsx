@@ -77,6 +77,20 @@ describe('PlayerScreen controls', () => {
     expect(elapsed()).toBe(marked);
   });
 
+  it('deletes a bookmark', async () => {
+    await setup();
+    await press(screen.getByRole('button', {name: 'Bookmark this moment'}));
+    await press(screen.getByRole('button', {name: 'More'}));
+    await press(screen.getByRole('button', {name: 'Bookmarks, 1'}));
+    const [remove] = screen.getAllByRole('button', {name: /^Delete bookmark at /});
+    await press(remove);
+
+    expect(screen.queryAllByRole('button', {name: /^Play from /})).toHaveLength(0);
+    expect(
+      screen.getByText('Tap the bookmark while you listen to save a moment.'),
+    ).toBeOnTheScreen();
+  });
+
   it('opens the book from More', async () => {
     const navigation = await setup();
     await press(screen.getByRole('button', {name: 'More'}));

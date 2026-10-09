@@ -77,6 +77,8 @@ describe('production persistence against SQLite', () => {
     await repository.addBookmark('starry-messenger', 90);
     await repository.addBookmark('starry-messenger', 30);
     await repository.addBookmark('starry-messenger', 90);
+    await repository.addBookmark('starry-messenger', 45);
+    await repository.removeBookmark('starry-messenger', 45);
     first.close();
 
     const second = open(filename);

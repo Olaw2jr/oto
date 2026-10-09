@@ -7,4 +7,5 @@ export interface CollectionsRepository {
   // Saves the shelf's name and replaces its books.
   saveShelf(shelf: ShelfRecord): Promise<void>;
   addBookmark(bookId: BookId, atSec: number): Promise<void>;
+  removeBookmark(bookId: BookId, atSec: number): Promise<void>;
 }
