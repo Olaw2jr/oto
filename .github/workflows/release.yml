@@ -1,0 +1,236 @@
+name: Release
+
+# Builds signed Android and iOS release artifacts for a version tag, with a
+# CycloneDX SBOM, SHA-256 checksums and build provenance, and publishes them
+# as a GitHub Release. Secrets: see docs/release/configuration.md.
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to release, e.g. v1.2.3
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - id: tag
+        name: Check the tag matches package.json
+        env:
+          REF: ${{ inputs.tag || github.ref }}
+        run: |
+          node scripts/release/check-tag.js "$REF"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "tag=${REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+  android:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      OTO_ENVIRONMENT: production
+      OTO_BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - name: Require Android signing secrets
+        env:
+          KEYSTORE: ${{ secrets.OTO_UPLOAD_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.OTO_UPLOAD_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.OTO_UPLOAD_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.OTO_UPLOAD_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Android signing secrets are missing. Add OTO_UPLOAD_KEYSTORE_BASE64, OTO_UPLOAD_STORE_PASSWORD, OTO_UPLOAD_KEY_ALIAS and OTO_UPLOAD_KEY_PASSWORD (see docs/release/configuration.md)."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.preflight.outputs.tag }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - run: npm ci
+      - name: Write the upload keystore
+        env:
+          KEYSTORE: ${{ secrets.OTO_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/upload.keystore"
+          echo "OTO_UPLOAD_STORE_FILE=$RUNNER_TEMP/upload.keystore" >> "$GITHUB_ENV"
+      - name: Validate release configuration
+        env:
+          OTO_UPLOAD_STORE_PASSWORD: ${{ secrets.OTO_UPLOAD_STORE_PASSWORD }}
+          OTO_UPLOAD_KEY_ALIAS: ${{ secrets.OTO_UPLOAD_KEY_ALIAS }}
+          OTO_UPLOAD_KEY_PASSWORD: ${{ secrets.OTO_UPLOAD_KEY_PASSWORD }}
+        run: npm run release:validate
+      - name: Build signed bundle and APK
+        working-directory: android
+        env:
+          OTO_UPLOAD_STORE_PASSWORD: ${{ secrets.OTO_UPLOAD_STORE_PASSWORD }}
+          OTO_UPLOAD_KEY_ALIAS: ${{ secrets.OTO_UPLOAD_KEY_ALIAS }}
+          OTO_UPLOAD_KEY_PASSWORD: ${{ secrets.OTO_UPLOAD_KEY_PASSWORD }}
+        run: ./gradlew :app:bundleRelease :app:assembleRelease --no-daemon
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/bundle/release/app-release.aab "dist/oto-${{ needs.preflight.outputs.version }}.aab"
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/oto-${{ needs.preflight.outputs.version }}.apk"
+          rm -f "$RUNNER_TEMP/upload.keystore"
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/*
+      - uses: actions/upload-artifact@v6
+        with:
+          name: android-release
+          path: dist/*
+          if-no-files-found: error
+
+  ios:
+    needs: preflight
+    runs-on: xcode-27
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      OTO_ENVIRONMENT: production
+    steps:
+      - name: Require iOS signing secrets
+        env:
+          CERT: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          TEAM_ID: ${{ secrets.OTO_IOS_TEAM_ID }}
+        run: |
+          if [ -z "$CERT" ] || [ -z "$CERT_PASSWORD" ] || [ -z "$PROFILE" ] || [ -z "$TEAM_ID" ]; then
+            echo "::error::iOS signing secrets are missing. Add IOS_DIST_CERT_P12_BASE64, IOS_DIST_CERT_PASSWORD, IOS_PROVISIONING_PROFILE_BASE64 and OTO_IOS_TEAM_ID (see docs/release/configuration.md)."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.preflight.outputs.tag }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+      - run: npm ci
+      - run: bundle exec pod install --project-directory=ios
+      - name: Install signing certificate and profile in a temporary keychain
+        env:
+          CERT: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/oto-release.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+          echo "$CERT" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/dist.p12" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          echo "$PROFILE" | base64 --decode > "$HOME/Library/MobileDevice/Provisioning Profiles/oto.mobileprovision"
+          rm -f "$RUNNER_TEMP/dist.p12"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+      - name: Archive
+        env:
+          OTO_IOS_TEAM_ID: ${{ secrets.OTO_IOS_TEAM_ID }}
+        run: |
+          xcodebuild archive \
+            -workspace ios/Eyy.xcworkspace \
+            -scheme Eyy \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/oto.xcarchive" \
+            DEVELOPMENT_TEAM="$OTO_IOS_TEAM_ID" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            OTO_ENVIRONMENT=production
+      - name: Export IPA
+        env:
+          OTO_IOS_TEAM_ID: ${{ secrets.OTO_IOS_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${OTO_IOS_TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/oto.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export"
+          mkdir -p dist
+          cp "$RUNNER_TEMP"/export/*.ipa "dist/oto-${{ needs.preflight.outputs.version }}.ipa"
+      - name: Remove the temporary keychain
+        if: always()
+        run: |
+          if [ -n "$KEYCHAIN" ]; then security delete-keychain "$KEYCHAIN" || true; fi
+          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/oto.mobileprovision"
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/*
+      - uses: actions/upload-artifact@v6
+        with:
+          name: ios-release
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    needs: [preflight, android, ios]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.preflight.outputs.tag }}
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: SBOM (CycloneDX) of the app's dependencies
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: dist/oto-${{ needs.preflight.outputs.version }}.sbom.cdx.json
+          upload-artifact: false
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS.txt
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.preflight.outputs.tag }}
+        run: gh release create "$TAG" dist/* --title "oto $TAG" --generate-notes --verify-tag
