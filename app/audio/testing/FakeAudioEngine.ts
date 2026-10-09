@@ -147,6 +147,12 @@ export class FakeAudioEngine implements AudioEngine {
     return durationSec === undefined ? lower : Math.min(durationSec, lower);
   }
 
+  // Simulates the native player stopping on an error, e.g. a lost stream.
+  fail(): void {
+    this.snapshot = {...this.snapshot, state: 'error'};
+    this.emit();
+  }
+
   private emit(): void {
     const snapshot = {...this.snapshot};
     this.listeners.forEach(listener => listener(snapshot));

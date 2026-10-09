@@ -10,7 +10,7 @@ describe('RNTP v4 RN 0.87 compatibility patch', () => {
     const pkg = JSON.parse(read('package.json'));
     expect(pkg.dependencies['react-native-track-player']).toBe('4.1.2');
     expect(pkg.scripts.postinstall).toBe(
-      'node scripts/patch-rntp-v4.js',
+      'node scripts/patch-rntp-v4.js && node scripts/patch-rn-gradle-plugin-kotlin.js',
     );
   });
 

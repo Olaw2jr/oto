@@ -19,3 +19,17 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url "https://dl.frostwire.com/maven"
+            content {
+                includeGroup "com.frostwire"
+            }
+        }
+    }
+}

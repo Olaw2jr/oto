@@ -17,6 +17,7 @@ import {
   LivePlaybackSession,
   SourceResolver,
   type AudioEngine,
+  type ChapterPreloadCoordinator,
 } from '../audio';
 import type {PersonalCollections} from '../domain';
 import type {Connectivity} from '../connectivity';
@@ -51,6 +52,7 @@ import {
   HttpsTransport,
   LocalFileTransport,
   TransportRegistry,
+  type ContentTransport,
 } from '../transports';
 
 export type ApplicationContainer = {
@@ -92,6 +94,10 @@ export type ApplicationContainerOptions = {
   createPlayerController?: () => Promise<PlayerController>;
   libraryGraph?: SeedLibraryGraph;
   databaseFactory?: () => Promise<SqlDatabase>;
+  createTorrentStreamingTransport?: () => Promise<ContentTransport | undefined>;
+  createAudioEngine?: () => Promise<AudioEngine>;
+  createPreloader?: () => Promise<ChapterPreloadCoordinator | undefined>;
+  createSleepTimerController?: () => Promise<PlayerSleepTimerController>;
   collections?: ApplicationContainer['collections'];
   outbox?: MutationOutbox;
   connectivity?: Connectivity;
@@ -121,8 +127,18 @@ export const createApplicationContainer = (
   const databaseFactory = options.databaseFactory ?? openDatabase;
   let database: Promise<SqlDatabase> | undefined;
   const sharedDatabase = () => (database ??= databaseFactory());
+  const createTorrentStreamingTransport =
+    options.createTorrentStreamingTransport ??
+    (async (): Promise<ContentTransport | undefined> => {
+      const {Platform} = await import('react-native');
+      if (Platform.OS !== 'android') return undefined;
+      const {createAndroidTorrentRuntime} = await import(
+        '../adapters/torrent'
+      );
+      return createAndroidTorrentRuntime().streaming;
+    });
 
-  const createEngine = async (): Promise<AudioEngine> => {
+  const createEngine = options.createAudioEngine ?? (async (): Promise<AudioEngine> => {
     const {Platform} = await import('react-native');
     if (Platform.OS === 'android') {
       const {createNativeMedia3AudioEngine} = await import(
@@ -134,9 +150,9 @@ export const createApplicationContainer = (
       '../audio/rntp/createNativeRntpAudioEngine'
     );
     return createNativeRntpAudioEngine();
-  };
+  });
 
-  const createPreloader = async () => {
+  const createPreloader = options.createPreloader ?? (async () => {
     const {Platform} = await import('react-native');
     const {ChapterPreloadCoordinator} = await import('../audio/preload');
     const backend =
@@ -146,7 +162,7 @@ export const createApplicationContainer = (
           ).Media3PreloadBackend()
         : new (await import('../audio/preload')).QueueAwarePreloadBackend();
     return new ChapterPreloadCoordinator(backend);
-  };
+  });
 
   const createPersistentLibraryService = async () => {
     const db = await sharedDatabase();
@@ -171,8 +187,8 @@ export const createApplicationContainer = (
       );
     };
 
-  const createSleepTimer =
-    async (): Promise<PlayerSleepTimerController> => {
+  const createSleepTimer = options.createSleepTimerController ??
+    (async (): Promise<PlayerSleepTimerController> => {
       const {Platform} = await import('react-native');
       if (Platform.OS === 'android') {
         const {Media3SleepTimerController} = await import(
@@ -184,7 +200,7 @@ export const createApplicationContainer = (
         '../adapters/audio/createNativeSleepTimerController'
       );
       return createNativeSleepTimerController();
-    };
+    });
 
   const createPlayerController =
     async (): Promise<PlayerController> => {
@@ -195,17 +211,20 @@ export const createApplicationContainer = (
         service,
         await createPreloader(),
       );
+      const transports: ContentTransport[] = [
+        new LocalFileTransport(),
+        new HttpsTransport({
+          start: async () => {
+            throw new Error(
+              'Direct HTTP downloads are not configured by the player',
+            );
+          },
+        }),
+      ];
+      const torrentTransport = await createTorrentStreamingTransport();
+      if (torrentTransport) transports.push(torrentTransport);
       const sources = new SourceResolver(
-        new TransportRegistry([
-          new LocalFileTransport(),
-          new HttpsTransport({
-            start: async () => {
-              throw new Error(
-                'Direct HTTP downloads are not configured by the player',
-              );
-            },
-          }),
-        ]),
+        new TransportRegistry(transports),
         new RightsPolicy('TZ', ['internetarchive']),
         {locate: async () => null},
       );

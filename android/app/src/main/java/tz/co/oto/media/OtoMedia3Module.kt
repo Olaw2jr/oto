@@ -124,12 +124,16 @@ class OtoMedia3Module(
   }
 
   private fun snapshot(player: Player): WritableMap {
+    // After a failure Media3 sits idle with a playerError; report the error
+    // so the app can tell the listener instead of going quiet.
     val state =
-      when (player.playbackState) {
-        Player.STATE_IDLE -> "none"
-        Player.STATE_BUFFERING -> "buffering"
-        Player.STATE_READY -> if (player.isPlaying) "playing" else "ready"
-        Player.STATE_ENDED -> "ended"
+      when {
+        player.playerError != null -> "error"
+        player.playbackState == Player.STATE_IDLE -> "none"
+        player.playbackState == Player.STATE_BUFFERING -> "buffering"
+        player.playbackState == Player.STATE_READY ->
+          if (player.isPlaying) "playing" else "ready"
+        player.playbackState == Player.STATE_ENDED -> "ended"
         else -> "error"
       }
     return Arguments.createMap().apply {

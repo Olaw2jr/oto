@@ -37,6 +37,14 @@ describe('public-domain playback assets', () => {
         sizeBytes: 1000,
         sources: [
           {
+            kind: 'torrent',
+            torrentUri:
+              `https://archive.org/download/${PUBLIC_DOMAIN_ARCHIVE_ID}/` +
+              `${PUBLIC_DOMAIN_ARCHIVE_ID}_archive.torrent`,
+            filePath: 'adventuresholmes_01_doyle_64kb.mp3',
+            trustedSourceId: 'internetarchive',
+          },
+          {
             kind: 'https',
             uri:
               'https://archive.org/download/' +

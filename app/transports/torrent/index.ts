@@ -7,3 +7,5 @@ export * from './LocalhostRangeGateway';
 export * from './TorrentStreamTransport';
 export * from './TorrentPiecePlanner';
 export * from './TorrentSessionPool';
+export * from './AsyncStorageTorrentResumeStore';
+export * from './KeyValueTorrentResumeStore';

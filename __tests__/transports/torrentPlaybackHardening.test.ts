@@ -93,4 +93,52 @@ describe('torrent playback hardening', () => {
 
     await playable.cleanup?.();
   });
+
+  it('resolves an archive-relative file path to one exact torrent manifest entry', async () => {
+    const engine = new FakeTorrentEngine([
+      {index: 0, path: 'archive-root/chapter-01.mp3', sizeBytes: 10_000},
+      {index: 1, path: 'archive-root/chapter-02.mp3', sizeBytes: 10_000},
+    ]);
+    const pool = new TorrentSessionPool(engine);
+    const gateway = new LocalhostRangeGateway({
+      start: async input => ({
+        routeId: `route-${input.fileIndex}`,
+        port: 43123,
+      }),
+      stop: async () => {},
+    });
+    const streaming = new TorrentStreamTransport(pool, gateway);
+
+    const playable = await streaming.prepare({
+      kind: 'torrent',
+      magnetUri: 'magnet:?xt=urn:btih:archive',
+      filePath: 'chapter-02.mp3',
+    });
+
+    expect(playable.uri).toBe('http://127.0.0.1:43123/media/route-1');
+    await playable.cleanup?.();
+  });
+
+  it('rejects an archive-relative path when multiple manifest entries match', async () => {
+    const engine = new FakeTorrentEngine([
+      {index: 0, path: 'disc-1/chapter.mp3', sizeBytes: 10_000},
+      {index: 1, path: 'disc-2/chapter.mp3', sizeBytes: 10_000},
+    ]);
+    const streaming = new TorrentStreamTransport(
+      engine,
+      new LocalhostRangeGateway({
+        start: async () => ({routeId: 'route', port: 43123}),
+        stop: async () => {},
+      }),
+    );
+
+    await expect(
+      streaming.prepare({
+        kind: 'torrent',
+        magnetUri: 'magnet:?xt=urn:btih:ambiguous',
+        filePath: 'chapter.mp3',
+      }),
+    ).rejects.toThrow('Torrent file selector does not identify one exact file');
+    expect(engine.closedSessions).toContain('fake-session');
+  });
 });

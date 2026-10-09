@@ -66,7 +66,43 @@ export class TorrentSessionPool {
     lease: TorrentSessionLease,
     selector: TorrentFileSelector,
   ): Promise<TorrentFile> {
-    return this.engine.selectFile(lease.session.id, selector);
+    if (selector.filePath === undefined) {
+      return this.engine.selectFile(lease.session.id, selector);
+    }
+
+    const expectedPath = selector.filePath
+      .replace(/\\/g, '/')
+      .replace(/^\.\//, '');
+    if (
+      expectedPath.length === 0 ||
+      expectedPath.split('/').some(part => part === '.' || part === '..')
+    ) {
+      throw new Error('Torrent file selector does not identify one exact file');
+    }
+
+    // Multi-file torrents expose paths beneath the torrent's root directory,
+    // while catalogue metadata commonly stores the archive-relative path.
+    // Resolve that path against the session manifest, then send the native
+    // engine the exact path and index it reported. Never guess when ambiguous.
+    const matches = lease.session.files.filter(file => {
+      const candidate = file.path.replace(/\\/g, '/').replace(/^\.\//, '');
+      return (
+        candidate === expectedPath ||
+        candidate.endsWith(`/${expectedPath}`)
+      );
+    });
+    const selected = matches.length === 1 ? matches[0] : undefined;
+    if (
+      !selected ||
+      (selector.fileIndex !== undefined && selector.fileIndex !== selected.index)
+    ) {
+      throw new Error('Torrent file selector does not identify one exact file');
+    }
+
+    return this.engine.selectFile(lease.session.id, {
+      fileIndex: selected.index,
+      filePath: selected.path,
+    });
   }
 
   async retainFile(
