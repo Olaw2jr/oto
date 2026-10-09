@@ -1,0 +1,19 @@
+# First run: onboarding, sign in, land on Home with a playable book.
+appId: tz.co.oto
+tags: [smoke]
+---
+- launchApp:
+    clearState: true
+- tapOn: "Continue to onboarding"
+- tapOn: "Skip"
+# Sign-up's social buttons sign in too (auth is a placeholder until BE-02);
+# they sit below the fold on small screens.
+- scrollUntilVisible:
+    element: "Google"
+    direction: DOWN
+- tapOn: "Google"
+- extendedWaitUntil:
+    visible: "Continue listening"
+    timeout: 20000
+# A fresh install continues the public-domain sample, which can play.
+- assertVisible: "The Adventures of Sherlock Holmes"
