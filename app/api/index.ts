@@ -9,4 +9,10 @@ export type {
 export {FakeHttpTransport} from './testing/FakeHttpTransport';
 export {FetchHttpTransport} from './FetchHttpTransport';
 export {OtoApiClient, createOtoApiClient} from './OtoApiClient';
-export type {OtoBook, Page, TokenProvider} from './OtoApiClient';
+export type {
+  OtoBook,
+  Page,
+  SyncMutation,
+  SyncMutationResult,
+  TokenProvider,
+} from './OtoApiClient';

@@ -21,6 +21,18 @@ export interface TokenProvider {
   refreshAccessToken(): Promise<string | null>;
 }
 
+export type SyncMutation = {
+  id: string;
+  kind: string;
+  entity_id: string;
+  occurred_at: string;
+  payload: Record<string, unknown>;
+};
+
+export type SyncMutationResult =
+  | {id: string; status: 'applied' | 'superseded' | 'duplicate'}
+  | {id: string; status: 'rejected'; code: string; message: string};
+
 export class OtoApiClient {
   constructor(
     private readonly transport: HttpTransport,
@@ -30,15 +42,18 @@ export class OtoApiClient {
   private async request<T>(
     method: HttpMethod,
     path: string,
+    body?: unknown,
     retry = true,
   ): Promise<T> {
     const token = await this.tokens.getAccessToken();
     const headers: HttpHeaders = token ? {Authorization: `Bearer ${token}`} : {};
-    const response = await this.transport.send<T>({method, path, headers});
+    const response = await this.transport.send<T>(
+      body === undefined ? {method, path, headers} : {method, path, headers, body},
+    );
     // An expired token gets one refresh and one retry.
     if (response.status === 401 && retry && token) {
       if (await this.tokens.refreshAccessToken()) {
-        return this.request<T>(method, path, false);
+        return this.request<T>(method, path, body, false);
       }
     }
     if (response.status < 200 || response.status >= 300) {
@@ -69,6 +84,12 @@ export class OtoApiClient {
 
   snapshot(): Promise<{library: unknown[]; progress: unknown[]}> {
     return this.request('GET', '/v1/sync/snapshot');
+  }
+
+  pushMutations(
+    mutations: SyncMutation[],
+  ): Promise<{results: SyncMutationResult[]}> {
+    return this.request('POST', '/v1/sync/mutations', {mutations});
   }
 }
 

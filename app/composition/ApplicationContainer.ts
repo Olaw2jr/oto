@@ -61,7 +61,14 @@ import {
   migrations,
   type SqlDatabase,
 } from '../storage/sqlite';
-import {InMemoryMutationOutbox, type MutationOutbox} from '../sync';
+import {
+  InMemoryMutationOutbox,
+  type MutationOutbox,
+  SyncRecorder,
+  syncCollections,
+  syncLibrary,
+  syncProgress,
+} from '../sync';
 import {
   HttpsTransport,
   LocalFileTransport,
@@ -86,9 +93,11 @@ export type ApplicationContainer = {
     initial: PersonalCollections;
   };
   sync: {
-    // Changes waiting for the server. Nothing sends them until a backend
-    // transport exists (BE-06).
+    // Changes waiting for oto-api (docs/sync-protocol.md there).
     outbox: MutationOutbox;
+    // Records library, progress, shelf and rating changes into the outbox.
+    // Only present when a backend is configured (apiBaseUrl).
+    recorder?: SyncRecorder;
   };
   connectivity: Connectivity;
   telemetry: {
@@ -343,15 +352,23 @@ export const createApplicationContainer = (
 // only used by explicitly injected test/prototype containers.
 export const createPersistentApplicationContainer = async (
   databaseFactory: () => Promise<SqlDatabase> = openDatabase,
+  options: {apiBaseUrl?: string | null} = {},
 ): Promise<ApplicationContainer> => {
   const database = await databaseFactory();
   await new MigrationRunner(database, migrations).migrate();
+  const backend =
+    options.apiBaseUrl === undefined ? apiBaseUrl : options.apiBaseUrl;
+  const outbox = new SqliteMutationOutbox(database);
+  // Without a backend there's nowhere to send changes, so none are queued.
+  const recorder = backend ? new SyncRecorder({outbox}) : undefined;
   const seed = createSeedLibraryGraph();
   const storedLibrary = new SqliteLibraryRepository(database);
   const storedProgress = new SqliteProgressRepository(database);
   const storedCollections = new SqliteCollectionsRepository(database);
   const collections = {
-    repository: storedCollections,
+    repository: recorder
+      ? syncCollections(storedCollections, recorder)
+      : storedCollections,
     initial: await storedCollections.load(),
   };
   const library = new ObservableLibraryRepository(await storedLibrary.list());
@@ -365,7 +382,7 @@ export const createPersistentApplicationContainer = async (
       progress.setOptimistic(saved);
     }
   }
-  const durableLibrary: LibraryRepository = {
+  const localLibrary: LibraryRepository = {
     get: id => storedLibrary.get(id),
     list: () => storedLibrary.list(),
     save: async entry => {
@@ -377,13 +394,19 @@ export const createPersistentApplicationContainer = async (
       await library.remove(id);
     },
   };
-  const durableProgress: ProgressRepository = {
+  const localProgress: ProgressRepository = {
     get: (bookId, renditionId) => storedProgress.get(bookId, renditionId),
     save: async entry => {
       await storedProgress.save(entry);
       progress.setOptimistic(entry);
     },
   };
+  const durableLibrary = recorder
+    ? syncLibrary(localLibrary, recorder)
+    : localLibrary;
+  const durableProgress = recorder
+    ? syncProgress(localProgress, recorder)
+    : localProgress;
   const service = new LibraryService({
     catalogue: seed.catalogue,
     renditions: seed.renditions,
@@ -401,9 +424,11 @@ export const createPersistentApplicationContainer = async (
     libraryGraph: {...seed, library, progress, service, adapter},
     databaseFactory: async () => database,
     collections,
-    outbox: new SqliteMutationOutbox(database),
+    outbox,
     telemetryStore: new SqliteTelemetryStore(database),
+    apiBaseUrl: backend,
   });
+  container.sync.recorder = recorder;
   container.repositories.library = durableLibrary;
   container.repositories.progress = durableProgress;
   return container;

@@ -1,5 +1,5 @@
 import React, {ReactNode, useEffect, useState} from 'react';
-import {ActivityIndicator, Button, Text, View} from 'react-native';
+import {ActivityIndicator, AppState, Button, Text, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import {
@@ -10,6 +10,7 @@ import {ThemeProvider} from '../theme/ThemeProvider';
 import {LibraryProvider} from './library';
 import {ConnectivityProvider} from './network';
 import {reportStartup} from '../telemetry/startup';
+import {settleOnBackground} from '../sync';
 import {installGlobalErrorReporting, TelemetryProvider} from './telemetry';
 import {PlayerProvider} from './player';
 import {SessionProvider} from './session';
@@ -57,8 +58,13 @@ export const AppProviders = ({
       container.telemetry.telemetry,
     );
     const stopUploads = container.telemetry.start();
+    const recorder = container.sync.recorder;
+    const stopSettling = recorder
+      ? settleOnBackground(recorder, AppState)
+      : () => {};
     reportStartup(container.telemetry.telemetry);
     return () => {
+      stopSettling();
       stopUploads();
       uninstall();
     };
