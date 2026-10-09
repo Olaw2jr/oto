@@ -1,6 +1,7 @@
 package tz.co.oto.media
 
 import android.content.Context
+import android.os.StatFs
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -12,7 +13,8 @@ import java.io.File
 
 @UnstableApi
 object OtoMedia3Cache {
-  private const val CACHE_BYTES = 512L * 1024L * 1024L
+  private const val MAX_CACHE_BYTES = 512L * 1024L * 1024L
+  private const val MIN_CACHE_BYTES = 64L * 1024L * 1024L
   private const val AUDIO_BYTES_PER_SECOND = 32L * 1024L
   // Torrent-backed loopback routes may wait for a verified piece before
   // responding. Keep the HTTP read timeout longer than the native route's
@@ -20,11 +22,19 @@ object OtoMedia3Cache {
   private const val HTTP_READ_TIMEOUT_MS = 35_000
   @Volatile private var instance: SimpleCache? = null
 
+  // Streaming cache size: up to 512 MB, but no more than a tenth of the free
+  // space when the cache opens (at least 64 MB), so a nearly full phone
+  // isn't pushed further (D5).
+  fun streamingCacheBytes(context: Context): Long {
+    val free = runCatching { StatFs(context.cacheDir.path).availableBytes }.getOrDefault(MAX_CACHE_BYTES * 10)
+    return (free / 10).coerceIn(MIN_CACHE_BYTES, MAX_CACHE_BYTES)
+  }
+
   fun cache(context: Context): SimpleCache =
     instance ?: synchronized(this) {
       instance ?: SimpleCache(
         File(context.cacheDir, "oto-media3"),
-        LeastRecentlyUsedCacheEvictor(CACHE_BYTES),
+        LeastRecentlyUsedCacheEvictor(streamingCacheBytes(context)),
         OtoDownloads.databaseProvider(context),
       ).also { instance = it }
     }

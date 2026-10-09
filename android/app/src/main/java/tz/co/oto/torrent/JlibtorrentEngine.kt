@@ -123,6 +123,29 @@ class JlibtorrentEngine(private val context: Context) {
 
   // libtorrent's own TLS fails on Android (#135); give it plain-HTTP loopback
   // URLs for HTTPS web seeds before the paused torrent starts.
+  // Streamed torrent data stays only as a short-term cache: once no torrent
+  // is open, drop directories unused for a week and keep the rest under a
+  // size budget, oldest first (D5).
+  private fun pruneStreamedData() {
+    val root = File(context.filesDir, "authorized-torrents")
+    val dirs = root.listFiles()?.filter { it.isDirectory } ?: return
+    val now = System.currentTimeMillis()
+    val (stale, fresh) = dirs.partition { now - lastUsed(it) > TORRENT_DATA_MAX_AGE_MS }
+    stale.forEach { it.deleteRecursively() }
+    var total = fresh.sumOf { size(it) }
+    for (dir in fresh.sortedBy { lastUsed(it) }) {
+      if (total <= TORRENT_DATA_BUDGET_BYTES) break
+      total -= size(dir)
+      dir.deleteRecursively()
+    }
+  }
+
+  private fun lastUsed(dir: File): Long =
+    dir.walkTopDown().maxOfOrNull { it.lastModified() } ?: dir.lastModified()
+
+  private fun size(dir: File): Long =
+    dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+
   private fun proxyHttpsWebSeeds(handle: TorrentHandle): List<String> =
     handle.urlSeeds()
       .filter { it.startsWith("https://") }
@@ -345,6 +368,7 @@ class JlibtorrentEngine(private val context: Context) {
         }
         proxy?.close()
         proxy = null
+        pruneStreamedData()
       }
     }
   }
@@ -657,3 +681,5 @@ class JlibtorrentEngine(private val context: Context) {
 private const val TAG = "OtoTorrent"
 
 private val REPRIORITIZE_EVERY_NANOS = TimeUnit.SECONDS.toNanos(2)
+private const val TORRENT_DATA_MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000
+private const val TORRENT_DATA_BUDGET_BYTES = 256L * 1024 * 1024
