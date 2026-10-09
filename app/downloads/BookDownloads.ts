@@ -24,6 +24,18 @@ type Dependencies = {
 export class BookDownloads {
   constructor(private readonly deps: Dependencies) {}
 
+  // Whether the book has rights-cleared audio that could be downloaded.
+  async canDownload(bookId: string): Promise<boolean> {
+    return (await this.deps.renditions.listForWork(bookId)).some(
+      rendition => rendition.chapters.length > 0 && rendition.rights.status !== 'unknown',
+    );
+  }
+
+  // Books with at least one download, in the order they were started.
+  async bookIds(): Promise<string[]> {
+    return [...new Set((await this.deps.engine.list()).map(s => s.bookId))];
+  }
+
   async downloadBook(bookId: string, {wifiOnly}: {wifiOnly: boolean}): Promise<number> {
     const {engine, renditions, assets, rightsPolicy} = this.deps;
     const rendition = (await renditions.listForWork(bookId)).find(
@@ -83,9 +95,9 @@ export class BookDownloads {
       ? 'completed'
       : states.has('downloading')
       ? 'downloading'
-      : states.has('queued')
-      ? 'queued'
-      : 'paused';
+      : states.has('paused')
+      ? 'paused'
+      : 'queued';
     return {
       state,
       chaptersDone: chapters.filter(c => c.state === 'completed').length,

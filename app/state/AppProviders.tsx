@@ -7,6 +7,7 @@ import {
   type ApplicationContainer,
 } from '../composition';
 import {ThemeProvider} from '../theme/ThemeProvider';
+import {DownloadsProvider} from './downloads';
 import {LibraryProvider} from './library';
 import {ConnectivityProvider} from './network';
 import {installGlobalErrorReporting, TelemetryProvider} from './telemetry';
@@ -89,16 +90,18 @@ export const AppProviders = ({
           <ConnectivityProvider connectivity={container.connectivity}>
             <SessionProvider>
               <SettingsProvider>
-                <LibraryProvider
-                  adapter={container.library}
-                  collections={container.collections}>
-                  <PlayerProvider
-                    createController={container.audio.createPlayerController}>
-                    <SocialProvider>
-                      <TasteProvider>{children}</TasteProvider>
-                    </SocialProvider>
-                  </PlayerProvider>
-                </LibraryProvider>
+                <DownloadsProvider books={container.downloads.books}>
+                  <LibraryProvider
+                    adapter={container.library}
+                    collections={container.collections}>
+                    <PlayerProvider
+                      createController={container.audio.createPlayerController}>
+                      <SocialProvider>
+                        <TasteProvider>{children}</TasteProvider>
+                      </SocialProvider>
+                    </PlayerProvider>
+                  </LibraryProvider>
+                </DownloadsProvider>
               </SettingsProvider>
             </SessionProvider>
           </ConnectivityProvider>

@@ -15,6 +15,7 @@ import AuthorScreen from '../features/profiles/AuthorScreen';
 import PersonScreen from '../features/profiles/PersonScreen';
 import SearchScreen from '../features/search/SearchScreen';
 import SettingsScreen from '../features/settings/SettingsScreen';
+import DownloadsScreen from '../features/downloads/DownloadsScreen';
 import ClubScreen from '../features/club/ClubScreen';
 import ThreadScreen from '../features/following/ThreadScreen';
 import UpdateComposeScreen from '../features/following/UpdateComposeScreen';
@@ -74,6 +75,7 @@ const RootNavigator = () => {
           />
           <Stack.Screen name="Club" component={ClubScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Downloads" component={DownloadsScreen} />
           <Stack.Screen name="Thread" component={ThreadScreen} />
           <Stack.Screen name="Catalog" component={CatalogScreen} />
           <Stack.Screen name="Mood" component={MoodScreen} />
