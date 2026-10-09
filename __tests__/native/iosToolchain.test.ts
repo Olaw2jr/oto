@@ -10,7 +10,7 @@ describe('React Native 0.87 iOS baseline', () => {
   it('uses the current CocoaPods/Xcode project tooling baseline', () => {
     const gemfile = read('Gemfile');
     expect(gemfile).toContain("gem 'cocoapods', '1.16.2'");
-    expect(gemfile).toContain("gem 'xcodeproj', '1.27.0'");
+    expect(gemfile).toContain("gem 'xcodeproj', '1.28.1'");
   });
 
   it('uses the RN 0.87 Podfile integration', () => {

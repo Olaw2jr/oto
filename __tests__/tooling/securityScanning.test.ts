@@ -14,6 +14,13 @@ describe('security scanning', () => {
     }
   });
 
+  it('leaves React and the RN-pinned toolchain to React Native upgrades', () => {
+    const config = read('.github/dependabot.yml');
+    for (const name of ['react', 'react-test-renderer', 'gradle-wrapper']) {
+      expect(config).toContain(`dependency-name: '${name}'`);
+    }
+  });
+
   it('runs CodeQL on TypeScript and workflows', () => {
     const workflow = read('.github/workflows/codeql.yml');
     expect(workflow).toContain('github/codeql-action/init@v4');
@@ -24,7 +31,7 @@ describe('security scanning', () => {
 
   it('blocks pull requests that add high-severity vulnerable dependencies', () => {
     const workflow = read('.github/workflows/dependency-review.yml');
-    expect(workflow).toContain('actions/dependency-review-action@v4');
+    expect(workflow).toContain('actions/dependency-review-action@v5');
     expect(workflow).toContain('fail-on-severity: high');
   });
 });

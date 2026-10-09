@@ -9,16 +9,16 @@ describe('React Native 0.87 JavaScript baseline', () => {
   const pkg = JSON.parse(read('package.json'));
 
   it('pins React Native and React to the 0.87 template line', () => {
-    expect(pkg.dependencies['react-native']).toBe('0.87.0');
+    expect(pkg.dependencies['react-native']).toBe('0.87.1');
     expect(pkg.dependencies.react).toBe('19.2.3');
     expect(pkg.devDependencies['react-test-renderer']).toBe('19.2.3');
   });
 
   it('uses the RN 0.87 toolchain packages', () => {
-    expect(pkg.devDependencies['@react-native/babel-preset']).toBe('0.87.0');
-    expect(pkg.devDependencies['@react-native/jest-preset']).toBe('0.87.0');
-    expect(pkg.devDependencies['@react-native/metro-config']).toBe('0.87.0');
-    expect(pkg.devDependencies['@react-native/typescript-config']).toBe('0.87.0');
+    expect(pkg.devDependencies['@react-native/babel-preset']).toBe('0.87.1');
+    expect(pkg.devDependencies['@react-native/jest-preset']).toBe('0.87.1');
+    expect(pkg.devDependencies['@react-native/metro-config']).toBe('0.87.1');
+    expect(pkg.devDependencies['@react-native/typescript-config']).toBe('0.87.1');
     expect(pkg.devDependencies['@react-native-community/cli']).toBe('20.2.0');
   });
 

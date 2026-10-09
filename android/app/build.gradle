@@ -89,7 +89,7 @@ android {
 }
 
 dependencies {
-    def media3Version = "1.11.0"
+    def media3Version = "1.11.1"
     def jlibtorrentVersion = "2.0.12.9"
 
     implementation("com.facebook.react:react-android")
