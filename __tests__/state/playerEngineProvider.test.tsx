@@ -206,3 +206,31 @@ describe('PlayerProvider native playback errors', () => {
     expect(result.current.playing).toBe(false);
   });
 });
+
+describe('PlayerProvider offline', () => {
+  beforeEach(() => jest.spyOn(console, 'warn').mockImplementation(() => {}));
+  afterEach(() => jest.restoreAllMocks());
+
+  it('explains that the book needs a connection or a download', async () => {
+    const {FakeConnectivity} = require('../../app/connectivity');
+    const {ConnectivityProvider} = require('../../app/state/network');
+    const wrapper = ({children}: {children: React.ReactNode}) => (
+      <ConnectivityProvider connectivity={new FakeConnectivity({online: false})}>
+        <SettingsProvider>
+          <LibraryProvider>
+            <PlayerProvider createController={() => Promise.reject(new Error('Unable to connect'))}>
+              {children}
+            </PlayerProvider>
+          </LibraryProvider>
+        </SettingsProvider>
+      </ConnectivityProvider>
+    );
+    const {result} = renderHook(() => usePlayer(), {wrapper});
+    act(() => result.current.toggle());
+    await waitFor(() =>
+      expect(result.current.error).toBe(
+        "You're offline. Download books to listen without a connection.",
+      ),
+    );
+  });
+});
