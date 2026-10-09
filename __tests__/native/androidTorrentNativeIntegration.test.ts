@@ -98,4 +98,65 @@ describe('Android native torrent runtime', () => {
     expect(engine).toContain('connectivity.getLinkProperties');
     expect(engine).toContain('manager.start(SessionParams(settings))');
   });
+
+  // #135: libtorrent's bundled OpenSSL fails HTTPS web seeds on Android
+  // ("init fail (BIO routines)"), so HTTPS seeds go through a loopback proxy
+  // that uses Android's own TLS.
+  it('routes HTTPS web seeds through a loopback proxy', () => {
+    const engine = read(
+      'android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt',
+    );
+    const proxy = read(
+      'android/app/src/main/java/tz/co/oto/torrent/WebSeedProxy.kt',
+    );
+
+    // Swapped before the paused torrent resumes, so libtorrent never tries TLS.
+    const swap = engine.indexOf('proxyHttpsWebSeeds(handle)');
+    expect(swap).toBeGreaterThan(-1);
+    expect(swap).toBeLessThan(engine.indexOf('handle.resume()'));
+    expect(engine).toContain('127.0.0.1:0');
+
+    expect(proxy).toContain('InetAddress.getByName("127.0.0.1")');
+    expect(proxy).toContain('SecureRandom');
+    expect(proxy).toContain('HttpsURLConnection');
+    // Forwards only to the HTTPS seed it was registered for.
+    expect(proxy).toContain('require(seed.startsWith("https://"))');
+    expect(proxy).toMatch(/method != "GET" && method != "HEAD"/);
+    expect(proxy).toContain('setRequestProperty("Range"');
+  });
+
+  // #135: with the file and the wanted range both at SEVEN, and 16 MiB web
+  // seed requests, the piece playback waited for arrived last.
+  it('fetches the wanted range before the rest of the streamed file', () => {
+    const engine = read(
+      'android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt',
+    );
+
+    expect(engine).toContain('"high" -> Priority.FIVE');
+    expect(engine).toContain('piecePriority(piece, Priority.SEVEN)');
+    expect(engine).toMatch(/urlseed_max_request_bytes[\s\S]*1 shl 20/);
+  });
+
+  // Changing any file's priority resets libtorrent's piece priorities, so
+  // the range playback waits for is re-applied while waiting.
+  it('keeps re-applying the awaited range priority', () => {
+    const engine = read(
+      'android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt',
+    );
+    expect(engine).toContain('REPRIORITIZE_EVERY_NANOS');
+  });
+
+  // Pieces of a priority-0 file go to libtorrent's hidden .parts file, which
+  // the range server can't read, so the file being played must be wanted.
+  it('keeps the file being played on disk', () => {
+    const engine = read(
+      'android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt',
+    );
+    const range = engine.slice(engine.indexOf('fun prioritizeRange('));
+    expect(range.indexOf('ensureFileWanted(active, fileIndex)')).toBeGreaterThan(-1);
+    expect(range.indexOf('ensureFileWanted(active, fileIndex)')).toBeLessThan(
+      range.indexOf('piecePriority(piece, Priority.SEVEN)'),
+    );
+    expect(engine).toContain('Priority.NORMAL');
+  });
 });

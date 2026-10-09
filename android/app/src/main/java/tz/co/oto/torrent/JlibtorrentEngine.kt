@@ -16,6 +16,7 @@ import com.frostwire.jlibtorrent.TorrentFlags
 import com.frostwire.jlibtorrent.alerts.Alert
 import com.frostwire.jlibtorrent.alerts.AlertType
 import com.frostwire.jlibtorrent.alerts.SaveResumeDataAlert
+import com.frostwire.jlibtorrent.swig.settings_pack
 import java.io.File
 import java.io.FileOutputStream
 import java.net.Inet6Address
@@ -65,6 +66,7 @@ class JlibtorrentEngine(private val context: Context) {
   private val sessions =
     ConcurrentHashMap<String, ActiveTorrentSession>()
   private val lifecycleLock = Any()
+  private val webSeedProxy by lazy { WebSeedProxy() }
 
   @Volatile private var started = false
 
@@ -76,6 +78,12 @@ class JlibtorrentEngine(private val context: Context) {
         Log.i(TAG, "Starting torrent session, listening on ${listen ?: "default"}")
         val settings = SettingsPack()
         listen?.let(settings::listenInterfaces)
+        // Small web seed requests, so a seed switches to newly urgent pieces
+        // quickly instead of finishing a 16 MiB request first.
+        settings.setInteger(
+          settings_pack.int_types.urlseed_max_request_bytes.swigValue(),
+          1 shl 20,
+        )
         manager.start(SessionParams(settings))
         started = true
       }
@@ -101,8 +109,19 @@ class JlibtorrentEngine(private val context: Context) {
           ?: return@mapNotNull null
         if (address is Inet6Address) "[$host]:0" else "$host:0"
       }
+      // Loopback, so libtorrent can reach the HTTPS web seed proxy.
+      .plus("127.0.0.1:0")
       .joinToString(",")
-      .ifEmpty { null }
+  }
+
+  // libtorrent's own TLS fails on Android (#135); give it plain-HTTP loopback
+  // URLs for HTTPS web seeds before the paused torrent starts.
+  private fun proxyHttpsWebSeeds(handle: TorrentHandle) {
+    for (seed in handle.urlSeeds()) {
+      if (!seed.startsWith("https://")) continue
+      handle.removeUrlSeed(seed)
+      handle.addUrlSeed(webSeedProxy.register(seed))
+    }
   }
 
   private fun readHttpsTorrent(uri: String): ByteArray {
@@ -264,6 +283,7 @@ class JlibtorrentEngine(private val context: Context) {
     )
 
     val handle = findHandle(info)
+    proxyHttpsWebSeeds(handle)
     handle.resume()
 
     val storage = info.files()
@@ -361,7 +381,9 @@ class JlibtorrentEngine(private val context: Context) {
       when (priority) {
         "off" -> Priority.IGNORE
         "normal" -> Priority.NORMAL
-        "high" -> Priority.SEVEN
+        // Below the SEVEN that prioritizeRange gives the pieces playback
+        // is waiting for, so those come first.
+        "high" -> Priority.FIVE
         else -> throw IllegalArgumentException(
           "Unsupported torrent file priority: $priority",
         )
@@ -373,6 +395,18 @@ class JlibtorrentEngine(private val context: Context) {
     active.priorities.forEach { (index, value) ->
       priorities[index] = value
     }
+    active.handle.prioritizeFiles(priorities)
+  }
+
+  // libtorrent writes pieces of a priority-0 file into its hidden .parts
+  // file, where the range server can't read them. Make the file being played
+  // wanted at the lowest priority; this moves any parted pieces into it.
+  // Must run before piece priorities, since file priorities reset them.
+  private fun ensureFileWanted(active: ActiveTorrentSession, fileIndex: Int) {
+    if ((active.priorities[fileIndex] ?: Priority.IGNORE) != Priority.IGNORE) return
+    active.priorities[fileIndex] = Priority.NORMAL
+    val priorities = Priority.array(Priority.IGNORE, active.info.numFiles())
+    active.priorities.forEach { (index, value) -> priorities[index] = value }
     active.handle.prioritizeFiles(priorities)
   }
 
@@ -391,6 +425,7 @@ class JlibtorrentEngine(private val context: Context) {
       "Torrent byte range starts beyond the selected file"
     }
 
+    ensureFileWanted(active, fileIndex)
     val boundedEnd = minOf(endByte, file.sizeBytes - 1)
     val first =
       active.info.mapFile(fileIndex, startByte, 1).piece()
@@ -514,7 +549,14 @@ class JlibtorrentEngine(private val context: Context) {
       System.nanoTime() +
         TimeUnit.MILLISECONDS.toNanos(timeoutMs)
 
+    var nextReprioritize = System.nanoTime() + REPRIORITIZE_EVERY_NANOS
     while (System.nanoTime() < deadline) {
+      // Another file's priority change resets piece priorities; keep the
+      // range playback is waiting for at the top.
+      if (System.nanoTime() >= nextReprioritize) {
+        prioritizeRange(sessionId, fileIndex, startByte, endByte)
+        nextReprioritize = System.nanoTime() + REPRIORITIZE_EVERY_NANOS
+      }
       var complete = true
       for (piece in first..last) {
         if (!active.handle.havePiece(piece)) {
@@ -570,3 +612,5 @@ class JlibtorrentEngine(private val context: Context) {
 }
 
 private const val TAG = "OtoTorrent"
+
+private val REPRIORITIZE_EVERY_NANOS = TimeUnit.SECONDS.toNanos(2)

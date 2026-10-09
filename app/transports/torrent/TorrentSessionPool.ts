@@ -17,7 +17,7 @@ type PoolEntry = {
   source: TorrentMediaSource;
   session: TorrentSession;
   references: number;
-  fileReferences: Map<number, number>;
+  fileReferences: Map<number, {download: number; stream: number}>;
 };
 
 const sourceKey = (source: TorrentMediaSource): string => {
@@ -105,30 +105,41 @@ export class TorrentSessionPool {
     });
   }
 
+  // Streaming keeps a file open but fetches only the ranges the player asks
+  // for; an offline download wants the whole file.
   async retainFile(
     lease: TorrentSessionLease,
     fileIndex: number,
+    purpose: TorrentFilePurpose = 'download',
   ): Promise<void> {
     const entry = this.entry(lease);
-    const current = entry.fileReferences.get(fileIndex) ?? 0;
-    entry.fileReferences.set(fileIndex, current + 1);
-    if (current === 0) {
-      await this.engine.setFilePriority(lease.session.id, fileIndex, 'high');
+    const refs = entry.fileReferences.get(fileIndex) ?? {download: 0, stream: 0};
+    const before = priorityFor(refs);
+    const next = {...refs, [purpose]: refs[purpose] + 1};
+    entry.fileReferences.set(fileIndex, next);
+    if (refs.download + refs.stream === 0 || priorityFor(next) !== before) {
+      await this.engine.setFilePriority(lease.session.id, fileIndex, priorityFor(next));
     }
   }
 
   async releaseFile(
     lease: TorrentSessionLease,
     fileIndex: number,
+    purpose: TorrentFilePurpose = 'download',
   ): Promise<void> {
     const entry = this.entry(lease);
-    const current = entry.fileReferences.get(fileIndex) ?? 0;
-    if (current <= 1) {
+    const refs = entry.fileReferences.get(fileIndex);
+    if (!refs) return;
+    const next = {...refs, [purpose]: Math.max(0, refs[purpose] - 1)};
+    if (next.download + next.stream === 0) {
       entry.fileReferences.delete(fileIndex);
       await this.engine.setFilePriority(lease.session.id, fileIndex, 'off');
       return;
     }
-    entry.fileReferences.set(fileIndex, current - 1);
+    entry.fileReferences.set(fileIndex, next);
+    if (priorityFor(next) !== priorityFor(refs)) {
+      await this.engine.setFilePriority(lease.session.id, fileIndex, priorityFor(next));
+    }
   }
 
   prioritizeRange(
@@ -171,5 +182,10 @@ export class TorrentSessionPool {
     this.entries.delete(lease.key);
   }
 }
+
+export type TorrentFilePurpose = 'download' | 'stream';
+
+const priorityFor = (refs: {download: number}) =>
+  refs.download > 0 ? ('high' as const) : ('off' as const);
 
 export {sourceKey as torrentSourceKey};

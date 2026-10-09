@@ -139,10 +139,9 @@ export class PlaybackQueueResolver {
         const playable = await this.sources.resolve(
           asset,
           rendition.rights,
-          {
-            durationSec,
-            positionSec: 0,
-          },
+          // No position: the chapters are prepared, not started, so torrent
+          // sources don't treat every chapter as urgent.
+          {durationSec},
         );
         prepared.push(playable);
 
