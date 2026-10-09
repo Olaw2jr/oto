@@ -8,3 +8,7 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+
+# FrostWire jlibtorrent JNI bindings.
+-keep class com.frostwire.jlibtorrent.swig.libtorrent_jni { *; }
