@@ -6,6 +6,7 @@ import {LibraryProvider, useLibrary} from '../../app/state/library';
 import {PlayerProvider, usePlayer} from '../../app/state/player';
 import {SettingsProvider} from '../../app/state/settings';
 import {createTestPlayerController} from '../test-utils';
+import {isUuid} from '../../app/sync/ids';
 
 const wrapper = ({children}: {children: React.ReactNode}) => (
   <SettingsProvider>
@@ -133,12 +134,13 @@ describe('library shelves', () => {
     act(() => {
       second = result.current.createShelf('Road trips');
     });
-    expect([first, second]).toEqual(['road-trips', 'road-trips-2']);
-    expect(result.current.shelf('road-trips')?.bookIds).toEqual([
-      'greenlights',
-    ]);
+    // UUIDs, so the server can tell everyone's shelves apart.
+    expect(isUuid(first)).toBe(true);
+    expect(isUuid(second)).toBe(true);
+    expect(first).not.toBe(second);
+    expect(result.current.shelf(first)?.bookIds).toEqual(['greenlights']);
 
-    act(() => result.current.toggleOnShelf('road-trips', 'greenlights'));
-    expect(result.current.shelf('road-trips')?.bookIds).toEqual([]);
+    act(() => result.current.toggleOnShelf(first, 'greenlights'));
+    expect(result.current.shelf(first)?.bookIds).toEqual([]);
   });
 });
