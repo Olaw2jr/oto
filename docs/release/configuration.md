@@ -39,7 +39,8 @@ Run `npm run release:validate` before production packaging.
 
 ## Backend URL and telemetry
 
-`app/config/environment.ts#apiBaseUrl` is the oto backend's base URL. It is
+`app/config/environment.ts#apiBaseUrl` is the base URL of the oto backend
+([oto-api](https://github.com/Olaw2jr/oto-api)). It is
 `null` until the backend exists. While it is null, telemetry (uncaught errors,
 playback failures, storage write failures) stays in a bounded on-device queue
 (newest 500 events in SQLite) and nothing is uploaded. Once it is set, queued
