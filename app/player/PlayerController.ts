@@ -129,6 +129,9 @@ const locate = (
 export class PlayerController {
   private queue: QueueState | null = null;
   private resolvedQueue: ResolvedPlaybackQueue | null = null;
+  // The book ended and its playback sources (e.g. torrent sessions) were
+  // released; the next play reloads it.
+  private sourcesReleased = false;
   private snapshot: PlayerControllerSnapshot = {
     state: 'idle',
     positionSec: 0,
@@ -191,6 +194,7 @@ export class PlayerController {
         await this.engine.load(resolved.tracks);
       }
       this.resolvedQueue = resolved;
+      this.sourcesReleased = false;
       this.updateFromEngine(await this.engine.getSnapshot());
       await this.restoreSleepTimer();
       await previousResolved?.dispose();
@@ -202,6 +206,13 @@ export class PlayerController {
   }
 
   async play(): Promise<void> {
+    if (this.sourcesReleased && this.queue?.bookId) {
+      await this.loadBook(this.queue.bookId);
+      // Playing a finished book starts it again.
+      if (this.snapshot.positionSec >= this.snapshot.durationSec - 1) {
+        await this.seekTo(0);
+      }
+    }
     await this.engine.play();
     this.updateFromEngine(await this.engine.getSnapshot());
   }
@@ -378,6 +389,23 @@ export class PlayerController {
     this.emit();
     this.refreshSleepTimerAfterPause(previousState, native.state);
     this.refreshSleepTimerAfterTrackChange(previousTrackId, native.trackId);
+    if (native.state === 'ended' && previousState !== 'ended') {
+      void this.releaseSources();
+    }
+  }
+
+  // A finished book shouldn't keep torrent sessions, loopback routes or
+  // background downloads alive (#138).
+  private async releaseSources(): Promise<void> {
+    const resolved = this.resolvedQueue;
+    if (!resolved) return;
+    this.resolvedQueue = null;
+    this.sourcesReleased = true;
+    try {
+      await resolved.dispose();
+    } catch {
+      // Released sources can't be retried; the next play reloads the book.
+    }
   }
 
   private refreshSleepTimerAfterTrackChange(

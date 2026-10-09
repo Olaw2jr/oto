@@ -108,3 +108,19 @@ public-domain torrent with its HTTPS source removed:
 Result: playback from a cleared cache, skip, seeking beyond the buffer and
 pause/resume all work, and streaming stored ~27 MB (the played chapter)
 instead of the whole book.
+
+## Shutdown and storage (#138)
+
+- When a book ends, `PlayerController` disposes the resolved queue, which
+  closes its torrent sessions and loopback range routes; the next Play
+  reloads the book and starts it again.
+- Streamed files stay at `Priority.NORMAL` so their pieces land in the file,
+  but after every file-priority change `applyStreamingPieces` drops pieces at
+  that level that playback didn't request, so only requested ranges download.
+- Closing the last torrent unregisters its proxied web seeds, closes the
+  `WebSeedProxy` and stops the libtorrent session; the next open restarts
+  both.
+
+Measured on a Galaxy S22 Ultra after a torrent-only book ended: loopback
+listeners 26 → 0, internet connections → 0, storage steady at 44 MB (before
+this change: 26 listeners left open and storage growing past 314 MB).

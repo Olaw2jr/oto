@@ -166,3 +166,63 @@ describe('PlayerController', () => {
     ).rejects.toThrow('positive duration');
   });
 });
+
+// #138: a finished book kept its torrent sessions, loopback routes and
+// downloads running until another book loaded.
+describe('PlayerController at the end of a book', () => {
+  const setup = () => {
+    const engine = new FakeAudioEngine();
+    const disposals: string[] = [];
+    let loads = 0;
+    const queueResolver = {
+      resolve: jest.fn(async (bookId: string) => {
+        loads += 1;
+        const load = loads;
+        return {
+          bookId,
+          renditionId: 'rendition-1',
+          tracks,
+          dispose: async () => {
+            disposals.push(`load-${load}`);
+          },
+        };
+      }),
+    };
+    const controller = new PlayerController(engine, {
+      queueResolver: queueResolver as any,
+    });
+    return {engine, controller, queueResolver, disposals};
+  };
+
+  it('releases the book\'s playback sources when it ends', async () => {
+    const {engine, controller, disposals} = setup();
+    await controller.loadBook('book-1');
+    await controller.play();
+
+    engine.finish();
+    await new Promise(resolve => setImmediate(resolve));
+
+    expect(controller.getSnapshot().state).toBe('ended');
+    expect(disposals).toEqual(['load-1']);
+  });
+
+  it('reloads the book and starts over when played again', async () => {
+    const {engine, controller, queueResolver, disposals} = setup();
+    await controller.loadBook('book-1');
+    await controller.seekTo(299);
+    await controller.play();
+    engine.finish();
+    await new Promise(resolve => setImmediate(resolve));
+
+    await controller.play();
+
+    expect(queueResolver.resolve).toHaveBeenCalledTimes(2);
+    expect(controller.getSnapshot()).toMatchObject({
+      bookId: 'book-1',
+      state: 'playing',
+      positionSec: 0,
+    });
+    expect(disposals).toEqual(['load-1']);
+  });
+});
+

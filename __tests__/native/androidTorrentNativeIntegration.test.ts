@@ -159,4 +159,36 @@ describe('Android native torrent runtime', () => {
     );
     expect(engine).toContain('Priority.NORMAL');
   });
+
+  // #138: a non-zero file priority wants the whole file, so every played
+  // chapter kept downloading in full after playback ended.
+  it('downloads only the requested ranges of a streamed file', () => {
+    const engine = read(
+      'android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt',
+    );
+    expect(engine).toContain('fun applyStreamingPieces(');
+    expect(engine).toContain('active.handle.prioritizePieces(');
+    // Re-applied after every file-priority change, which resets pieces.
+    const setFile = engine.slice(engine.indexOf('fun setFilePriority('));
+    expect(setFile.indexOf('applyStreamingPieces(active)')).toBeGreaterThan(-1);
+    expect(setFile.indexOf('applyStreamingPieces(active)')).toBeLessThan(
+      setFile.indexOf('fun prioritizeRange('),
+    );
+  });
+
+  // #138: closing the last torrent left the web seed proxy registrations and
+  // libtorrent's session (listen sockets, DHT) running.
+  it('releases everything when the last torrent closes', () => {
+    const engine = read(
+      'android/app/src/main/java/tz/co/oto/torrent/JlibtorrentEngine.kt',
+    );
+    const proxy = read(
+      'android/app/src/main/java/tz/co/oto/torrent/WebSeedProxy.kt',
+    );
+    const close = engine.slice(engine.indexOf('  fun close(sessionId: String)'));
+    expect(close).toContain('webSeedProxy.unregister(');
+    expect(close).toContain('manager.stop()');
+    expect(close).toContain('proxy?.close()');
+    expect(proxy).toContain('fun unregister(');
+  });
 });
