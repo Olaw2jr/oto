@@ -1,44 +1,9 @@
-/// <reference types="node" />
-import {DatabaseSync} from 'node:sqlite';
 import {mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createPersistentApplicationContainer} from '../../app/composition/ApplicationContainer';
-import {
-  MigrationRunner,
-  migrations,
-  OpSqliteDatabase,
-} from '../../app/storage/sqlite';
-import type {OpSqliteClient} from '../../app/storage/sqlite/OpSqliteDatabase';
-
-// Exercise the driver boundary with real SQLite, including file reopen and DDL
-// rollback, instead of reproducing SQLite behavior in a fake SQL parser.
-const open = (filename: string) => {
-  const native = new DatabaseSync(filename);
-  const execute: OpSqliteClient['execute'] = async (sql, params = []) => {
-    const statement = native.prepare(sql);
-    return {
-      rows: statement.all(...(params as (string | number | null)[])) as Record<
-        string,
-        string | number | null
-      >[],
-    };
-  };
-  const db = new OpSqliteDatabase({
-    execute,
-    transaction: async work => {
-      native.exec('BEGIN');
-      try {
-        await work({execute});
-        native.exec('COMMIT');
-      } catch (error) {
-        native.exec('ROLLBACK');
-        throw error;
-      }
-    },
-  });
-  return {db, close: () => native.close()};
-};
+import {MigrationRunner, migrations} from '../../app/storage/sqlite';
+import {openNodeSqlite as open} from './sqlite-test-utils';
 
 describe('production persistence against SQLite', () => {
   let directory: string;
@@ -126,6 +91,34 @@ describe('production persistence against SQLite', () => {
         ],
         bookmarks: {'starry-messenger': [30, 90]},
       });
+    } finally {
+      second.close();
+    }
+  });
+
+  it('keeps changes waiting to sync after reopening the database', async () => {
+    const filename = join(directory, 'outbox.sqlite');
+    const first = open(filename);
+    const app = await createPersistentApplicationContainer(
+      async () => first.db,
+    );
+    await app.sync.outbox.enqueue({
+      id: 'm1',
+      kind: 'library.status',
+      entityId: 'starry-messenger',
+      payload: {status: 'want'},
+      createdAt: '2026-10-09T10:00:00.000Z',
+    });
+    first.close();
+
+    const second = open(filename);
+    try {
+      const restored = await createPersistentApplicationContainer(
+        async () => second.db,
+      );
+      expect(
+        (await restored.sync.outbox.listReady(new Date())).map(m => m.id),
+      ).toEqual(['m1']);
     } finally {
       second.close();
     }
