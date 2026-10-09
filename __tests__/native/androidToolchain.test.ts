@@ -19,7 +19,7 @@ describe('React Native 0.87 Android baseline', () => {
 
   it('uses Gradle 9 and the React Native settings plugin', () => {
     expect(read('android/gradle/wrapper/gradle-wrapper.properties')).toContain(
-      'gradle-9.4.1-bin.zip',
+      'gradle-9.8.0-bin.zip',
     );
     const settings = read('android/settings.gradle');
     expect(settings).toContain('com.facebook.react.settings');
