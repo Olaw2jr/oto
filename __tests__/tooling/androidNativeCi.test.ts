@@ -22,5 +22,11 @@ describe('Android native CI', () => {
     expect(workflow).toContain('package.json');
     expect(workflow).toContain('package-lock.json');
     expect(workflow).toContain('app.json');
+    // Postinstall patches (RNTP, RN Gradle plugin Kotlin) change native builds.
+    expect(workflow).toContain('scripts/**');
+  });
+
+  it('is the only workflow that builds the Android app', () => {
+    expect(read('.github/workflows/ci.yml')).not.toContain('assembleDebug');
   });
 });
