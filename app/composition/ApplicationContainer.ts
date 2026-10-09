@@ -28,6 +28,12 @@ import {
   type Telemetry,
   type TelemetryStore,
 } from '../telemetry';
+import {
+  BookDownloads,
+  createDownloadedAssetLocator,
+  UnavailableDownloadEngine,
+  type DownloadEngine,
+} from '../downloads';
 import {RightsPolicy} from '../domain/rights';
 import {
   PlaybackQueueResolver,
@@ -93,6 +99,10 @@ export type ApplicationContainer = {
     // Uploads to the backend's telemetry endpoint when one is configured.
     start(): () => void;
   };
+  downloads: {
+    engine: DownloadEngine;
+    books: BookDownloads;
+  };
   audio: {
     createEngine(): Promise<AudioEngine>;
     createPersistentSession(): Promise<ChapterPlaybackSession>;
@@ -117,6 +127,7 @@ export type ApplicationContainerOptions = {
   collections?: ApplicationContainer['collections'];
   outbox?: MutationOutbox;
   connectivity?: Connectivity;
+  downloadEngine?: DownloadEngine;
   telemetryStore?: TelemetryStore;
   apiBaseUrl?: string | null;
 };
@@ -164,6 +175,9 @@ export const createApplicationContainer = (
   options: ApplicationContainerOptions = {},
 ): ApplicationContainer => {
   const libraryGraph = options.libraryGraph ?? createSeedLibraryGraph();
+  const rightsPolicy = new RightsPolicy('TZ', ['internetarchive']);
+  const downloadEngine =
+    options.downloadEngine ?? new UnavailableDownloadEngine();
   const playbackAssets =
     options.playbackAssets ?? new PublicDomainPlaybackAssetRepository();
   const databaseFactory = options.databaseFactory ?? openDatabase;
@@ -264,8 +278,8 @@ export const createApplicationContainer = (
     if (torrentTransport) transports.push(torrentTransport);
     const sources = new SourceResolver(
       new TransportRegistry(transports),
-      new RightsPolicy('TZ', ['internetarchive']),
-      {locate: async () => null},
+      rightsPolicy,
+      createDownloadedAssetLocator(downloadEngine),
     );
     const queueResolver = new PlaybackQueueResolver(
       libraryGraph.catalogue,
@@ -301,6 +315,15 @@ export const createApplicationContainer = (
       connectivity,
       options.apiBaseUrl === undefined ? apiBaseUrl : options.apiBaseUrl,
     ),
+    downloads: {
+      engine: downloadEngine,
+      books: new BookDownloads({
+        engine: downloadEngine,
+        renditions: libraryGraph.renditions,
+        assets: playbackAssets,
+        rightsPolicy,
+      }),
+    },
     audio: {
       createEngine,
       createPersistentSession,
