@@ -50,6 +50,8 @@ export const Txt = ({
   return (
     <Text
       accessibilityRole={headings.includes(variant) ? 'header' : undefined}
+      // Follow the system font size, capped so layouts stay usable.
+      maxFontSizeMultiplier={headings.includes(variant) ? 1.5 : 2}
       {...props}
       style={[
         variants[variant],
