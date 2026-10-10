@@ -40,12 +40,36 @@ Run `npm run release:validate` before production packaging.
 ## Backend URL and telemetry
 
 `app/config/environment.ts#apiBaseUrl` is the base URL of the oto backend
-([oto-api](https://github.com/Olaw2jr/oto-api)). It is
-`null` until the backend exists. While it is null, telemetry (uncaught errors,
-playback failures, storage write failures) stays in a bounded on-device queue
-(newest 500 events in SQLite) and nothing is uploaded. Once it is set, queued
-events are sent in batches to `POST {apiBaseUrl}/v1/telemetry` while online,
-retried with backoff. See `docs/architecture/telemetry.md`.
+([oto-api](https://github.com/Olaw2jr/oto-api)). It must be HTTPS, apart
+from `http://localhost` or `http://127.0.0.1` for a backend on your machine.
+
+While it is `null`, nothing leaves the device:
+- telemetry (uncaught errors, playback failures, storage write failures)
+  stays in a bounded on-device queue (newest 500 events in SQLite);
+- library, progress, shelf and rating changes aren't recorded for sync;
+- the sign-in buttons keep their local behaviour.
+
+Once it is set:
+- telemetry is sent in batches to `POST {apiBaseUrl}/v1/telemetry`, retried
+  with backoff (`docs/architecture/telemetry.md`);
+- changes are queued in the SQLite outbox and sent to
+  `POST /v1/sync/mutations` while an oto-api account is signed in;
+- tokens are kept in the iOS Keychain or Android's Keystore-backed storage.
+
+### Sign-in
+
+- **Google:** set `googleWebClientId`, the OAuth web client id that oto-api
+  checks ID tokens against (`OAUTH_GOOGLE_CLIENT_ID` there).
+  - **iOS:** also set `googleIosClientId`, and add its reversed client id as
+    a URL scheme in `ios/oto/Info.plist`.
+  - **Android:** register the signing certificate's SHA-1 for both the debug
+    and upload keys in the Google Cloud console.
+  
+  Until the web client id is set, the Google button signs in locally.
+- **Developer sign-in:** against a development oto-api started with
+  `DEV_LOGIN=true` and seeded with `python -m app.seed`, the sign-in screen
+  lists the seeded readers to sign in as. oto-api never offers this in
+  production.
 
 ## Cutting a release (H6)
 

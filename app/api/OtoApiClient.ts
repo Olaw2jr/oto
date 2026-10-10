@@ -46,9 +46,13 @@ export class OtoApiClient {
     retry = true,
   ): Promise<T> {
     const token = await this.tokens.getAccessToken();
-    const headers: HttpHeaders = token ? {Authorization: `Bearer ${token}`} : {};
+    const headers: HttpHeaders = token
+      ? {Authorization: `Bearer ${token}`}
+      : {};
     const response = await this.transport.send<T>(
-      body === undefined ? {method, path, headers} : {method, path, headers, body},
+      body === undefined
+        ? {method, path, headers}
+        : {method, path, headers, body},
     );
     // An expired token gets one refresh and one retry.
     if (response.status === 401 && retry && token) {
@@ -63,7 +67,10 @@ export class OtoApiClient {
   }
 
   search(q: string, offset = 0): Promise<Page<OtoBook>> {
-    return this.request('GET', `/v1/search?q=${encodeURIComponent(q)}&offset=${offset}`);
+    return this.request(
+      'GET',
+      `/v1/search?q=${encodeURIComponent(q)}&offset=${offset}`,
+    );
   }
 
   discover(offset = 0): Promise<Page<OtoBook>> {
@@ -97,12 +104,16 @@ const LOCAL_DEVELOPMENT = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/;
 
 // Builds the client for apiBaseUrl. Only HTTPS is allowed, apart from a
 // backend running on the developer's machine.
+export function assertSecureBaseUrl(baseUrl: string): void {
+  if (!baseUrl.startsWith('https://') && !LOCAL_DEVELOPMENT.test(baseUrl)) {
+    throw new Error('oto-api must be reached over HTTPS');
+  }
+}
+
 export function createOtoApiClient(
   baseUrl: string,
   tokens: TokenProvider,
 ): OtoApiClient {
-  if (!baseUrl.startsWith('https://') && !LOCAL_DEVELOPMENT.test(baseUrl)) {
-    throw new Error('oto-api must be reached over HTTPS');
-  }
+  assertSecureBaseUrl(baseUrl);
   return new OtoApiClient(new FetchHttpTransport(baseUrl), tokens);
 }

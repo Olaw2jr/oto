@@ -20,12 +20,19 @@ describe('recording changes for oto-api', () => {
   it('queues library, shelf and rating changes once a backend is configured', async () => {
     const database = open(join(directory, 'oto.sqlite'));
     try {
-      const app = await createPersistentApplicationContainer(async () => database.db, {
-        apiBaseUrl: 'https://api.oto.test',
-      });
+      const app = await createPersistentApplicationContainer(
+        async () => database.db,
+        {
+          apiBaseUrl: 'https://api.oto.test',
+        },
+      );
       app.library.setStatus('starry-messenger', 'want');
       await app.library.flush();
-      await app.collections.repository.saveShelf({id: SHELF, name: 'Road trips', bookIds: []});
+      await app.collections.repository.saveShelf({
+        id: SHELF,
+        name: 'Road trips',
+        bookIds: [],
+      });
       await app.collections.repository.saveRating('starry-messenger', 4);
 
       const queued = await app.sync.outbox.listReady(everything);
@@ -42,15 +49,70 @@ describe('recording changes for oto-api', () => {
   it('records nothing while no backend is configured', async () => {
     const database = open(join(directory, 'oto.sqlite'));
     try {
-      const app = await createPersistentApplicationContainer(async () => database.db, {
-        apiBaseUrl: null,
-      });
+      const app = await createPersistentApplicationContainer(
+        async () => database.db,
+        {
+          apiBaseUrl: null,
+        },
+      );
       app.library.setStatus('starry-messenger', 'want');
       await app.library.flush();
       await app.collections.repository.saveRating('starry-messenger', 4);
 
       expect(await app.sync.outbox.listReady(everything)).toEqual([]);
       expect(app.sync.recorder).toBeUndefined();
+    } finally {
+      database.close();
+    }
+  });
+});
+
+describe('signing in to oto-api', () => {
+  let directory: string;
+  beforeEach(() => {
+    directory = mkdtempSync(join(tmpdir(), 'oto-account-'));
+  });
+  afterEach(() => {
+    rmSync(directory, {recursive: true, force: true});
+  });
+
+  it('sends changes queued before sign-in once an account signs in', async () => {
+    const {FakeHttpTransport} = require('../../app/api');
+    const {InMemoryTokenStore} = require('../../app/auth');
+    const transport = new FakeHttpTransport();
+    const database = open(join(directory, 'oto.sqlite'));
+    try {
+      const app = await createPersistentApplicationContainer(
+        async () => database.db,
+        {
+          apiBaseUrl: 'https://api.oto.test',
+          transport,
+          tokenStore: new InMemoryTokenStore(),
+        },
+      );
+      await app.collections.repository.saveRating('starry-messenger', 5);
+      const stop = await app.account!.start();
+
+      transport.enqueue({
+        status: 200,
+        headers: {},
+        body: {access_token: 'a', refresh_token: 'r'},
+      });
+      const queued = await app.sync.outbox.listReady(everything);
+      transport.enqueue({
+        status: 200,
+        headers: {},
+        body: {results: [{id: queued[0].id, status: 'applied'}]},
+      });
+      await app.account!.session.signInAsDeveloper('amani');
+      await app.account!.idle();
+
+      expect(transport.requests.map((r: {path: string}) => r.path)).toEqual([
+        '/v1/auth/dev',
+        '/v1/sync/mutations',
+      ]);
+      expect(await app.sync.outbox.listReady(everything)).toEqual([]);
+      stop();
     } finally {
       database.close();
     }

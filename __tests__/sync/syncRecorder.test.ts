@@ -13,7 +13,7 @@ function setup() {
     now: () => new Date(clock),
     newId: () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`,
   });
-  const queued = async () => (await outbox.listReady(new Date(8.64e15)));
+  const queued = async () => await outbox.listReady(new Date(8.64e15));
   return {recorder, queued, tick: (sec: number) => (clock += sec * 1000)};
 }
 
@@ -81,17 +81,34 @@ describe('SyncRecorder', () => {
 
   it('records shelves, deletions and ratings', async () => {
     const {recorder, queued} = setup();
-    await recorder.shelf({id: SHELF, name: 'Road trips', bookIds: ['greenlights']});
+    await recorder.shelf({
+      id: SHELF,
+      name: 'Road trips',
+      bookIds: ['greenlights'],
+    });
     await recorder.shelfDeleted(SHELF);
     await recorder.rating('greenlights', 4);
     await recorder.rating('greenlights', null);
 
     expect((await queued()).map(m => [m.kind, m.entityId, m.payload])).toEqual([
-      ['shelf.upsert', SHELF, {name: 'Road trips', book_ids: [bookEntityId('greenlights')]}],
+      [
+        'shelf.upsert',
+        SHELF,
+        {name: 'Road trips', book_ids: [bookEntityId('greenlights')]},
+      ],
       ['shelf.upsert', SHELF, {deleted: true}],
       ['rating.set', bookEntityId('greenlights'), {rating: 4}],
       ['rating.set', bookEntityId('greenlights'), {rating: null}],
     ]);
+  });
+
+  it('tells listeners once each change is queued', async () => {
+    const {recorder, queued} = setup();
+    let told = 0;
+    recorder.subscribe(() => (told += 1));
+    await recorder.rating('greenlights', 3);
+    expect(told).toBe(1);
+    expect(await queued()).toHaveLength(1);
   });
 
   it('skips shelves from before ids were UUIDs', async () => {

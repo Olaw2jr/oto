@@ -6,6 +6,35 @@ jest.mock(
   () => require('react-native-safe-area-context/jest/mock').default,
 );
 // Mock data loads instantly in tests unless a test opts in.
+// Native secure storage and Google sign-in; tests inject fakes where it matters.
+jest.mock('react-native-keychain', () => {
+  const saved = new Map<string, string>();
+  return {
+    ACCESSIBLE: {WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WhenUnlockedThisDeviceOnly'},
+    getGenericPassword: async ({service}: {service: string}) =>
+      saved.has(service)
+        ? {username: 'oto', password: saved.get(service)}
+        : false,
+    setGenericPassword: async (
+      _: string,
+      password: string,
+      {service}: {service: string},
+    ) => {
+      saved.set(service, password);
+      return true;
+    },
+    resetGenericPassword: async ({service}: {service: string}) =>
+      saved.delete(service),
+  };
+});
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    hasPlayServices: jest.fn(async () => true),
+    signIn: jest.fn(async () => ({type: 'cancelled', data: null})),
+    signOut: jest.fn(async () => null),
+  },
+}));
 jest.mock('./app/data/latency', () => ({MOCK_LATENCY_MS: 0}));
 jest.mock('@react-native-community/netinfo', () =>
   require('@react-native-community/netinfo/jest/netinfo-mock.js'),
