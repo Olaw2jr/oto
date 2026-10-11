@@ -102,6 +102,12 @@ describe('SettingsScreen', () => {
     expect(summary.props.onPress).toBeUndefined();
   });
 
+  it('opens Downloads', async () => {
+    const navigation = await setup();
+    await press(screen.getByRole('button', {name: 'Downloads, None'}));
+    expect(navigation.navigate).toHaveBeenCalledWith('Downloads');
+  });
+
   it('cycles the default playback speed', async () => {
     await setup();
     await press(screen.getByRole('button', {name: 'Playback speed, 1×'}));

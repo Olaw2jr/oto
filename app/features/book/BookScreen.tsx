@@ -4,6 +4,7 @@ import {Pressable, StyleSheet, View} from 'react-native';
 import {AuthorLinks} from '../../components/AuthorLinks';
 import {BookCover} from '../../components/BookCover';
 import {LoadingState} from '../../components/LoadingState';
+import {DownloadControl} from '../../components/DownloadControl';
 import {ReviewCard} from '../../components/ReviewCard';
 import {getBook} from '../../data/catalogue';
 import {formatDuration} from '../../data/format';
@@ -155,6 +156,8 @@ const BookScreen = ({navigation, route}: RootStackScreenProps<'Book'>) => {
           />
         </View>
       </View>
+
+      <DownloadControl bookId={book.id} />
 
       <View style={styles.status}>
         <Segmented

@@ -7,6 +7,7 @@ import {usePlayer} from '../../state/player';
 import {useSession} from '../../state/session';
 import {useAccount} from '../../state/account';
 import {useSocial} from '../../state/social';
+import {useDownloadedBooks} from '../../state/downloads';
 import {NotificationsSheet} from '../../components/NotificationsSheet';
 import {
   NOTIFICATION_LABELS,
@@ -104,6 +105,7 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
     'skip' | 'notifications' | 'muted' | 'hidden' | null
   >(null);
   const social = useSocial();
+  const downloads = useDownloadedBooks();
   const {preference, setPreference} = useTheme();
   const {signOut: endSession} = useSession();
   const account = useAccount();
@@ -161,6 +163,11 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
           label="Download on Wi-Fi only"
           value={settings.wifiOnly}
           onChange={v => settings.set('wifiOnly', v)}
+        />
+        <ValueRow
+          label="Downloads"
+          value={downloads.entries.length ? String(downloads.entries.length) : 'None'}
+          onPress={() => navigation.navigate('Downloads')}
           last
         />
       </Card>
