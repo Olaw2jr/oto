@@ -27,6 +27,9 @@ target 'Eyy' do
   pod 'GoogleUtilities', :modular_headers => true
   pod 'RecaptchaInterop', :modular_headers => true
 
+  # oto's own native modules (downloads).
+  pod 'OtoNative', :path => './OtoNative'
+
   target 'EyyTests' do
     inherit! :complete
   end

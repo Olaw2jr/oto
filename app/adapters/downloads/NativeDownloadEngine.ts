@@ -25,8 +25,10 @@ const subscribeToNativeDownloads: Subscribe = listener => {
   return () => subscription.remove();
 };
 
-// Android downloads via Media3 DownloadService (OtoDownloadsModule).
-export class NativeAndroidDownloadEngine implements DownloadEngine {
+// Downloads via the OtoDownloads native module: Media3 DownloadService on
+// Android (OtoDownloadsModule.kt), a background URLSession on iOS
+// (ios/OtoNative/OtoDownloads.m).
+export class NativeDownloadEngine implements DownloadEngine {
   constructor(
     private readonly bridge: NativeDownloadsBridge = NativeModules.OtoDownloads,
     private readonly subscribeNative: Subscribe = subscribeToNativeDownloads,

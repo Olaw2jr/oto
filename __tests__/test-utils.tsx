@@ -21,6 +21,7 @@ import {
   type ApplicationContainerOptions,
 } from '../app/composition';
 import {FakeConnectivity} from '../app/connectivity';
+import {FakeDownloadEngine} from '../app/downloads';
 import {ThemeProvider} from '../app/theme/ThemeProvider';
 import {AppProviders} from '../app/state/AppProviders';
 import {
@@ -101,6 +102,7 @@ export const createTestContainer = (
   createApplicationContainer({
     createPlayerController: createTestPlayerController,
     connectivity: new FakeConnectivity(),
+    downloadEngine: new FakeDownloadEngine(),
     ...options,
   });
 

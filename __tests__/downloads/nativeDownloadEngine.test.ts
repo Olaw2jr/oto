@@ -1,4 +1,4 @@
-import {NativeAndroidDownloadEngine} from '../../app/adapters/downloads';
+import {NativeDownloadEngine} from '../../app/adapters/downloads';
 
 const bridge = () => ({
   start: jest.fn(async () => {}),
@@ -10,10 +10,10 @@ const bridge = () => ({
   playbackSource: jest.fn(async () => ({kind: 'https', uri: 'https://archive.org/c1.mp3', trustedSourceId: 'internetarchive'})),
 });
 
-describe('NativeAndroidDownloadEngine', () => {
+describe('NativeDownloadEngine', () => {
   it('passes requests and queries through to the native module', async () => {
     const native = bridge();
-    const engine = new NativeAndroidDownloadEngine(native as any, () => () => {});
+    const engine = new NativeDownloadEngine(native as any, () => () => {});
     const request = {id: 'asset-1', bookId: 'book-1', uri: 'https://archive.org/c1.mp3', cacheKey: 'r:c', title: 'Chapter 1', wifiOnly: true};
 
     await engine.start(request);
@@ -33,7 +33,7 @@ describe('NativeAndroidDownloadEngine', () => {
 
   it('forwards native progress events to subscribers', () => {
     let emit: (status: any) => void = () => {};
-    const engine = new NativeAndroidDownloadEngine(bridge() as any, listener => {
+    const engine = new NativeDownloadEngine(bridge() as any, listener => {
       emit = listener;
       return () => {};
     });
