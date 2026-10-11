@@ -110,30 +110,24 @@ export const AppProviders = ({
         <TelemetryProvider telemetry={container.telemetry.telemetry}>
           <ConnectivityProvider connectivity={container.connectivity}>
             <SessionProvider>
-<<<<<<< HEAD
-              <SettingsProvider>
-                <DownloadsProvider books={container.downloads.books}>
-=======
               <AccountProvider account={container.account}>
                 <SettingsProvider>
->>>>>>> origin/main
-                  <LibraryProvider
-                    adapter={container.library}
-                    collections={container.collections}>
-                    <PlayerProvider
-                      createController={container.audio.createPlayerController}>
-                      <SocialProvider>
-                        <TasteProvider>{children}</TasteProvider>
-                      </SocialProvider>
-                    </PlayerProvider>
-                  </LibraryProvider>
-<<<<<<< HEAD
-                </DownloadsProvider>
-              </SettingsProvider>
-=======
+                  <DownloadsProvider books={container.downloads.books}>
+                    <LibraryProvider
+                      adapter={container.library}
+                      collections={container.collections}>
+                      <PlayerProvider
+                        createController={
+                          container.audio.createPlayerController
+                        }>
+                        <SocialProvider>
+                          <TasteProvider>{children}</TasteProvider>
+                        </SocialProvider>
+                      </PlayerProvider>
+                    </LibraryProvider>
+                  </DownloadsProvider>
                 </SettingsProvider>
               </AccountProvider>
->>>>>>> origin/main
             </SessionProvider>
           </ConnectivityProvider>
         </TelemetryProvider>
