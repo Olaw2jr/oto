@@ -78,10 +78,9 @@ class ProgressMemory implements ProgressRepository {
     return this.entries.get(`${bookId}:${renditionId}`) ?? null;
   }
   async save(progress: ListeningProgress) {
-    this.entries.set(
-      `${progress.bookId}:${progress.renditionId}`,
-      {...progress},
-    );
+    this.entries.set(`${progress.bookId}:${progress.renditionId}`, {
+      ...progress,
+    });
   }
 }
 
@@ -181,5 +180,31 @@ describe('LibraryService', () => {
     await expect(
       service.setPosition('missing', rendition.id, 10),
     ).rejects.toThrow('Unknown book: missing');
+  });
+});
+
+describe('ordering', () => {
+  it('lets a position save in flight finish before a status change, so finished sticks', async () => {
+    const {service, library} = setup();
+    await service.setStatus(book.id, rendition.id, 'listening');
+    // The checkpoint has read "listening" and its write is slow, like a
+    // database under load, when the reader marks the book finished.
+    const save = library.save.bind(library);
+    let slow = true;
+    library.save = async (entry: LibraryEntry) => {
+      if (slow) {
+        slow = false;
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      return save(entry);
+    };
+
+    const checkpoint = service.setPosition(book.id, rendition.id, 40);
+    const finish = service.setStatus(book.id, rendition.id, 'finished');
+    await Promise.all([checkpoint, finish]);
+    // The pause after finishing saves its position too.
+    await service.setPosition(book.id, rendition.id, 42);
+
+    expect(await service.getStatus(book.id)).toBe('finished');
   });
 });

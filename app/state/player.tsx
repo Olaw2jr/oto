@@ -9,7 +9,11 @@ import React, {
   useState,
 } from 'react';
 
-import {CatalogueBook, getBook, PUBLIC_DOMAIN_SAMPLE_ID} from '../data/catalogue';
+import {
+  CatalogueBook,
+  getBook,
+  PUBLIC_DOMAIN_SAMPLE_ID,
+} from '../data/catalogue';
 import {PlaybackUnavailableError} from '../player/PlaybackQueueResolver';
 import type {
   PlayerController,
@@ -22,6 +26,8 @@ import {SPEED_OPTIONS, useSettings} from './settings';
 import {useTelemetry} from './telemetry';
 
 export const RATES = SPEED_OPTIONS;
+// The speeds offered in the player's speed picker, slowest first.
+export const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
 export type SleepTimer = PlayerSleepTimer;
 
@@ -35,6 +41,7 @@ type PlayerValue = {
   skip: (seconds: number) => void;
   seekTo: (seconds: number) => void;
   cycleRate: () => void;
+  setRate: (rate: number) => void;
   sleepTimer: SleepTimer;
   setSleepTimer: (timer: SleepTimer) => void;
   // Why the last player action failed, in words for the listener.
@@ -262,8 +269,17 @@ export const PlayerProvider = ({
       run(async () => {
         const active = await prepare(selectedBookId);
         const currentRate = active.getSnapshot().rate;
-        const next =
-          RATES[(RATES.indexOf(currentRate) + 1) % RATES.length];
+        const next = RATES[(RATES.indexOf(currentRate) + 1) % RATES.length];
+        setSetting('speed', next);
+        await active.setRate(next);
+      }),
+    [prepare, run, selectedBookId, setSetting],
+  );
+
+  const setRate = useCallback(
+    (next: number) =>
+      run(async () => {
+        const active = await prepare(selectedBookId);
         setSetting('speed', next);
         await active.setRate(next);
       }),
@@ -296,6 +312,7 @@ export const PlayerProvider = ({
       skip,
       seekTo,
       cycleRate,
+      setRate,
       sleepTimer: snapshot.sleepTimer,
       setSleepTimer,
       error,
@@ -312,6 +329,7 @@ export const PlayerProvider = ({
       skip,
       seekTo,
       cycleRate,
+      setRate,
       setSleepTimer,
       error,
       dismissError,

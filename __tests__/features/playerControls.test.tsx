@@ -94,7 +94,7 @@ describe('PlayerScreen controls', () => {
   it('opens the book from More', async () => {
     const navigation = await setup();
     await press(screen.getByRole('button', {name: 'More'}));
-    await press(screen.getByRole('button', {name: 'View book'}));
+    await press(screen.getByRole('button', {name: 'Title details'}));
     expect(navigation.navigate).toHaveBeenCalledWith('Book', {
       bookId: 'where-the-crawdads-sing',
     });
@@ -104,7 +104,7 @@ describe('PlayerScreen controls', () => {
     await setup();
     await press(screen.getByRole('button', {name: 'More'}));
     await press(screen.getByRole('button', {name: 'Close'}));
-    expect(screen.queryByRole('button', {name: 'View book'})).toBeNull();
+    expect(screen.queryByRole('button', {name: 'Title details'})).toBeNull();
   });
 });
 

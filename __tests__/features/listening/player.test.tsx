@@ -43,11 +43,12 @@ describe('PlayerScreen', () => {
     await screen.findByText('0:00');
   });
 
-  it('cycles the playback speed', async () => {
+  it('changes the playback speed from the picker', async () => {
     await setup();
     fireEvent.press(
       screen.getByRole('button', {name: 'Playback speed 1 times'}),
     );
+    fireEvent.press(await screen.findByRole('radio', {name: '1.25×'}));
     expect(
       await screen.findByRole('button', {name: 'Playback speed 1.25 times'}),
     ).toBeOnTheScreen();

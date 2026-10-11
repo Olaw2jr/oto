@@ -21,7 +21,18 @@ type Dependencies = {
 };
 
 export class LibraryService {
+  // Changes run one at a time. Each reads the entry, then writes it back; if
+  // two overlapped, a playback checkpoint that read "listening" could land
+  // after "finished" and undo it.
+  private changes: Promise<unknown> = Promise.resolve();
+
   constructor(private readonly dependencies: Dependencies) {}
+
+  private serial<T>(change: () => Promise<T>): Promise<T> {
+    const result = this.changes.then(change, change);
+    this.changes = result.catch(() => {});
+    return result;
+  }
 
   private async requireBook(bookId: BookId): Promise<BookWork> {
     const book = await this.dependencies.catalogue.get(bookId);
@@ -52,10 +63,7 @@ export class LibraryService {
     return (await this.dependencies.library.get(bookId))?.status;
   }
 
-  async getPosition(
-    bookId: BookId,
-    renditionId: RenditionId,
-  ): Promise<number> {
+  async getPosition(bookId: BookId, renditionId: RenditionId): Promise<number> {
     const progress = await this.dependencies.progress.get(bookId, renditionId);
     if (progress) {
       return progress.positionSec;
@@ -63,10 +71,7 @@ export class LibraryService {
     return (await this.dependencies.library.get(bookId))?.positionSec ?? 0;
   }
 
-  async getProgress(
-    bookId: BookId,
-    renditionId: RenditionId,
-  ): Promise<number> {
+  async getProgress(bookId: BookId, renditionId: RenditionId): Promise<number> {
     const rendition = await this.requireRendition(bookId, renditionId);
     const durationSec = rendition.durationSec ?? 0;
     if (durationSec <= 0) {
@@ -84,40 +89,53 @@ export class LibraryService {
       .map(entry => entry.bookId);
   }
 
-  async setStatus(
+  setStatus(
     bookId: BookId,
     renditionId: RenditionId,
     status: LibraryStatus,
   ): Promise<void> {
-    const rendition = await this.requireRendition(bookId, renditionId);
-    const durationSec = rendition.durationSec ?? 0;
-    const current = await this.dependencies.library.get(bookId);
-    const currentProgress = await this.dependencies.progress.get(
-      bookId,
-      renditionId,
-    );
-    const existingPosition =
-      currentProgress?.positionSec ?? current?.positionSec ?? 0;
-    const positionSec =
-      status === 'finished'
-        ? durationSec
-        : clampPosition(existingPosition, durationSec);
+    return this.serial(async () => {
+      const rendition = await this.requireRendition(bookId, renditionId);
+      const durationSec = rendition.durationSec ?? 0;
+      const current = await this.dependencies.library.get(bookId);
+      const currentProgress = await this.dependencies.progress.get(
+        bookId,
+        renditionId,
+      );
+      const existingPosition =
+        currentProgress?.positionSec ?? current?.positionSec ?? 0;
+      const positionSec =
+        status === 'finished'
+          ? durationSec
+          : clampPosition(existingPosition, durationSec);
 
-    await this.dependencies.library.save({
-      bookId,
-      status,
-      positionSec,
-    });
-    await this.dependencies.progress.save({
-      bookId,
-      renditionId,
-      chapterId: currentProgress?.chapterId,
-      positionSec,
-      durationSec,
+      await this.dependencies.library.save({
+        bookId,
+        status,
+        positionSec,
+      });
+      await this.dependencies.progress.save({
+        bookId,
+        renditionId,
+        chapterId: currentProgress?.chapterId,
+        positionSec,
+        durationSec,
+      });
     });
   }
 
-  async setPosition(
+  setPosition(
+    bookId: BookId,
+    renditionId: RenditionId,
+    positionSec: number,
+    chapterId?: string,
+  ): Promise<void> {
+    return this.serial(() =>
+      this.writePosition(bookId, renditionId, positionSec, chapterId),
+    );
+  }
+
+  private async writePosition(
     bookId: BookId,
     renditionId: RenditionId,
     positionSec: number,
@@ -143,16 +161,14 @@ export class LibraryService {
     });
   }
 
-  async advance(
+  advance(
     bookId: BookId,
     renditionId: RenditionId,
     deltaSec: number,
   ): Promise<void> {
-    const currentPosition = await this.getPosition(bookId, renditionId);
-    await this.setPosition(
-      bookId,
-      renditionId,
-      currentPosition + deltaSec,
-    );
+    return this.serial(async () => {
+      const currentPosition = await this.getPosition(bookId, renditionId);
+      await this.writePosition(bookId, renditionId, currentPosition + deltaSec);
+    });
   }
 }
