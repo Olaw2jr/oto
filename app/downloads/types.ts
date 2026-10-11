@@ -41,6 +41,8 @@ export interface DownloadEngine {
   // HTTPS source on Android. Null until it's complete.
   playbackSource(id: string): Promise<MediaSource | null>;
   subscribe(listener: (status: DownloadStatus) => void): () => void;
+  // Bytes free where downloads are stored, or null if unknown.
+  freeSpace(): Promise<number | null>;
 }
 
 export type BookDownloadStatus = {
