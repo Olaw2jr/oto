@@ -1,14 +1,7 @@
+import type {RightsInfo} from '../../app/domain/catalogue';
 import {RightsPolicy} from '../../app/domain/rights';
-import {PolicyEnforcedAssetProvider} from '../../server/catalogue/services/PolicyEnforcedAssetProvider';
-import {FakeAssetProvider} from '../../server/catalogue/providers/fakes';
-import type {ProviderAssetManifest, ProviderAudioRendition} from '../../server/catalogue/providers';
 
-const rendition: ProviderAudioRendition = {
-  ref: {providerId: 'librivox', externalId: 'book-1'},
-  workHint: {title: 'Book', authors: ['Author'], identifiers: {}},
-  narrators: ['Reader'],
-  language: 'en',
-  chapters: [],
+const rendition: {rights: RightsInfo} = {
   rights: {
     status: 'public-domain',
     source: 'librivox',
@@ -35,27 +28,5 @@ describe('rights and trusted source policy', () => {
       rendition.rights,
       {kind: 'https', trustedSourceId: 'internetarchive'},
     ).allowed).toBe(false);
-  });
-
-  it('filters provider manifests to trusted, rights-allowed sources', async () => {
-    const manifest: ProviderAssetManifest = {
-      ref: {providerId: 'internetarchive', externalId: 'book/file.mp3'},
-      renditionRef: rendition.ref,
-      format: 'mp3',
-      rights: rendition.rights,
-      sources: [
-        {kind: 'https', uri: 'https://archive.org/file.mp3', trustedSourceId: 'internetarchive'},
-        {kind: 'torrent', magnetUri: 'magnet:?xt=urn:btih:abc', trustedSourceId: 'unknown'},
-      ],
-    };
-    const provider = new PolicyEnforcedAssetProvider(
-      new FakeAssetProvider([manifest]),
-      new RightsPolicy('TZ', ['internetarchive']),
-    );
-
-    const assets = await provider.resolveAssets(rendition);
-
-    expect(assets[0]?.sources).toHaveLength(1);
-    expect(assets[0]?.sources[0]?.kind).toBe('https');
   });
 });

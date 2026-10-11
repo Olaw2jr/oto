@@ -19,6 +19,7 @@ import type {CollectionsRepository} from '../repositories';
 import type {Telemetry} from '../telemetry';
 import {useTelemetry} from './telemetry';
 import {shelvesSeed, Status} from '../data/social';
+import {randomUuid} from '../sync/ids';
 
 export type Shelf = ShelfRecord & {custom: boolean};
 
@@ -149,21 +150,10 @@ export const LibraryProvider = ({
 
   const createShelf = useCallback(
     (name: string, bookId?: string) => {
-      const current = customRef.current;
-      const base =
-        name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '') || 'shelf';
-      const taken = new Set(
-        current.map(s => s.id).concat(['want', 'finished']),
-      );
-      let id = base;
-      for (let n = 2; taken.has(id); n++) {
-        id = `${base}-${n}`;
-      }
+      // A UUID, so the server can tell everyone's shelves apart.
+      const id = randomUuid();
       const shelf = {id, name: name.trim(), bookIds: bookId ? [bookId] : []};
-      saveShelves([...current, shelf], shelf);
+      saveShelves([...customRef.current, shelf], shelf);
       return id;
     },
     [saveShelves],

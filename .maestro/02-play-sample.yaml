@@ -1,0 +1,16 @@
+# Find the public-domain sample and play it over the network.
+appId: tz.co.oto
+tags: [smoke]
+---
+- runFlow: 01-sign-in.yaml
+- tapOn: "Discover"
+- tapOn: "Search"
+- inputText: "Sherlock"
+- tapOn: "The Adventures of Sherlock Holmes.*"
+- tapOn: "Listen"
+- assertVisible: "Close player"
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 45000
+- tapOn: "Pause"
+- assertVisible: "Play"

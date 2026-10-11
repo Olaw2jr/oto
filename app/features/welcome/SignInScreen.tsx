@@ -6,11 +6,14 @@ import {RootStackScreenProps} from '../../navigator/types';
 import {useSession} from '../../state/session';
 import {useTheme} from '../../theme/ThemeProvider';
 import {Button, Screen, TextField, TextLink, Txt} from '../../ui';
+import {DeveloperSignIn} from './DeveloperSignIn';
 import {OrDivider} from './OrDivider';
+import {useAccountSignIn} from './useAccountSignIn';
 
 const SignInScreen = ({navigation}: RootStackScreenProps<'SignIn'>) => {
   const {colorScheme} = useTheme();
   const {signIn} = useSession();
+  const account = useAccountSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   // No backend yet, so password resets only explain what would happen.
@@ -38,9 +41,14 @@ const SignInScreen = ({navigation}: RootStackScreenProps<'SignIn'>) => {
         <Button
           kind="secondary"
           label="Continue with Google"
-          onPress={signIn}
+          onPress={account.continueWithGoogle}
         />
       </View>
+      {account.failed ? (
+        <Txt variant="caption" accessibilityRole="alert" style={styles.failed}>
+          Couldn't sign you in. Please try again.
+        </Txt>
+      ) : null}
 
       <OrDivider />
 
@@ -90,6 +98,11 @@ const SignInScreen = ({navigation}: RootStackScreenProps<'SignIn'>) => {
           onPress={() => navigation.replace('SignUp')}
         />
       </View>
+
+      <DeveloperSignIn
+        readers={account.developerReaders}
+        onPick={account.signInAsDeveloper}
+      />
     </Screen>
   );
 };
@@ -103,6 +116,7 @@ const styles = StyleSheet.create({
   sso: {marginTop: 26},
   spacer: {height: 10},
   resetNote: {marginBottom: 12},
+  failed: {marginTop: 12},
   forgot: {flexDirection: 'row', justifyContent: 'flex-end'},
   switch: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Pressable, StyleSheet, useWindowDimensions, View} from 'react-native';
 
 import {AuthorLinks} from '../../components/AuthorLinks';
@@ -93,7 +93,19 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const {book, position, playing, rate} = player;
+  const {book, playing, rate} = player;
+  // While you drag the scrubber, the times preview where you'll land.
+  const [dragSec, setDragSec] = useState<number | null>(null);
+  const scrubberWidth = useRef(0);
+  const position = dragSec ?? player.position;
+  const scrubTo = (locationX: number) => {
+    const trackWidth = scrubberWidth.current;
+    if (trackWidth <= 0) return null;
+    const fraction = Math.min(1, Math.max(0, locationX / trackWidth));
+    const sec = fraction * book.durationSec;
+    setDragSec(sec);
+    return sec;
+  };
   const club = clubs.find(c => c.bookId === book.id);
   const notes = marginNotes
     .filter(n => n.bookId === book.id)
@@ -191,10 +203,32 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
               : -skip.back,
           )
         }
+        // Tap to seek, or drag and let go. Children ignore touches so
+        // locationX is always measured from the scrubber itself.
+        onLayout={e => {
+          scrubberWidth.current = e.nativeEvent.layout.width;
+        }}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderTerminationRequest={() => false}
+        onResponderGrant={e => {
+          scrubTo(e.nativeEvent.locationX);
+        }}
+        onResponderMove={e => {
+          scrubTo(e.nativeEvent.locationX);
+        }}
+        onResponderRelease={e => {
+          const sec = scrubTo(e.nativeEvent.locationX);
+          if (sec !== null) player.seekTo(sec);
+          setDragSec(null);
+        }}
+        onResponderTerminate={() => setDragSec(null)}
+        hitSlop={{top: 12, bottom: 12}}
         style={styles.scrubber}>
         {notes.map(n => (
           <View
             key={n.id}
+            pointerEvents="none"
             style={[
               styles.marker,
               {
@@ -204,14 +238,19 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
             ]}
           />
         ))}
-        <View style={[styles.track, {backgroundColor: colors.track}]} />
         <View
+          pointerEvents="none"
+          style={[styles.track, {backgroundColor: colors.track}]}
+        />
+        <View
+          pointerEvents="none"
           style={[
             styles.track,
             {width: `${progress * 100}%`, backgroundColor: colors.ink},
           ]}
         />
         <View
+          pointerEvents="none"
           style={[
             styles.head,
             {left: `${progress * 100}%`, backgroundColor: colors.kaki},

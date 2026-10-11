@@ -2,6 +2,8 @@
  * @format
  */
 
+// First, so the startup metric measures from the start of JS.
+import './app/telemetry/startup';
 import {AppRegistry, Platform} from 'react-native';
 import App from './App';
 
