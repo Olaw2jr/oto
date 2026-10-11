@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">oto</string>
+    <string name="downloads_channel_name">Downloads</string>
+    <string name="downloads_waiting_for_wifi">Waiting for Wi-Fi</string>
 </resources>

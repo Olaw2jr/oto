@@ -2,7 +2,6 @@ package tz.co.oto.media
 
 import android.content.Context
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
@@ -26,11 +25,20 @@ object OtoMedia3Cache {
       instance ?: SimpleCache(
         File(context.cacheDir, "oto-media3"),
         LeastRecentlyUsedCacheEvictor(CACHE_BYTES),
-        StandaloneDatabaseProvider(context),
+        OtoDownloads.databaseProvider(context),
       ).also { instance = it }
     }
 
+  // Playback reads downloaded chapters first (never written here), then the
+  // streaming cache, then the network.
   fun dataSourceFactory(context: Context): CacheDataSource.Factory =
+    CacheDataSource.Factory()
+      .setCache(OtoDownloads.cache(context))
+      .setCacheWriteDataSinkFactory(null)
+      .setUpstreamDataSourceFactory(streamingDataSourceFactory(context))
+      .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+
+  fun streamingDataSourceFactory(context: Context): CacheDataSource.Factory =
     CacheDataSource.Factory()
       .setCache(cache(context))
       .setUpstreamDataSourceFactory(
@@ -49,7 +57,7 @@ object OtoMedia3Cache {
       .setKey(cacheKey)
       .setLength(targetBytes)
       .build()
-    val dataSource = dataSourceFactory(context).createDataSource() as CacheDataSource
+    val dataSource = streamingDataSourceFactory(context).createDataSource()
     CacheWriter(dataSource, dataSpec, null, null).cache()
   }
 
