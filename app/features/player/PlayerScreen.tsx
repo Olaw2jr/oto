@@ -3,7 +3,7 @@ import {Pressable, StyleSheet, useWindowDimensions, View} from 'react-native';
 
 import {AuthorLinks} from '../../components/AuthorLinks';
 import {BookCover} from '../../components/BookCover';
-import {chapterAt} from '../../data/catalogue';
+import {chapterAt, chaptersOf} from '../../data/catalogue';
 import {clubs} from '../../data/clubs';
 import {formatClock} from '../../data/format';
 import {shareBook} from '../../utils/share';
@@ -12,7 +12,8 @@ import {marginNotes} from '../../data/social';
 import {RootStackScreenProps} from '../../navigator/types';
 import {useLibrary} from '../../state/library';
 import {useSettings} from '../../state/settings';
-import {SleepTimer, usePlayer} from '../../state/player';
+import {formatMegabytes, useBookDownload} from '../../state/downloads';
+import {SleepTimer, SPEEDS, usePlayer} from '../../state/player';
 import {useTheme} from '../../theme/ThemeProvider';
 import {
   Avatar,
@@ -23,6 +24,7 @@ import {
   Screen,
   Sheet,
   SheetRow,
+  StarRating,
   TextLink,
   Txt,
 } from '../../ui';
@@ -49,6 +51,67 @@ const Skip = ({
     </Txt>
   </Pressable>
 );
+
+const Action = ({
+  label,
+  accessibilityLabel,
+  onPress,
+  children,
+}: {
+  label: string;
+  accessibilityLabel: string;
+  onPress: () => void;
+  children: React.ReactNode;
+}) => (
+  <Pressable
+    accessibilityRole="button"
+    accessibilityLabel={accessibilityLabel}
+    onPress={onPress}
+    style={styles.action}>
+    <View style={styles.actionIcon}>{children}</View>
+    <Txt variant="small" style={styles.actionLabel}>
+      {label}
+    </Txt>
+  </Pressable>
+);
+
+// Download, its progress or removal, for books with rights-cleared audio.
+const DownloadRow = ({bookId}: {bookId: string}) => {
+  const {available, status, download, remove} = useBookDownload(bookId);
+  if (!available) return null;
+  const percent = status.totalBytes
+    ? Math.floor((status.bytesDownloaded / status.totalBytes) * 100)
+    : 0;
+  if (status.state === 'completed') {
+    return (
+      <SheetRow
+        icon="download"
+        label="Remove download"
+        value={formatMegabytes(status.totalBytes)}
+        onPress={remove}
+      />
+    );
+  }
+  if (status.state === 'downloading' || status.state === 'queued') {
+    return (
+      <SheetRow
+        icon="download"
+        label="Cancel download"
+        value={`${percent}%`}
+        onPress={remove}
+      />
+    );
+  }
+  return (
+    <SheetRow
+      icon="download"
+      label={
+        status.state === 'failed' ? 'Download failed · Try again' : 'Download'
+      }
+      onPress={download}
+    />
+  );
+};
 
 const sleepOptions: {label: string; timer: SleepTimer}[] = [
   {label: 'Off', timer: null},
@@ -80,9 +143,9 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
   const player = usePlayer();
   const library = useLibrary();
   const {skip} = useSettings();
-  const [sheet, setSheet] = useState<'sleep' | 'more' | 'bookmarks' | null>(
-    null,
-  );
+  const [sheet, setSheet] = useState<
+    'sleep' | 'more' | 'bookmarks' | 'speed' | 'chapters' | 'rate' | null
+  >(null);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -112,6 +175,20 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
     .sort((a, b) => Math.abs(a.at - position) - Math.abs(b.at - position));
   const nearest = notes[0];
   const progress = position / book.durationSec;
+  const chapters = chaptersOf(book);
+  const chapter = chapters[chapterAt(book, position) - 1] ?? chapters[0];
+  const rating = library.rating(book.id);
+  // Like a CD player: partway into a chapter, go back to its start first.
+  const previousChapter = () =>
+    player.seekTo(
+      position - chapter.startSec > 3 || chapter.number === 1
+        ? chapter.startSec
+        : chapters[chapter.number - 2].startSec,
+    );
+  const nextChapter = () => {
+    const next = chapters[chapter.number];
+    if (next) player.seekTo(next.startSec);
+  };
   const coverSize = Math.min(292, width - 98);
 
   return (
@@ -176,16 +253,6 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
             onOpen={name => navigation.navigate('Author', {name})}
           />
         </View>
-        <IconButton
-          icon="bookmark"
-          label="Bookmark this moment"
-          size={48}
-          background="segment"
-          onPress={() => {
-            library.addBookmark(book.id, position);
-            setToast(`Bookmarked at ${formatClock(position)}`);
-          }}
-        />
       </View>
 
       <View
@@ -261,20 +328,30 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
         <Txt variant="small" accessibilityLabel="Elapsed">
           {formatClock(position)}
         </Txt>
-        <Txt variant="small">{`Chapter ${chapterAt(book, position)}`}</Txt>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Chapters, chapter ${chapter.number} of ${chapters.length}, ${chapter.title}`}
+          hitSlop={8}
+          onPress={() => setSheet('chapters')}
+          style={styles.chapter}>
+          <Icon name="chapters" size={16} color="graphite" />
+          <Txt variant="small" numberOfLines={1} style={styles.chapterText}>
+            {chapter.title}
+          </Txt>
+        </Pressable>
         <Txt variant="small" accessibilityLabel="Remaining">
           {`−${formatClock(book.durationSec - position)}`}
         </Txt>
       </View>
 
       <View style={styles.controls}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Playback speed ${rate} times`}
-          onPress={player.cycleRate}
-          style={styles.rate}>
-          <Txt variant="strong" style={styles.rateText}>{`${rate}×`}</Txt>
-        </Pressable>
+        <IconButton
+          icon="previousChapter"
+          label="Previous chapter"
+          size={48}
+          iconSize={22}
+          onPress={previousChapter}
+        />
         <Skip
           icon="skipBack"
           seconds={skip.back}
@@ -296,11 +373,32 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
           label={`Forward ${skip.forward} seconds`}
           onPress={() => player.skip(skip.forward)}
         />
-        <Pressable
-          accessibilityRole="button"
+        <IconButton
+          icon="nextChapter"
+          label="Next chapter"
+          size={48}
+          iconSize={22}
+          onPress={nextChapter}
+        />
+      </View>
+
+      <View style={styles.actions}>
+        <Action
+          label="Speed"
+          accessibilityLabel={`Playback speed ${rate} times`}
+          onPress={() => setSheet('speed')}>
+          <Txt variant="strong" style={styles.rateText}>{`${rate}×`}</Txt>
+        </Action>
+        <Action
+          label="Car Mode"
+          accessibilityLabel="Car Mode"
+          onPress={() => navigation.navigate('CarMode')}>
+          <Icon name="car" />
+        </Action>
+        <Action
+          label="Timer"
           accessibilityLabel={sleepLabel(player.sleepTimer)}
-          onPress={() => setSheet('sleep')}
-          style={styles.sleep}>
+          onPress={() => setSheet('sleep')}>
           <Icon name="sleep" />
           {player.sleepTimer ? (
             <Txt
@@ -313,7 +411,16 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
                 : `${player.sleepTimer.minutes}m`}
             </Txt>
           ) : null}
-        </Pressable>
+        </Action>
+        <Action
+          label="Bookmark"
+          accessibilityLabel="Bookmark this moment"
+          onPress={() => {
+            library.addBookmark(book.id, position);
+            setToast(`Bookmarked at ${formatClock(position)}`);
+          }}>
+          <Icon name="bookmark" />
+        </Action>
       </View>
 
       {nearest ? (
@@ -383,12 +490,21 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
         onClose={() => setSheet(null)}>
         <SheetRow
           icon="book"
-          label="View book"
+          label="Title details"
           onPress={() => {
             setSheet(null);
             navigation.navigate('Book', {bookId: book.id});
           }}
         />
+        <SheetRow
+          icon="plus"
+          label="Add to a shelf"
+          onPress={() => {
+            setSheet(null);
+            navigation.navigate('SaveToShelf', {bookId: book.id});
+          }}
+        />
+        <DownloadRow bookId={book.id} />
         <SheetRow
           icon="share"
           label="Share"
@@ -402,6 +518,105 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
           label="Bookmarks"
           value={String(library.bookmarks(book.id).length)}
           onPress={() => setSheet('bookmarks')}
+        />
+        {library.status(book.id) === 'finished' ? (
+          <SheetRow
+            icon="finished"
+            label="Finished"
+            value="In your library"
+            onPress={() => setSheet(null)}
+          />
+        ) : (
+          <SheetRow
+            icon="finished"
+            label="Mark as finished"
+            onPress={() => {
+              // Stop first, so playback doesn't move a finished book's
+              // position back into the middle.
+              if (playing) player.toggle();
+              library.setStatus(book.id, 'finished');
+              setSheet(null);
+            }}
+          />
+        )}
+        <SheetRow
+          icon="star"
+          label="Rate and review"
+          value={
+            rating ? `${rating} ${rating === 1 ? 'star' : 'stars'}` : undefined
+          }
+          onPress={() => setSheet('rate')}
+        />
+        <SheetRow
+          icon="settings"
+          label="Player settings"
+          onPress={() => {
+            setSheet(null);
+            navigation.navigate('Settings');
+          }}
+        />
+      </Sheet>
+
+      <Sheet
+        visible={sheet === 'speed'}
+        title="Playback speed"
+        onClose={() => setSheet(null)}>
+        {SPEEDS.map(speed => (
+          <SheetRow
+            key={speed}
+            label={`${speed}×`}
+            selected={rate === speed}
+            onPress={() => {
+              player.setRate(speed);
+              setSheet(null);
+            }}
+          />
+        ))}
+      </Sheet>
+
+      <Sheet
+        visible={sheet === 'chapters'}
+        title="Chapters"
+        onClose={() => setSheet(null)}>
+        {chapters.map(c => (
+          <SheetRow
+            key={c.number}
+            label={c.title}
+            value={
+              c.number === chapter.number ? 'Now' : formatClock(c.startSec)
+            }
+            accessibilityLabel={`${c.title}, starts at ${formatClock(
+              c.startSec,
+            )}`}
+            onPress={() => {
+              player.seekTo(c.startSec);
+              setSheet(null);
+            }}
+          />
+        ))}
+      </Sheet>
+
+      <Sheet
+        visible={sheet === 'rate'}
+        title="Rate and review"
+        onClose={() => setSheet(null)}>
+        <View style={styles.rating}>
+          <StarRating
+            value={rating}
+            size={34}
+            onChange={stars => {
+              library.setRating(book.id, stars);
+              setSheet(null);
+            }}
+          />
+        </View>
+        <SheetRow
+          icon="note"
+          label="Write a review"
+          onPress={() => {
+            setSheet(null);
+            navigation.navigate('UpdateCompose', {bookId: book.id});
+          }}
         />
       </Sheet>
 
@@ -441,13 +656,23 @@ const PlayerScreen = ({navigation}: RootStackScreenProps<'Player'>) => {
 };
 
 const styles = StyleSheet.create({
-  sleep: {
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 14,
   },
-  sleepText: {position: 'absolute', bottom: 0, fontSize: 10},
+  action: {alignItems: 'center', minWidth: 64, paddingVertical: 4},
+  actionIcon: {height: 30, alignItems: 'center', justifyContent: 'center'},
+  actionLabel: {marginTop: 2},
+  sleepText: {position: 'absolute', bottom: -6, fontSize: 9},
+  chapter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+    marginHorizontal: 10,
+  },
+  chapterText: {marginLeft: 4, flexShrink: 1},
+  rating: {alignItems: 'center', paddingVertical: 16},
   toast: {
     position: 'absolute',
     alignSelf: 'center',
@@ -511,7 +736,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 12,
   },
-  rate: {width: 52, height: 48, alignItems: 'center', justifyContent: 'center'},
   rateText: {fontSize: 14},
   skip: {width: 56, height: 56, alignItems: 'center', justifyContent: 'center'},
   skipText: {position: 'absolute', bottom: 3, fontSize: 10},

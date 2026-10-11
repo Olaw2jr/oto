@@ -3,6 +3,7 @@ import * as Outline from 'react-native-heroicons/outline';
 import * as Solid from 'react-native-heroicons/solid';
 
 import {ColorToken} from '../theme/colors';
+import {CarIcon} from './CarIcon';
 import {useTheme} from '../theme/ThemeProvider';
 
 const icons = {
@@ -40,6 +41,12 @@ const icons = {
   mute: Outline.SpeakerXMarkIcon,
   flag: Outline.FlagIcon,
   calendar: Outline.CalendarIcon,
+  car: CarIcon,
+  chapters: Outline.QueueListIcon,
+  previousChapter: Solid.BackwardIcon,
+  nextChapter: Solid.ForwardIcon,
+  download: Outline.ArrowDownTrayIcon,
+  finished: Outline.CheckCircleIcon,
 };
 
 export type IconName = keyof typeof icons;

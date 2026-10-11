@@ -11,6 +11,7 @@ import LibraryScreen from '../features/library/LibraryScreen';
 import SaveToShelfScreen from '../features/library/SaveToShelfScreen';
 import ShelfScreen from '../features/library/ShelfScreen';
 import PlayerScreen from '../features/player/PlayerScreen';
+import CarModeScreen from '../features/player/CarModeScreen';
 import AuthorScreen from '../features/profiles/AuthorScreen';
 import PersonScreen from '../features/profiles/PersonScreen';
 import SearchScreen from '../features/search/SearchScreen';
@@ -72,6 +73,11 @@ const RootNavigator = () => {
             name="Player"
             component={PlayerScreen}
             options={{animation: 'slide_from_bottom'}}
+          />
+          <Stack.Screen
+            name="CarMode"
+            component={CarModeScreen}
+            options={{presentation: 'fullScreenModal', animation: 'fade'}}
           />
           <Stack.Screen name="Club" component={ClubScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />

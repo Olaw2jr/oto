@@ -62,7 +62,8 @@ export const cleanSummary = (text: string) =>
 // chapter 14 of Where the Crawdads Sing at 28%).
 const chapterCounts: Record<string, number> = {'where-the-crawdads-sing': 48};
 
-export const PUBLIC_DOMAIN_SAMPLE_ID = 'adventures-of-sherlock-holmes-public-domain';
+export const PUBLIC_DOMAIN_SAMPLE_ID =
+  'adventures-of-sherlock-holmes-public-domain';
 
 export const PUBLIC_DOMAIN_SAMPLE_CHAPTERS = [
   {title: 'A Scandal in Bohemia, Part 1', durationSec: 1670},
@@ -160,9 +161,16 @@ export const getBook = (id: string) => {
 export const chapterAt = (book: CatalogueBook, positionSec: number) => {
   if (book.id === PUBLIC_DOMAIN_SAMPLE_ID) {
     let endSec = 0;
-    for (let index = 0; index < PUBLIC_DOMAIN_SAMPLE_CHAPTERS.length; index += 1) {
+    for (
+      let index = 0;
+      index < PUBLIC_DOMAIN_SAMPLE_CHAPTERS.length;
+      index += 1
+    ) {
       endSec += PUBLIC_DOMAIN_SAMPLE_CHAPTERS[index].durationSec;
-      if (positionSec < endSec || index === PUBLIC_DOMAIN_SAMPLE_CHAPTERS.length - 1) {
+      if (
+        positionSec < endSec ||
+        index === PUBLIC_DOMAIN_SAMPLE_CHAPTERS.length - 1
+      ) {
         return index + 1;
       }
     }
@@ -172,4 +180,36 @@ export const chapterAt = (book: CatalogueBook, positionSec: number) => {
     book.chapters,
     Math.floor((positionSec / book.durationSec) * book.chapters) + 1,
   );
+};
+
+export type Chapter = {
+  number: number;
+  title: string;
+  startSec: number;
+  durationSec: number;
+};
+
+// The book's chapters with their start times. The public-domain sample has
+// real titles and lengths; other books are split evenly, as chapterAt does.
+export const chaptersOf = (book: CatalogueBook): Chapter[] => {
+  if (book.id === PUBLIC_DOMAIN_SAMPLE_ID) {
+    let startSec = 0;
+    return PUBLIC_DOMAIN_SAMPLE_CHAPTERS.map((chapter, index) => {
+      const entry = {
+        number: index + 1,
+        title: chapter.title,
+        startSec,
+        durationSec: chapter.durationSec,
+      };
+      startSec += chapter.durationSec;
+      return entry;
+    });
+  }
+  const length = book.durationSec / book.chapters;
+  return Array.from({length: book.chapters}, (_, index) => ({
+    number: index + 1,
+    title: `Chapter ${index + 1}`,
+    startSec: Math.round(index * length),
+    durationSec: Math.round(length),
+  }));
 };

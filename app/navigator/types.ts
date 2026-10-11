@@ -25,6 +25,7 @@ export type RootStackParamList = {
   BookDetails: {bookId: string};
   Reviews: {bookId: string};
   Player: undefined;
+  CarMode: undefined;
   Club: {clubId: string};
   UpdateCompose: {bookId?: string} | undefined;
   Thread: {itemId: string};
