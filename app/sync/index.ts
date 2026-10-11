@@ -17,3 +17,7 @@ export type {
   MutationSender,
   SyncEngineOptions,
 } from './SyncEngine';
+export {SyncRecorder} from './SyncRecorder';
+export {OtoApiMutationSender} from './OtoApiMutationSender';
+export {syncCollections, syncLibrary, syncProgress} from './SyncingRepositories';
+export {settleOnBackground} from './settleOnBackground';

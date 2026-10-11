@@ -5,6 +5,7 @@ import {getPerson, ME} from '../../data/people';
 import {RootStackScreenProps} from '../../navigator/types';
 import {usePlayer} from '../../state/player';
 import {useSession} from '../../state/session';
+import {useAccount} from '../../state/account';
 import {useSocial} from '../../state/social';
 import {useDownloadedBooks} from '../../state/downloads';
 import {NotificationsSheet} from '../../components/NotificationsSheet';
@@ -106,7 +107,13 @@ const SettingsScreen = ({navigation}: RootStackScreenProps<'Settings'>) => {
   const social = useSocial();
   const downloads = useDownloadedBooks();
   const {preference, setPreference} = useTheme();
-  const {signOut} = useSession();
+  const {signOut: endSession} = useSession();
+  const account = useAccount();
+  // Signs out of oto-api too, when an account is signed in.
+  const signOut = () => {
+    account?.signOut().catch(() => {});
+    endSession();
+  };
   const settings = useSettings();
   const player = usePlayer();
   const me = getPerson(ME);

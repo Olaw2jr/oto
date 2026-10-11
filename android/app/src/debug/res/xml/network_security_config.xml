@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug: cleartext allowed so the app can load JS from Metro over the LAN. -->
+<network-security-config>
+  <base-config cleartextTrafficPermitted="true">
+    <trust-anchors>
+      <certificates src="system" />
+      <certificates src="user" />
+    </trust-anchors>
+  </base-config>
+</network-security-config>

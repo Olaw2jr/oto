@@ -18,8 +18,27 @@ import {
   type ChapterPreloadCoordinator,
 } from '../audio';
 import type {PersonalCollections} from '../domain';
-import {ApiClient, FetchHttpTransport} from '../api';
-import {apiBaseUrl} from '../config/environment';
+import {
+  apiBaseUrl,
+  googleIosClientId,
+  googleWebClientId,
+} from '../config/environment';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import {
+  ApiClient,
+  assertSecureBaseUrl,
+  FetchHttpTransport,
+  OtoApiClient,
+  type HttpTransport,
+} from '../api';
+import {
+  AccountSession,
+  createGoogleIdentity,
+  syncWhileSignedIn,
+  type GoogleIdentity,
+  type TokenStore,
+} from '../auth';
+import {KeychainTokenStore} from '../auth/KeychainTokenStore';
 import type {Connectivity} from '../connectivity';
 import {
   InMemoryTelemetryStore,
@@ -61,7 +80,16 @@ import {
   migrations,
   type SqlDatabase,
 } from '../storage/sqlite';
-import {InMemoryMutationOutbox, type MutationOutbox} from '../sync';
+import {
+  InMemoryMutationOutbox,
+  type MutationOutbox,
+  OtoApiMutationSender,
+  SyncEngine,
+  SyncRecorder,
+  syncCollections,
+  syncLibrary,
+  syncProgress,
+} from '../sync';
 import {
   HttpsTransport,
   LocalFileTransport,
@@ -86,11 +114,24 @@ export type ApplicationContainer = {
     initial: PersonalCollections;
   };
   sync: {
-    // Changes waiting for the server. Nothing sends them until a backend
-    // transport exists (BE-06).
+    // Changes waiting for oto-api (docs/sync-protocol.md there).
     outbox: MutationOutbox;
+    // Records library, progress, shelf and rating changes into the outbox.
+    // Only present when a backend is configured (apiBaseUrl).
+    recorder?: SyncRecorder;
   };
   connectivity: Connectivity;
+  // The oto-api account and the sync it drives. Only present when a
+  // backend is configured (apiBaseUrl).
+  account?: {
+    session: AccountSession;
+    client: OtoApiClient;
+    google: GoogleIdentity;
+    // Restores a saved account and sends queued changes while signed in.
+    start(): Promise<() => void>;
+    // Resolves once any send in progress has finished.
+    idle(): Promise<void>;
+  };
   telemetry: {
     telemetry: Telemetry;
     store: TelemetryStore;
@@ -130,6 +171,7 @@ export type ApplicationContainerOptions = {
   downloadEngine?: DownloadEngine;
   telemetryStore?: TelemetryStore;
   apiBaseUrl?: string | null;
+  account?: ApplicationContainer['account'];
 };
 
 const createTelemetry = (
@@ -319,6 +361,7 @@ export const createApplicationContainer = (
     library: libraryGraph.adapter,
     collections: options.collections ?? createSeedCollections(),
     sync: {outbox: options.outbox ?? new InMemoryMutationOutbox()},
+    account: options.account,
     connectivity,
     telemetry: createTelemetry(
       options.telemetryStore ?? new InMemoryTelemetryStore(),
@@ -353,15 +396,28 @@ export const createApplicationContainer = (
 // only used by explicitly injected test/prototype containers.
 export const createPersistentApplicationContainer = async (
   databaseFactory: () => Promise<SqlDatabase> = openDatabase,
+  options: {
+    apiBaseUrl?: string | null;
+    // Tests replace the network and the device's secure storage.
+    transport?: HttpTransport;
+    tokenStore?: TokenStore;
+  } = {},
 ): Promise<ApplicationContainer> => {
   const database = await databaseFactory();
   await new MigrationRunner(database, migrations).migrate();
+  const backend =
+    options.apiBaseUrl === undefined ? apiBaseUrl : options.apiBaseUrl;
+  const outbox = new SqliteMutationOutbox(database);
+  // Without a backend there's nowhere to send changes, so none are queued.
+  const recorder = backend ? new SyncRecorder({outbox}) : undefined;
   const seed = createSeedLibraryGraph();
   const storedLibrary = new SqliteLibraryRepository(database);
   const storedProgress = new SqliteProgressRepository(database);
   const storedCollections = new SqliteCollectionsRepository(database);
   const collections = {
-    repository: storedCollections,
+    repository: recorder
+      ? syncCollections(storedCollections, recorder)
+      : storedCollections,
     initial: await storedCollections.load(),
   };
   const library = new ObservableLibraryRepository(await storedLibrary.list());
@@ -375,7 +431,7 @@ export const createPersistentApplicationContainer = async (
       progress.setOptimistic(saved);
     }
   }
-  const durableLibrary: LibraryRepository = {
+  const localLibrary: LibraryRepository = {
     get: id => storedLibrary.get(id),
     list: () => storedLibrary.list(),
     save: async entry => {
@@ -387,13 +443,19 @@ export const createPersistentApplicationContainer = async (
       await library.remove(id);
     },
   };
-  const durableProgress: ProgressRepository = {
+  const localProgress: ProgressRepository = {
     get: (bookId, renditionId) => storedProgress.get(bookId, renditionId),
     save: async entry => {
       await storedProgress.save(entry);
       progress.setOptimistic(entry);
     },
   };
+  const durableLibrary = recorder
+    ? syncLibrary(localLibrary, recorder)
+    : localLibrary;
+  const durableProgress = recorder
+    ? syncProgress(localProgress, recorder)
+    : localProgress;
   const service = new LibraryService({
     catalogue: seed.catalogue,
     renditions: seed.renditions,
@@ -411,9 +473,38 @@ export const createPersistentApplicationContainer = async (
     libraryGraph: {...seed, library, progress, service, adapter},
     databaseFactory: async () => database,
     collections,
-    outbox: new SqliteMutationOutbox(database),
+    outbox,
     telemetryStore: new SqliteTelemetryStore(database),
+    apiBaseUrl: backend,
   });
+  container.sync.recorder = recorder;
+  if (backend) {
+    assertSecureBaseUrl(backend);
+    const transport = options.transport ?? new FetchHttpTransport(backend);
+    const session = new AccountSession(
+      transport,
+      options.tokenStore ?? new KeychainTokenStore(),
+    );
+    const client = new OtoApiClient(transport, session);
+    const engine = new SyncEngine({
+      outbox,
+      sender: new OtoApiMutationSender(client),
+      connectivity: container.connectivity,
+    });
+    container.account = {
+      session,
+      client,
+      google: createGoogleIdentity(
+        {webClientId: googleWebClientId, iosClientId: googleIosClientId},
+        GoogleSignin,
+      ),
+      start: async () => {
+        await session.restore();
+        return syncWhileSignedIn(session, engine, recorder);
+      },
+      idle: () => engine.idle(),
+    };
+  }
   container.repositories.library = durableLibrary;
   container.repositories.progress = durableProgress;
   return container;

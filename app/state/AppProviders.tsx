@@ -1,5 +1,5 @@
 import React, {ReactNode, useEffect, useState} from 'react';
-import {ActivityIndicator, Button, Text, View} from 'react-native';
+import {ActivityIndicator, AppState, Button, Text, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import {
@@ -10,9 +10,12 @@ import {ThemeProvider} from '../theme/ThemeProvider';
 import {DownloadsProvider} from './downloads';
 import {LibraryProvider} from './library';
 import {ConnectivityProvider} from './network';
+import {reportStartup} from '../telemetry/startup';
+import {settleOnBackground} from '../sync';
 import {installGlobalErrorReporting, TelemetryProvider} from './telemetry';
 import {PlayerProvider} from './player';
 import {SessionProvider} from './session';
+import {AccountProvider} from './account';
 import {SettingsProvider} from './settings';
 import {SocialProvider} from './social';
 import {TasteProvider} from './taste';
@@ -57,7 +60,25 @@ export const AppProviders = ({
       container.telemetry.telemetry,
     );
     const stopUploads = container.telemetry.start();
+    const recorder = container.sync.recorder;
+    const stopSettling = recorder
+      ? settleOnBackground(recorder, AppState)
+      : () => {};
+    reportStartup(container.telemetry.telemetry);
+    // Restore a saved oto-api account and send queued changes while signed in.
+    let stopAccount: (() => void) | undefined;
+    let mounted = true;
+    container.account?.start().then(
+      stop => (mounted ? (stopAccount = stop) : stop()),
+      failure =>
+        container.telemetry.telemetry.error(failure, {
+          source: 'account.start',
+        }),
+    );
     return () => {
+      mounted = false;
+      stopAccount?.();
+      stopSettling();
       stopUploads();
       uninstall();
     };
@@ -89,8 +110,13 @@ export const AppProviders = ({
         <TelemetryProvider telemetry={container.telemetry.telemetry}>
           <ConnectivityProvider connectivity={container.connectivity}>
             <SessionProvider>
+<<<<<<< HEAD
               <SettingsProvider>
                 <DownloadsProvider books={container.downloads.books}>
+=======
+              <AccountProvider account={container.account}>
+                <SettingsProvider>
+>>>>>>> origin/main
                   <LibraryProvider
                     adapter={container.library}
                     collections={container.collections}>
@@ -101,8 +127,13 @@ export const AppProviders = ({
                       </SocialProvider>
                     </PlayerProvider>
                   </LibraryProvider>
+<<<<<<< HEAD
                 </DownloadsProvider>
               </SettingsProvider>
+=======
+                </SettingsProvider>
+              </AccountProvider>
+>>>>>>> origin/main
             </SessionProvider>
           </ConnectivityProvider>
         </TelemetryProvider>

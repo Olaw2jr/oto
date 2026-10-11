@@ -99,6 +99,10 @@ Colours come from the theme tokens in `app/theme/tokens.js`, never from raw hex 
 - [react-native-svg](https://github.com/software-mansion/react-native-svg) and [Heroicons](https://heroicons.com/) for graphics
 - Jest and React Native Testing Library for tests
 
+The backend (FastAPI, Postgres, Neo4j) lives in its own repository,
+[Olaw2jr/oto-api](https://github.com/Olaw2jr/oto-api). The app talks to it through
+`app/api/OtoApiClient.ts` once `app/config/environment.ts#apiBaseUrl` is set.
+
 ## Getting started
 
 **Requirements**

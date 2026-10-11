@@ -1,5 +1,8 @@
 # Contributing
 
+This repository is the oto app. Backend changes go to
+[Olaw2jr/oto-api](https://github.com/Olaw2jr/oto-api).
+
 ## Workflow
 
 1. Branch off an up-to-date `main`. Name the branch `feat/<topic>`, `fix/<topic>` or `chore/<topic>`.

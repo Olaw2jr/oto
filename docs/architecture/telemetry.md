@@ -9,7 +9,7 @@ oto reports problems about itself to its own backend through a vendor-neutral
 |---|---|---|
 | `error` | Uncaught JS errors (`fatal`, `source: 'global'`), playback errors (`source: 'player'`), library write failures (`source: 'library.save'`) | `installGlobalErrorReporting`, `PlayerProvider`, `LibraryProvider` |
 | `event` | `playback.failed` (`reason: unavailable \| failed`, `bookId`), `playback.stopped` (`reason: native-error`) | `PlayerProvider` |
-| `metric` | Reserved for performance budgets (HA-07) | — |
+| `metric` | `startup.ready_ms`: JS start to providers ready, once per launch | `reportStartup` (`app/telemetry/startup.ts`) |
 
 ## Privacy rules
 
@@ -29,3 +29,5 @@ oto reports problems about itself to its own backend through a vendor-neutral
   while online, on start and on reconnect, and retries failures with the sync
   engine's backoff. Events are removed only after the backend accepts them.
 - The uploader starts only when `app/config/environment.ts#apiBaseUrl` is set.
+  The endpoint is `app/telemetry_api.py` in
+  [oto-api](https://github.com/Olaw2jr/oto-api), which enforces the same limits.
