@@ -101,7 +101,7 @@ jobs:
       - uses: actions/attest-build-provenance@v4
         with:
           subject-path: dist/*
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: android-release
           path: dist/*
@@ -200,7 +200,7 @@ jobs:
       - uses: actions/attest-build-provenance@v4
         with:
           subject-path: dist/*
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: ios-release
           path: dist/*
